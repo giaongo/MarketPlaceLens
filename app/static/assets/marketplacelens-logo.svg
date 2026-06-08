@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">MarketPlaceLens logo</title>
+  <desc id="desc">A green marketplace tag inside a lens with a small magnifier handle.</desc>
+  <defs>
+    <linearGradient id="lens" x1="40" y1="32" x2="208" y2="220" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#18b89d"/>
+      <stop offset="0.55" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#14532d"/>
+    </linearGradient>
+    <linearGradient id="tag" x1="74" y1="66" x2="178" y2="166" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dffaf4"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="#f8fafc"/>
+  <circle cx="116" cy="112" r="78" fill="url(#lens)"/>
+  <circle cx="116" cy="112" r="60" fill="#ffffff" opacity="0.13"/>
+  <path d="M171 169l43 43" fill="none" stroke="#17202a" stroke-width="22" stroke-linecap="round"/>
+  <path d="M75 92c0-9 7-16 16-16h64c9 0 16 7 16 16v54c0 9-7 16-16 16H91c-9 0-16-7-16-16V92z" fill="url(#tag)"/>
+  <path d="M91 76h64c9 0 16 7 16 16v15H75V92c0-9 7-16 16-16z" fill="#17202a" opacity="0.12"/>
+  <circle cx="98" cy="96" r="8" fill="#0f766e"/>
+  <path d="M119 104h30M98 126h51M98 145h38" fill="none" stroke="#0f766e" stroke-width="9" stroke-linecap="round"/>
+  <path d="M62 61c18-18 43-29 70-27" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.74"/>
+</svg>

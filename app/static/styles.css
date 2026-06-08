@@ -85,6 +85,13 @@ select {
     conic-gradient(from 45deg, #0f766e, #22c55e, #f59e0b, #2563eb, #0f766e);
 }
 
+.brand-logo {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+}
+
 .brand strong {
   display: block;
   font-size: 1.05rem;
