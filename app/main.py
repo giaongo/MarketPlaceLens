@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import random
 import sqlite3
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -234,6 +237,36 @@ async def update_listing_status(listing_id: int, payload: ListingStatusPayload) 
     return row_to_listing(row)
 
 
+@app.get("/api/listings/{listing_id}/image")
+async def listing_image(listing_id: int) -> Response:
+    with connect() as db:
+        row = db.execute("SELECT thumbnail_url FROM listings WHERE id = ?", (listing_id,)).fetchone()
+    if not row:
+        raise HTTPException(404, "Listing not found")
+    image_url = row["thumbnail_url"]
+    if not image_url:
+        raise HTTPException(404, "Listing has no image")
+    validate_remote_image_url(image_url)
+    parsed = urlparse(image_url)
+    async with httpx.AsyncClient(
+        headers={
+            "User-Agent": settings.user_agent,
+            "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            "Referer": f"{parsed.scheme}://{parsed.netloc}/",
+        },
+        follow_redirects=True,
+        timeout=20.0,
+    ) as client:
+        response = await client.get(image_url)
+        response.raise_for_status()
+    content_type = response.headers.get("content-type", "").split(";")[0].strip().lower()
+    if not content_type.startswith("image/"):
+        raise HTTPException(502, "Remote URL did not return an image")
+    if len(response.content) > 5 * 1024 * 1024:
+        raise HTTPException(502, "Remote image is too large")
+    return Response(content=response.content, media_type=content_type)
+
+
 @app.get("/api/settings")
 async def get_settings() -> dict[str, Any]:
     with connect() as db:
@@ -397,6 +430,21 @@ def get_setting(db, key: str) -> str:
 
 def mask_secret(value: str) -> str:
     return "********" if value else ""
+
+
+def validate_remote_image_url(url: str) -> None:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise HTTPException(400, "Unsupported image URL")
+    host = parsed.hostname.lower()
+    if host in {"localhost", "localhost.localdomain"} or host.endswith(".local"):
+        raise HTTPException(400, "Local image URLs are not allowed")
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return
+    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved:
+        raise HTTPException(400, "Private image URLs are not allowed")
 
 
 def find_existing_listing(db: sqlite3.Connection, profile_id: int, candidate: ListingCandidate) -> sqlite3.Row | None:

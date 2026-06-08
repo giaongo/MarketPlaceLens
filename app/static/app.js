@@ -212,7 +212,7 @@ async function loadListings() {
       <article class="listing-card">
         <div class="listing-media">
           ${listing.thumbnail_url ? `
-            <button class="image-load" data-image-src="${escapeAttribute(listing.thumbnail_url)}" data-image-alt="${escapeAttribute(listing.title)}">Load image</button>
+            <button class="image-load" data-listing-id="${listing.id}" data-image-alt="${escapeAttribute(listing.title)}">Load image</button>
           ` : `<span class="no-image">No image</span>`}
         </div>
         <div class="listing-main">
@@ -250,7 +250,7 @@ async function loadListings() {
   $$(".image-load").forEach((button) => {
     button.addEventListener("click", () => {
       const img = document.createElement("img");
-      img.src = button.dataset.imageSrc;
+      img.src = `/api/listings/${button.dataset.listingId}/image`;
       img.alt = button.dataset.imageAlt;
       img.loading = "lazy";
       img.addEventListener("error", () => {
