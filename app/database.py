@@ -148,6 +148,12 @@ def init_db() -> None:
             "webhook_url": settings.webhook_url,
             "global_rate_limit_seconds": "20",
             "default_watchlist_id": str(default_watchlist_id),
+            "ai_enabled": "0",
+            "ai_provider": "openai",
+            "ai_api_key": "",
+            "ai_base_url": "",
+            "ai_model": "gpt-4o-mini",
+            "ai_tone": "normal",
         }
         for key, value in defaults.items():
             db.execute(

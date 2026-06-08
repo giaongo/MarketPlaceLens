@@ -20,7 +20,7 @@ from .connectors import ListingCandidate, get_connector
 from .database import connect, encode_list, ensure_default_watchlist, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
-from .schemas import ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, WatchlistPayload
+from .schemas import InquiryPayload, ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, WatchlistPayload
 
 app = FastAPI(title="MarketPlaceLens", version="0.1.0")
 static_dir = Path(__file__).parent / "static"
@@ -373,6 +373,30 @@ async def listing_image(listing_id: int) -> Response:
     return Response(content=response.content, media_type=content_type)
 
 
+@app.post("/api/listings/{listing_id}/inquiry")
+async def generate_listing_inquiry(listing_id: int, payload: InquiryPayload) -> dict[str, str]:
+    with connect() as db:
+        listing_row = db.execute(
+            """
+            SELECT listings.*, watch_profiles.name profile_name
+            FROM listings
+            JOIN watch_profiles ON watch_profiles.id = listings.profile_id
+            WHERE listings.id = ?
+            """,
+            (listing_id,),
+        ).fetchone()
+        settings_rows = db.execute("SELECT key, value FROM app_settings").fetchall()
+    if not listing_row:
+        raise HTTPException(404, "Listing not found")
+    app_settings = {item["key"]: item["value"] for item in settings_rows}
+    if app_settings.get("ai_enabled") != "1":
+        raise HTTPException(400, "AI inquiry generation is not enabled")
+    listing = row_to_listing(listing_row)
+    prompt = inquiry_prompt(listing, app_settings.get("ai_tone", "normal"), payload.language)
+    text = await generate_ai_text(app_settings, prompt)
+    return {"text": text.strip()}
+
+
 @app.get("/api/settings")
 async def get_settings() -> dict[str, Any]:
     with connect() as db:
@@ -387,6 +411,13 @@ async def get_settings() -> dict[str, Any]:
         "webhook_url_set": bool(values.get("webhook_url")),
         "global_rate_limit_seconds": int(values.get("global_rate_limit_seconds", "20") or 20),
         "default_watchlist_id": default_watchlist_id,
+        "ai_enabled": values.get("ai_enabled", "0") == "1",
+        "ai_provider": values.get("ai_provider", "openai") or "openai",
+        "ai_api_key": mask_secret(values.get("ai_api_key", "")),
+        "ai_api_key_set": bool(values.get("ai_api_key")),
+        "ai_base_url": values.get("ai_base_url", ""),
+        "ai_model": values.get("ai_model", "gpt-4o-mini") or "gpt-4o-mini",
+        "ai_tone": values.get("ai_tone", "normal") or "normal",
     }
 
 
@@ -394,12 +425,19 @@ async def get_settings() -> dict[str, Any]:
 async def update_settings(payload: SettingsPayload) -> dict[str, Any]:
     with connect() as db:
         current_token = get_setting(db, "telegram_bot_token")
+        current_ai_key = get_setting(db, "ai_api_key")
         values = {
             "telegram_bot_token": current_token if payload.telegram_bot_token == "********" else payload.telegram_bot_token,
             "telegram_chat_id": payload.telegram_chat_id,
             "webhook_url": payload.webhook_url,
             "global_rate_limit_seconds": str(payload.global_rate_limit_seconds),
             "default_watchlist_id": str(valid_watchlist_id(db, payload.default_watchlist_id)),
+            "ai_enabled": "1" if payload.ai_enabled else "0",
+            "ai_provider": payload.ai_provider,
+            "ai_api_key": current_ai_key if payload.ai_api_key == "********" else payload.ai_api_key,
+            "ai_base_url": payload.ai_base_url.strip(),
+            "ai_model": payload.ai_model.strip(),
+            "ai_tone": payload.ai_tone,
         }
         for key, value in values.items():
             db.execute(
@@ -683,6 +721,108 @@ def attach_watchlists(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def mask_secret(value: str) -> str:
     return "********" if value else ""
+
+
+def inquiry_prompt(listing: dict[str, Any], tone: str, language: str) -> list[dict[str, str]]:
+    tone_instruction = {
+        "polite": "sehr höflich, respektvoll und warm",
+        "normal": "freundlich, direkt und natürlich",
+        "cheeky": "locker-frech, charmant, aber nicht respektlos",
+    }.get(tone, "freundlich, direkt und natürlich")
+    if language == "en":
+        tone_instruction = {
+            "polite": "very polite, respectful, and warm",
+            "normal": "friendly, direct, and natural",
+            "cheeky": "playfully cheeky and charming, never rude",
+        }.get(tone, "friendly, direct, and natural")
+    facts = "\n".join(
+        [
+            f"Titel: {listing.get('title') or ''}",
+            f"Preis: {listing.get('price_text') or 'unbekannt'}",
+            f"Ort: {listing.get('location_text') or 'unbekannt'}",
+            f"Kategorie: {listing.get('category_text') or 'unbekannt'}",
+            f"Beschreibung: {listing.get('description_snippet') or ''}",
+        ]
+    )
+    output_language = "German" if language == "de" else "English"
+    return [
+        {
+            "role": "system",
+            "content": (
+                "You write short buyer inquiry messages for marketplace listings. "
+                "Return only the message text. Do not invent private facts, do not mention AI, "
+                "and do not include placeholders, subject lines, or explanations."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Write one {output_language} inquiry message. Style: {tone_instruction}. "
+                "Ask whether the item is still available and, if fitting, mention pickup or a quick viewing. "
+                "Keep it concise.\n\nListing facts:\n"
+                f"{facts}"
+            ),
+        },
+    ]
+
+
+async def generate_ai_text(app_settings: dict[str, str], messages: list[dict[str, str]]) -> str:
+    provider = app_settings.get("ai_provider", "openai") or "openai"
+    model = app_settings.get("ai_model", "").strip() or default_ai_model(provider)
+    base_url = normalized_ai_base_url(provider, app_settings.get("ai_base_url", ""))
+    api_key = app_settings.get("ai_api_key", "")
+    if provider == "openai" and not api_key:
+        raise HTTPException(400, "OpenAI API key is missing")
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    try:
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            response = await client.post(
+                f"{base_url}/chat/completions",
+                headers=headers,
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "temperature": 0.65,
+                    "max_tokens": 220,
+                },
+            )
+            response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        detail = exc.response.text[:500] if exc.response is not None else str(exc)
+        raise HTTPException(502, f"AI provider request failed: {detail}") from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(502, f"AI provider is unreachable: {exc}") from exc
+    data = response.json()
+    try:
+        content = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise HTTPException(502, "AI provider returned an unsupported response") from exc
+    if not str(content).strip():
+        raise HTTPException(502, "AI provider returned an empty response")
+    return str(content)
+
+
+def normalized_ai_base_url(provider: str, value: str) -> str:
+    base_url = value.strip().rstrip("/")
+    if not base_url:
+        base_url = {
+            "openai": "https://api.openai.com/v1",
+            "ollama": "http://host.docker.internal:11434/v1",
+            "lmstudio": "http://host.docker.internal:1234/v1",
+        }.get(provider, "https://api.openai.com/v1")
+    if not base_url.endswith("/v1"):
+        base_url = f"{base_url}/v1"
+    return base_url
+
+
+def default_ai_model(provider: str) -> str:
+    return {
+        "openai": "gpt-4o-mini",
+        "ollama": "llama3.1",
+        "lmstudio": "local-model",
+    }.get(provider, "gpt-4o-mini")
 
 
 def validate_remote_image_url(url: str) -> None:

@@ -23,6 +23,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Paginated listing history with a collapsed-by-default browser, 5/10/20 items per page, adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails; seen and hidden listings drop out of the default active list unless explicitly filtered
 - Tinder-style listing review view with a large image, key facts, double-click watchlisting, selectable watchlist saving, and swipe-to-seen queue progression
 - Multiple user-created watchlists, including a settings-controlled default watchlist for the normal Watch action and a per-listing dropdown to choose or create a list
+- Optional AI-generated inquiry texts per listing with OpenAI API, Ollama, or LM Studio compatible chat-completions providers and configurable tone (`very polite`, `normal`, `cheeky`)
 - Dedicated watchlist view for saved listings you want to compare or revisit
 - English/German UI language switcher and light/dark theme toggle
 - Telegram and webhook settings with test messages
@@ -74,6 +75,8 @@ Set `MARKETPLACELENS_ADMIN_USERNAME`, `MARKETPLACELENS_ADMIN_PASSWORD`, and `MAR
 
 The password can also be changed from the Settings page. A changed password is stored as a PBKDF2-SHA256 hash in SQLite and overrides the environment default.
 
+AI inquiry generation is configured from Settings and is disabled by default. When enabled, listing cards and the review view show an AI text button that drafts a buyer message for the current listing. The app only generates text for review/copying; it does not send messages to sellers. OpenAI uses `https://api.openai.com/v1` by default. Docker deployments can reach local Ollama and LM Studio via `http://host.docker.internal:11434/v1` and `http://host.docker.internal:1234/v1`.
+
 ## Configuration
 
 The UI can store Telegram settings in SQLite. Environment variables can seed first-run defaults:
@@ -111,6 +114,7 @@ app/
 - `GET /api/listings`
 - `PATCH /api/listings/{id}`
 - `GET /api/listings?watchlisted=true`
+- `POST /api/listings/{id}/inquiry`
 - `GET /api/watchlists`
 - `POST /api/watchlists`
 - `GET /api/settings`

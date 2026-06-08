@@ -403,6 +403,7 @@
               <div class="watch-menu hidden" id="review-watch-menu"></div>
             </div>
             <button class="button primary" type="button" id="review-seen-button" data-i18n="review.seen">Seen, next</button>
+            <button class="button ghost hidden" type="button" id="review-inquiry-button" data-i18n="listing.aiInquiry">AI text</button>
             <button class="button ghost" type="button" id="review-open-button" data-i18n="review.open">Open original</button>
           </div>
         </section>
@@ -458,6 +459,37 @@
         <section class="panel narrow settings-section">
           <div class="panel-heading">
             <div>
+              <h2 data-i18n="settings.ai">AI inquiry texts</h2>
+              <p class="panel-subtitle" data-i18n="settings.aiSubtitle">Generate short buyer messages from a listing when a provider is configured.</p>
+            </div>
+          </div>
+          <form id="ai-settings-form" class="form-grid">
+            <label class="switch wide"><input id="ai-enabled" type="checkbox"> <span data-i18n="settings.aiEnabled">Enable AI inquiry texts</span></label>
+            <label><span data-i18n="settings.aiProvider">Provider</span>
+              <select id="ai-provider">
+                <option value="openai">OpenAI API</option>
+                <option value="ollama">Ollama</option>
+                <option value="lmstudio">LM Studio</option>
+              </select>
+            </label>
+            <label><span data-i18n="settings.aiTone">Tone</span>
+              <select id="ai-tone">
+                <option value="polite" data-i18n="settings.aiTonePolite">Very polite</option>
+                <option value="normal" data-i18n="settings.aiToneNormal">Normal</option>
+                <option value="cheeky" data-i18n="settings.aiToneCheeky">Cheeky</option>
+              </select>
+            </label>
+            <label class="wide"><span data-i18n="settings.aiApiKey">API key</span><input id="ai-api-key" type="password" autocomplete="off" placeholder="sk-..."></label>
+            <label class="wide"><span data-i18n="settings.aiBaseUrl">Base URL</span><input id="ai-base-url" type="url" placeholder="https://api.openai.com/v1"></label>
+            <label class="wide"><span data-i18n="settings.aiModel">Model</span><input id="ai-model" placeholder="gpt-4o-mini"></label>
+            <div class="actions wide">
+              <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
+            </div>
+          </form>
+        </section>
+        <section class="panel narrow settings-section">
+          <div class="panel-heading">
+            <div>
               <h2 data-i18n="settings.watchlists">Watchlists</h2>
               <p class="panel-subtitle" data-i18n="settings.watchlistsSubtitle">Choose the default list used by the normal Watch click.</p>
             </div>
@@ -496,6 +528,18 @@
     </main>
 
     <div id="toast" role="status"></div>
+    <dialog id="inquiry-dialog" class="modal-dialog">
+      <form method="dialog" class="modal-card">
+        <div class="panel-heading">
+          <h2 data-i18n="inquiry.title">AI inquiry text</h2>
+          <button class="mini-button" value="close" data-i18n="inquiry.close">Close</button>
+        </div>
+        <textarea id="inquiry-text" rows="8"></textarea>
+        <div class="actions">
+          <button class="button primary" type="button" id="copy-inquiry-button" data-i18n="inquiry.copy">Copy</button>
+        </div>
+      </form>
+    </dialog>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
     <script src="/static/app.js" defer></script>
   </body>

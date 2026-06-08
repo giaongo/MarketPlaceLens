@@ -12,6 +12,7 @@ const state = {
   reviewPointer: null,
   watchlists: [],
   defaultWatchlistId: null,
+  aiEnabled: false,
   locationMap: null,
   locationMarker: null,
   locationCircle: null,
@@ -186,6 +187,17 @@ const translations = {
     "settings.defaultWatchlist": "Default watchlist",
     "settings.newWatchlist": "New watchlist",
     "settings.createWatchlist": "Create list",
+    "settings.ai": "AI inquiry texts",
+    "settings.aiSubtitle": "Generate short buyer messages from a listing when a provider is configured.",
+    "settings.aiEnabled": "Enable AI inquiry texts",
+    "settings.aiProvider": "Provider",
+    "settings.aiApiKey": "API key",
+    "settings.aiBaseUrl": "Base URL",
+    "settings.aiModel": "Model",
+    "settings.aiTone": "Tone",
+    "settings.aiTonePolite": "Very polite",
+    "settings.aiToneNormal": "Normal",
+    "settings.aiToneCheeky": "Cheeky",
     "settings.save": "Save settings",
     "settings.sendTest": "Send test",
     "settings.sendWebhookTest": "Send webhook test",
@@ -213,6 +225,7 @@ const translations = {
     "listing.watchMenu": "Choose watchlist",
     "listing.newWatchlistPrompt": "New watchlist name",
     "listing.addToWatchlist": "Add to {name}",
+    "listing.aiInquiry": "AI text",
     "listing.seen": "Seen",
     "listing.hide": "Hide",
     "listing.new": "New",
@@ -224,6 +237,11 @@ const translations = {
     "toast.watchlistAddedTo": "Added to {name}",
     "toast.watchlistCreated": "Watchlist created",
     "toast.watchlistRemoved": "Removed from watchlist",
+    "toast.inquiryGenerated": "Inquiry text generated",
+    "toast.inquiryCopied": "Inquiry copied",
+    "inquiry.title": "AI inquiry text",
+    "inquiry.copy": "Copy",
+    "inquiry.close": "Close",
     "toast.passwordMismatch": "New passwords do not match",
     "toast.passwordChanged": "Password changed",
     "toast.profileSaved": "Profile saved",
@@ -408,6 +426,17 @@ const translations = {
     "settings.defaultWatchlist": "Standard-Watchlist",
     "settings.newWatchlist": "Neue Watchlist",
     "settings.createWatchlist": "Liste anlegen",
+    "settings.ai": "KI-Anfragetexte",
+    "settings.aiSubtitle": "Erzeugt kurze Käufernachrichten aus einem Listing, sobald ein Provider konfiguriert ist.",
+    "settings.aiEnabled": "KI-Anfragetexte aktivieren",
+    "settings.aiProvider": "Provider",
+    "settings.aiApiKey": "API-Key",
+    "settings.aiBaseUrl": "Base-URL",
+    "settings.aiModel": "Modell",
+    "settings.aiTone": "Tonfall",
+    "settings.aiTonePolite": "Sehr höflich",
+    "settings.aiToneNormal": "Normal",
+    "settings.aiToneCheeky": "Frech",
     "settings.save": "Einstellungen speichern",
     "settings.sendTest": "Test senden",
     "settings.sendWebhookTest": "Webhook-Test senden",
@@ -435,6 +464,7 @@ const translations = {
     "listing.watchMenu": "Watchlist auswählen",
     "listing.newWatchlistPrompt": "Name der neuen Watchlist",
     "listing.addToWatchlist": "Zu {name} hinzufügen",
+    "listing.aiInquiry": "KI-Text",
     "listing.seen": "Gesehen",
     "listing.hide": "Ausblenden",
     "listing.new": "Neu",
@@ -446,6 +476,11 @@ const translations = {
     "toast.watchlistAddedTo": "Zu {name} hinzugefügt",
     "toast.watchlistCreated": "Watchlist angelegt",
     "toast.watchlistRemoved": "Aus Watchlist entfernt",
+    "toast.inquiryGenerated": "Anfragetext erstellt",
+    "toast.inquiryCopied": "Anfrage kopiert",
+    "inquiry.title": "KI-Anfragetext",
+    "inquiry.copy": "Kopieren",
+    "inquiry.close": "Schließen",
     "toast.passwordMismatch": "Neue Passwörter stimmen nicht überein",
     "toast.passwordChanged": "Passwort geändert",
     "toast.profileSaved": "Profil gespeichert",
@@ -564,6 +599,7 @@ function bindNavigation() {
   $("#review-watch-button").addEventListener("click", reviewWatchCurrent);
   $("#review-watch-menu-button").addEventListener("click", toggleReviewWatchMenu);
   $("#review-seen-button").addEventListener("click", reviewSeenCurrent);
+  $("#review-inquiry-button").addEventListener("click", reviewInquiryCurrent);
   $("#review-open-button").addEventListener("click", reviewOpenCurrent);
   $("#listing-status-filter").addEventListener("change", resetListingsPage);
   $("#listing-profile-filter").addEventListener("change", () => {
@@ -622,11 +658,17 @@ function bindForms() {
     event.preventDefault();
     await saveSettings();
   });
+  $("#ai-settings-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveSettings();
+  });
   $("#watchlist-settings-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await createWatchlistFromSettings();
   });
   $("#default-watchlist").addEventListener("change", saveSettings);
+  $("#ai-provider").addEventListener("change", updateAiProviderHints);
+  $("#copy-inquiry-button").addEventListener("click", copyInquiryText);
   $("#password-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await changePassword();
@@ -1480,10 +1522,12 @@ function renderReviewCard() {
   const watchButton = $("#review-watch-button");
   const watchMenuButton = $("#review-watch-menu-button");
   const seenButton = $("#review-seen-button");
+  const inquiryButton = $("#review-inquiry-button");
   const openButton = $("#review-open-button");
-  [watchButton, watchMenuButton, seenButton, openButton].forEach((button) => {
+  [watchButton, watchMenuButton, seenButton, inquiryButton, openButton].forEach((button) => {
     if (button) button.disabled = !listing;
   });
+  if (inquiryButton) inquiryButton.classList.toggle("hidden", !state.aiEnabled);
   renderReviewWatchMenu(listing);
   if (!listing) {
     target.innerHTML = `
@@ -1581,6 +1625,42 @@ async function reviewSeenCurrent() {
 function reviewOpenCurrent() {
   const listing = currentReviewListing();
   if (listing?.listing_url) window.open(listing.listing_url, "_blank", "noopener");
+}
+
+function reviewInquiryCurrent() {
+  const listing = currentReviewListing();
+  if (!listing) return;
+  generateInquiry(listing.id, $("#review-inquiry-button"));
+}
+
+async function generateInquiry(listingId, button) {
+  if (!listingId) return;
+  if (button) button.disabled = true;
+  try {
+    const result = await api(`/api/listings/${listingId}/inquiry`, {
+      method: "POST",
+      body: JSON.stringify({ language: state.language }),
+    });
+    $("#inquiry-text").value = result.text || "";
+    $("#inquiry-dialog").showModal();
+    toast(t("toast.inquiryGenerated"));
+  } catch (error) {
+    toast(errorMessage(error));
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function copyInquiryText() {
+  const text = $("#inquiry-text").value;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(t("toast.inquiryCopied"));
+  } catch {
+    $("#inquiry-text").focus();
+    $("#inquiry-text").select();
+  }
 }
 
 function renderReviewWatchMenu(listing) {
@@ -1739,6 +1819,9 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
       bindWatchlistMenu(menu);
     });
   });
+  browser.querySelectorAll("[data-inquiry-action]").forEach((button) => {
+    button.addEventListener("click", () => generateInquiry(button.dataset.id, button));
+  });
   browser.querySelectorAll(".listing-image").forEach((img) => {
     img.addEventListener("error", () => {
       const fallback = document.createElement("span");
@@ -1866,6 +1949,7 @@ function listingMarkup(listing) {
         <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">${escapeHtml(t("listing.seen"))}</button>
         <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">${escapeHtml(t("listing.hide"))}</button>
         <button class="mini-button" data-listing-action="new" data-id="${listing.id}">${escapeHtml(t("listing.new"))}</button>
+        ${state.aiEnabled ? `<button class="mini-button ai-button" data-inquiry-action data-id="${listing.id}">${escapeHtml(t("listing.aiInquiry"))}</button>` : ""}
       </div>
     </article>
   `;
@@ -1890,6 +1974,14 @@ async function loadSettings() {
   $("#telegram-chat").value = settings.telegram_chat_id;
   $("#webhook-url").value = settings.webhook_url;
   $("#global-rate").value = settings.global_rate_limit_seconds;
+  state.aiEnabled = Boolean(settings.ai_enabled);
+  $("#ai-enabled").checked = Boolean(settings.ai_enabled);
+  $("#ai-provider").value = settings.ai_provider || "openai";
+  $("#ai-api-key").value = settings.ai_api_key || "";
+  $("#ai-base-url").value = settings.ai_base_url || "";
+  $("#ai-model").value = settings.ai_model || "";
+  $("#ai-tone").value = settings.ai_tone || "normal";
+  updateAiProviderHints();
   renderDefaultWatchlistSelect();
 }
 
@@ -1902,11 +1994,21 @@ async function saveSettings() {
       webhook_url: $("#webhook-url").value,
       global_rate_limit_seconds: Number($("#global-rate").value || 20),
       default_watchlist_id: Number($("#default-watchlist").value || state.defaultWatchlistId || 0),
+      ai_enabled: $("#ai-enabled").checked,
+      ai_provider: $("#ai-provider").value,
+      ai_api_key: $("#ai-api-key").value,
+      ai_base_url: $("#ai-base-url").value,
+      ai_model: $("#ai-model").value,
+      ai_tone: $("#ai-tone").value,
     }),
   });
   state.defaultWatchlistId = settings.default_watchlist_id;
+  state.aiEnabled = Boolean(settings.ai_enabled);
   renderDefaultWatchlistSelect();
   toast(t("toast.settingsSaved"));
+  loadListings();
+  loadWatchlist();
+  renderReviewCard();
 }
 
 async function loadWatchlistsMeta() {
@@ -1940,6 +2042,22 @@ async function createWatchlistFromSettings() {
   await loadWatchlistsMeta();
   await saveSettings();
   toast(t("toast.watchlistCreated"));
+}
+
+function updateAiProviderHints() {
+  const provider = $("#ai-provider").value;
+  const baseUrl = $("#ai-base-url");
+  const model = $("#ai-model");
+  baseUrl.placeholder = {
+    openai: "https://api.openai.com/v1",
+    ollama: "http://host.docker.internal:11434/v1",
+    lmstudio: "http://host.docker.internal:1234/v1",
+  }[provider] || "https://api.openai.com/v1";
+  model.placeholder = {
+    openai: "gpt-4o-mini",
+    ollama: "llama3.1",
+    lmstudio: "local-model",
+  }[provider] || "gpt-4o-mini";
 }
 
 async function testTelegram() {

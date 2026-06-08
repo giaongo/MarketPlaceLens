@@ -26,6 +26,10 @@ class ListingStatusPayload(BaseModel):
     watchlist_id: int | None = None
 
 
+class InquiryPayload(BaseModel):
+    language: str = Field(default="de", pattern="^(de|en)$")
+
+
 class WatchlistPayload(BaseModel):
     name: str = Field(min_length=1, max_length=80)
 
@@ -36,6 +40,12 @@ class SettingsPayload(BaseModel):
     webhook_url: str = ""
     global_rate_limit_seconds: int = Field(default=20, ge=5, le=3600)
     default_watchlist_id: int | None = None
+    ai_enabled: bool = False
+    ai_provider: str = Field(default="openai", pattern="^(openai|ollama|lmstudio)$")
+    ai_api_key: str = ""
+    ai_base_url: str = ""
+    ai_model: str = ""
+    ai_tone: str = Field(default="normal", pattern="^(polite|normal|cheeky)$")
 
 
 class LoginPayload(BaseModel):
