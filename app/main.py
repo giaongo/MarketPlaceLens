@@ -165,6 +165,8 @@ async def update_profile(profile_id: int, payload: ProfilePayload) -> dict[str, 
             profile_values(profile, now, include_created=False) + (profile_id,),
         )
         row = db.execute("SELECT * FROM watch_profiles WHERE id = ?", (profile_id,)).fetchone()
+        if row:
+            reapply_profile_filters(db, profile_id, row_to_profile(row))
     if not row:
         raise HTTPException(404, "Profile not found")
     return row_to_profile(row)
@@ -265,6 +267,11 @@ async def update_listing_status(listing_id: int, payload: ListingStatusPayload) 
         if payload.status is not None:
             updates.append("status = ?")
             values.append(payload.status)
+            updates.append("user_hidden = ?")
+            values.append(1 if payload.status == "hidden" else 0)
+            if payload.status == "hidden":
+                updates.append("filter_reason = ?")
+                values.append("")
         if payload.watchlisted is not None:
             updates.append("watchlisted = ?")
             values.append(int(payload.watchlisted))
@@ -553,8 +560,8 @@ def insert_listing(
         INSERT INTO listings(
           source_type, source_listing_id, profile_id, title, price_text, price_value,
           location_text, category_text, posted_at_text, description_snippet, listing_url,
-          thumbnail_url, content_hash, first_seen_at, last_seen_at, status, watchlisted, score, filter_reason
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          thumbnail_url, content_hash, first_seen_at, last_seen_at, status, watchlisted, user_hidden, score, filter_reason
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             candidate.source_type,
@@ -574,11 +581,54 @@ def insert_listing(
             now,
             status,
             0,
+            0,
             score,
             reason,
         ),
     )
     return int(cursor.lastrowid)
+
+
+def reapply_profile_filters(db: sqlite3.Connection, profile_id: int, profile: dict[str, Any]) -> dict[str, int]:
+    stats = {"checked": 0, "changed": 0, "hidden": 0, "visible": 0}
+    rows = db.execute("SELECT * FROM listings WHERE profile_id = ?", (profile_id,)).fetchall()
+    for row in rows:
+        stats["checked"] += 1
+        if bool(row["user_hidden"]):
+            continue
+        result = apply_filters(listing_candidate_from_row(row), profile)
+        next_status = result.status
+        if next_status != "hidden" and row["status"] in {"seen", "notified"}:
+            next_status = row["status"]
+        if next_status == "hidden":
+            stats["hidden"] += 1
+        else:
+            stats["visible"] += 1
+        if row["status"] == next_status and row["score"] == result.score and row["filter_reason"] == result.reason:
+            continue
+        stats["changed"] += 1
+        db.execute(
+            "UPDATE listings SET status = ?, score = ?, filter_reason = ? WHERE id = ?",
+            (next_status, result.score, result.reason, row["id"]),
+        )
+    return stats
+
+
+def listing_candidate_from_row(row: sqlite3.Row) -> ListingCandidate:
+    return ListingCandidate(
+        source_type=row["source_type"],
+        source_listing_id=row["source_listing_id"],
+        title=row["title"],
+        price_text=row["price_text"],
+        price_value=row["price_value"],
+        location_text=row["location_text"],
+        category_text=row["category_text"],
+        posted_at_text=row["posted_at_text"],
+        description_snippet=row["description_snippet"],
+        listing_url=row["listing_url"],
+        thumbnail_url=row["thumbnail_url"],
+        content_hash=row["content_hash"],
+    )
 
 
 def record_run(

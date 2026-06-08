@@ -47,6 +47,10 @@ const translations = {
     "profile.sourceTitle": "Provider",
     "profile.sourceSubtitle": "Pick the marketplace and paste the sorted search URL.",
     "profile.searchUrl": "Search URL",
+    "profile.urlParameters": "URL parameters",
+    "profile.urlQuery": "Search",
+    "profile.urlCategory": "Category",
+    "profile.urlLocation": "Location",
     "profile.openSource": "Open source",
     "profile.filtersTitle": "Criteria",
     "profile.filtersSubtitle": "Local filters applied after the search page is fetched",
@@ -244,6 +248,10 @@ const translations = {
     "profile.sourceTitle": "Provider",
     "profile.sourceSubtitle": "Marketplace auswählen und sortierte Such-URL einfügen.",
     "profile.searchUrl": "Such-URL",
+    "profile.urlParameters": "URL-Parameter",
+    "profile.urlQuery": "Suche",
+    "profile.urlCategory": "Kategorie",
+    "profile.urlLocation": "Ort",
     "profile.openSource": "Quelle öffnen",
     "profile.filtersTitle": "Kriterien",
     "profile.filtersSubtitle": "Lokale Filter nach dem Abruf der Suchseite",
@@ -475,7 +483,8 @@ function bindNavigation() {
   $("#wizard-source").addEventListener("change", updateWizardCategories);
   $("#new-profile-button").addEventListener("click", () => editProfile(null));
   $("#profile-source").addEventListener("change", updateSourcePlaceholder);
-  $("#profile-url").addEventListener("change", syncProfileKleinanzeigenTypesFromUrl);
+  $("#profile-url").addEventListener("input", debounce(() => syncProfileParametersFromUrl(false), 220));
+  $("#profile-url").addEventListener("change", () => syncProfileParametersFromUrl(true));
   $("#open-source-button").addEventListener("click", openSelectedSource);
   $$("[data-source-option]").forEach((button) => {
     button.addEventListener("click", () => selectSource(button.dataset.sourceOption));
@@ -778,6 +787,115 @@ function syncProfileKleinanzeigenTypesFromUrl() {
   updateFilterPreview();
 }
 
+function syncProfileParametersFromUrl(applyFields) {
+  const params = parseSearchUrlParameters($("#profile-url").value);
+  if (params.source && params.source !== $("#profile-source").value) {
+    $("#profile-source").value = params.source;
+    updateSourcePlaceholder();
+  }
+  if (params.source === "kleinanzeigen" && params.types?.length) {
+    setKleinanzeigenTypes("profile", params.types);
+  }
+  if (applyFields) applyUrlParametersToForm(params);
+  renderUrlParameterPreview(params);
+  updateFilterPreview();
+}
+
+function parseSearchUrlParameters(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return {};
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    return {};
+  }
+  const host = url.hostname.toLowerCase();
+  if (host.includes("kleinanzeigen.de")) return parseKleinanzeigenUrl(url);
+  if (host === "facebook.com" || host.endsWith(".facebook.com")) return parseFacebookMarketplaceUrl(url);
+  return {};
+}
+
+function parseKleinanzeigenUrl(url) {
+  const segments = url.pathname.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
+  const query = url.searchParams.get("keywords") || keywordFromKleinanzeigenSegments(segments);
+  const category = categoryFromKleinanzeigenUrl(url.pathname);
+  const location = segments.find((part) => /^\d{5}$/.test(part)) || "";
+  return {
+    source: "kleinanzeigen",
+    query: humanizeUrlTerm(query),
+    category: category?.label || "",
+    location,
+    types: kleinanzeigenTypesFromUrl(url.toString()),
+  };
+}
+
+function parseFacebookMarketplaceUrl(url) {
+  const categoryMatch = url.pathname.match(/\/marketplace\/category\/([^/]+)/i);
+  const category = categoryMatch
+    ? (providerCategories.facebook.find((item) => item.slug === categoryMatch[1])?.label || humanizeUrlTerm(categoryMatch[1]))
+    : "";
+  return {
+    source: "facebook",
+    query: humanizeUrlTerm(url.searchParams.get("query") || ""),
+    category,
+  };
+}
+
+function keywordFromKleinanzeigenSegments(segments) {
+  const candidates = segments.filter((part) => {
+    return !part.startsWith("s-")
+      && !part.startsWith("k0")
+      && !/^c\d+/i.test(part)
+      && !/^l\d+/i.test(part)
+      && !/^r\d+/i.test(part)
+      && !part.startsWith("anzeige:")
+      && !/^\d{5}$/.test(part);
+  });
+  return candidates.at(-1) || "";
+}
+
+function categoryFromKleinanzeigenUrl(pathname) {
+  const categoryId = pathname.match(/c(\d+)/)?.[1];
+  if (categoryId) {
+    const byId = providerCategories.kleinanzeigen.find((item) => item.id === categoryId);
+    if (byId) return byId;
+  }
+  return providerCategories.kleinanzeigen.find((item) => pathname.includes(`/s-${item.path}`));
+}
+
+function humanizeUrlTerm(value) {
+  return String(value || "").replace(/[-_]+/g, " ").trim();
+}
+
+function applyUrlParametersToForm(params) {
+  if (params.query && !$("#profile-include").value.trim()) {
+    $("#profile-include").value = params.query.split(/\s+/).filter(Boolean).join("\n");
+  }
+  if (params.location && !$("#profile-location-query").value.trim()) {
+    $("#profile-location-query").value = params.location;
+    setLocationMode("text");
+  }
+  syncAllChipInputs();
+}
+
+function renderUrlParameterPreview(params = parseSearchUrlParameters($("#profile-url").value)) {
+  const target = $("#url-parameter-preview");
+  if (!target) return;
+  const chips = [];
+  if (params.source) chips.push(`${t("jobSummary.provider")}: ${sourceLabel(params.source)}`);
+  if (params.query) chips.push(`${t("profile.urlQuery")}: ${params.query}`);
+  if (params.category) chips.push(`${t("profile.urlCategory")}: ${params.category}`);
+  if (params.location) chips.push(`${t("profile.urlLocation")}: ${params.location}`);
+  if (params.source === "kleinanzeigen" && params.types?.length) {
+    chips.push(`${t("listingTypes.title")}: ${kleinanzeigenTypeLabel(params.types)}`);
+  }
+  target.classList.toggle("hidden", chips.length === 0);
+  target.innerHTML = chips.length
+    ? [`${t("profile.urlParameters")}:`, ...chips].map((chip) => `<span>${escapeHtml(chip)}</span>`).join("")
+    : "";
+}
+
 function setLocationMode(mode) {
   const selected = mode === "map" ? "map" : "text";
   $$("[data-location-mode]").forEach((button) => {
@@ -895,6 +1013,7 @@ function editProfile(profile) {
   setKleinanzeigenTypes("profile", kleinanzeigenTypesFromUrl(profile?.search_url || ""));
   updateSourcePlaceholder();
   updateSourceOptions();
+  syncProfileParametersFromUrl(false);
   $("#profile-interval").value = profile?.poll_interval_minutes || 60;
   applyLocationCriteria(profile?.location_hint || "");
   $("#profile-min-price").value = profile?.min_price ?? "";
@@ -1133,6 +1252,7 @@ function updateSourcePlaceholder() {
   }[source] || "https://example.com/search-results";
   updateSourceOptions();
   updateKleinanzeigenTypeVisibility();
+  renderUrlParameterPreview();
   updateJobSetupSummary();
 }
 

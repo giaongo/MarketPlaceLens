@@ -11,6 +11,8 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Fredy-inspired job builder with provider selection, source URL, criteria, keyword rules, automation, and Telegram toggle
 - Quick-job wizard with Kleinanzeigen category/listing-type seeds and Facebook Marketplace category seeds for URL creation
 - Search profiles/jobs with enable/disable, polling interval, source URL, Kleinanzeigen-style location criteria with radius, price limits, guided keyword filter rules, category filters, and Telegram toggle
+- URL parameter preview for saved search URLs, including detected source, search term, category, location, and Kleinanzeigen listing type where available
+- Existing listings are re-evaluated when a job's filters or criteria change, while manually hidden listings stay hidden
 - Generic HTML listing connector for user-supplied search result URLs
 - Source profiles for Kleinanzeigen and Facebook Marketplace URLs
 - Facebook Marketplace validation that rejects non-specific `/marketplace` start pages before a job is saved

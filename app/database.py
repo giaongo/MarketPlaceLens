@@ -86,6 +86,7 @@ def init_db() -> None:
               last_seen_at TEXT NOT NULL,
               status TEXT NOT NULL DEFAULT 'new',
               watchlisted INTEGER NOT NULL DEFAULT 0,
+              user_hidden INTEGER NOT NULL DEFAULT 0,
               score INTEGER NOT NULL DEFAULT 0,
               filter_reason TEXT NOT NULL DEFAULT '',
               notified_at TEXT,
@@ -115,6 +116,7 @@ def init_db() -> None:
             """
         )
         ensure_column(db, "listings", "watchlisted", "INTEGER NOT NULL DEFAULT 0")
+        ensure_column(db, "listings", "user_hidden", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "watch_profiles", "notify_webhook", "INTEGER NOT NULL DEFAULT 0")
         defaults = {
             "telegram_bot_token": settings.telegram_bot_token,
@@ -142,6 +144,7 @@ def row_to_profile(row: sqlite3.Row) -> dict[str, Any]:
 def row_to_listing(row: sqlite3.Row) -> dict[str, Any]:
     data = dict(row)
     data["watchlisted"] = bool(data.get("watchlisted", False))
+    data["user_hidden"] = bool(data.get("user_hidden", False))
     return data
 
 
