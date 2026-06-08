@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from dataclasses import dataclass
 from urllib.parse import parse_qs, urljoin, urlparse
@@ -47,6 +48,10 @@ class MarketplaceConnector:
                 raise ValueError("Facebook jobs need a Marketplace search or category URL.")
             if path == "/marketplace/search" and not parse_qs(parsed.query).get("query", [""])[0].strip():
                 raise ValueError("Facebook Marketplace search URLs need a query term.")
+        if self.source_type == "mobilede":
+            host = parsed.netloc.lower()
+            if host not in {"mobile.de", "www.mobile.de", "suchen.mobile.de"}:
+                raise ValueError("mobile.de jobs need a mobile.de or suchen.mobile.de URL.")
 
     async def fetch_listings(self, profile: dict) -> list[ListingCandidate]:
         raise NotImplementedError
@@ -60,19 +65,107 @@ class HtmlListingConnector(MarketplaceConnector):
 
     async def fetch_listings(self, profile: dict) -> list[ListingCandidate]:
         self.validate_search_url(profile["search_url"])
+        user_agent = (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+            if self.source_type == "mobilede"
+            else settings.user_agent
+        )
         async with httpx.AsyncClient(
-            headers={"User-Agent": settings.user_agent},
+            headers={"User-Agent": user_agent},
             follow_redirects=True,
             timeout=20.0,
         ) as client:
             response = await client.get(profile["search_url"])
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                if self.source_type == "mobilede" and exc.response.status_code in {401, 403}:
+                    raise ValueError(
+                        "mobile.de blocked the anonymous server request. "
+                        "Try a concrete public search result URL; if mobile.de still returns 403, the page cannot be watched from this server."
+                    ) from exc
+                raise
         if self.source_type == "facebook" and "/marketplace/item/" not in response.text:
             raise ValueError(
                 "Facebook returned Marketplace HTML without public listing links. "
                 "This usually means the page is login-, location-, consent-, or JavaScript-rendered for anonymous server requests."
             )
+        if self.source_type == "mobilede":
+            listings = self.parse_mobilede_listings(response.text, profile)
+            if not listings:
+                raise ValueError(
+                    "mobile.de returned HTML without embedded public vehicle results. "
+                    "Use a concrete mobile.de search result URL copied from the browser."
+                )
+            return listings
         return self.parse_listings(response.text, profile)
+
+    def parse_mobilede_listings(self, html: str, profile: dict) -> list[ListingCandidate]:
+        state = extract_mobilede_initial_state(html)
+        items = (
+            state.get("search", {})
+            .get("srp", {})
+            .get("data", {})
+            .get("searchResults", {})
+            .get("items", [])
+        )
+        candidates: list[ListingCandidate] = []
+        seen: set[str] = set()
+        for item in items[:80]:
+            if not isinstance(item, dict):
+                continue
+            candidate = self.normalize_mobilede_listing(item, profile["search_url"])
+            if not candidate or candidate.content_hash in seen:
+                continue
+            seen.add(candidate.content_hash)
+            candidates.append(candidate)
+        return candidates
+
+    def normalize_mobilede_listing(self, item: dict, base_url: str) -> ListingCandidate | None:
+        listing_id = str(item.get("id") or "")
+        title = clean_text(item.get("title") or " ".join([str(item.get("shortTitle") or ""), str(item.get("subTitle") or "")]))
+        if not listing_id or not title:
+            return None
+        price = item.get("price") if isinstance(item.get("price"), dict) else {}
+        attributes = item.get("attr") if isinstance(item.get("attr"), dict) else {}
+        contact = item.get("contactInfo") if isinstance(item.get("contactInfo"), dict) else {}
+        image = item.get("previewImage") if isinstance(item.get("previewImage"), dict) else {}
+        price_text = clean_text(str(price.get("gross") or price.get("net") or ""))
+        relative_url = str(item.get("relativeUrl") or f"/fahrzeuge/details.html?id={listing_id}")
+        listing_url = urljoin("https://suchen.mobile.de/", relative_url)
+        location_text = clean_text(contact.get("location") or " ".join([str(attributes.get("z") or ""), str(attributes.get("loc") or "")]))
+        category_text = clean_text(item.get("category") or attributes.get("c") or "")
+        snippet = clean_text(
+            " · ".join(
+                str(value)
+                for value in [
+                    attributes.get("fr"),
+                    attributes.get("ml"),
+                    attributes.get("pw"),
+                    attributes.get("ft"),
+                    attributes.get("tr"),
+                    contact.get("typeLocalized"),
+                    contact.get("name"),
+                ]
+                if value
+            )
+        )
+        thumbnail_url = urljoin(base_url, str(image.get("src") or ""))
+        hash_input = "|".join([listing_id, title, price_text, location_text])
+        return ListingCandidate(
+            source_type=self.source_type,
+            source_listing_id=listing_id,
+            title=title,
+            price_text=price_text,
+            price_value=float(price["grossAmount"]) if isinstance(price.get("grossAmount"), int | float) else parse_price(price_text),
+            location_text=location_text,
+            category_text=category_text,
+            posted_at_text=clean_text(attributes.get("fr") or ""),
+            description_snippet=snippet[:400],
+            listing_url=listing_url,
+            thumbnail_url=thumbnail_url,
+            content_hash=hashlib.sha256(hash_input.encode("utf-8")).hexdigest(),
+        )
 
     def parse_listings(self, html: str, profile: dict) -> list[ListingCandidate]:
         soup = BeautifulSoup(html, "html.parser")
@@ -184,7 +277,42 @@ def parse_price(value: str) -> float | None:
     return float(match.group(1).replace(",", "."))
 
 
+def extract_mobilede_initial_state(html: str) -> dict:
+    marker = "window.__INITIAL_STATE__"
+    marker_index = html.find(marker)
+    if marker_index < 0:
+        return {}
+    start = html.find("{", marker_index)
+    if start < 0:
+        return {}
+    in_string = False
+    escaped = False
+    depth = 0
+    for index, char in enumerate(html[start:], start):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                try:
+                    data = json.loads(html[start : index + 1])
+                except json.JSONDecodeError:
+                    return {}
+                return data if isinstance(data, dict) else {}
+    return {}
+
+
 def get_connector(source_type: str) -> MarketplaceConnector:
-    if source_type in {"html", "kleinanzeigen", "facebook"}:
+    if source_type in {"html", "kleinanzeigen", "facebook", "mobilede"}:
         return HtmlListingConnector(source_type)
     raise ValueError(f"Unsupported source type: {source_type}")

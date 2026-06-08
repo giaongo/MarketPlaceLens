@@ -438,6 +438,11 @@ h1 {
   color: #1d4ed8;
 }
 
+.source-badge.mobilede {
+  background: #fff2cc;
+  color: #8a5a00;
+}
+
 .meta {
   color: var(--muted);
   font-size: 0.9rem;
@@ -725,7 +730,7 @@ textarea.chip-source {
 
 .source-card-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }

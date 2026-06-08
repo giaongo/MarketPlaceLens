@@ -10,12 +10,12 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Role-based multi-user login for the local web UI
 - Fredy-inspired job builder with provider selection, source URL, criteria, keyword rules, automation, and Telegram toggle
 - Interactive quick-job assistant that guides admins step by step through source, search terms, filters, and automation before creating the saved job
-- Quick-job wizard with Kleinanzeigen category/listing-type seeds and Facebook Marketplace category seeds for URL creation
+- Quick-job wizard with Kleinanzeigen category/listing-type seeds plus Facebook Marketplace and mobile.de seeds for URL creation
 - Search profiles/jobs with enable/disable, polling interval, source URL, Kleinanzeigen-style location criteria with radius, price limits, guided keyword filter rules, category filters, and Telegram toggle
 - URL parameter preview for saved search URLs, including detected source, search term, category, location, and Kleinanzeigen listing type where available
 - Existing listings are re-evaluated when a job's filters or criteria change, while manually hidden listings stay hidden
 - Generic HTML listing connector for user-supplied search result URLs
-- Source profiles for Kleinanzeigen and Facebook Marketplace URLs
+- Source profiles for Kleinanzeigen, Facebook Marketplace, mobile.de, and generic HTML URLs
 - Facebook Marketplace validation that rejects non-specific `/marketplace` start pages before a job is saved
 - Filter engine with explainable hidden reasons
 - Manual run per profile, including directly from the listing browser for the selected job
@@ -49,6 +49,8 @@ Facebook Marketplace and similar platforms can require login, change their marku
 Facebook jobs should use a concrete Marketplace search or category URL, for example `https://www.facebook.com/marketplace/search/?query=defekt` or `https://www.facebook.com/marketplace/category/electronics/?query=defekt`. The generic `https://www.facebook.com/marketplace/` start page is rejected because it does not describe a stable result set and often returns no public listing HTML to the server.
 
 Facebook can also return a public Marketplace shell without any `/marketplace/item/` listing links for anonymous server requests. In that case MarketPlaceLens records the run as a connector error instead of a misleading successful run with `0` fetched listings.
+
+mobile.de jobs should use public `mobile.de` or `suchen.mobile.de` search result URLs. MarketPlaceLens reads the embedded public vehicle result data when present. If mobile.de returns a shell, consent, or protection page without embedded results, the run is recorded as a connector error with a clear message.
 
 The quick-job category and Kleinanzeigen listing-type lists are local URL-building seeds for convenience. Marketplace category names, listing type parameters, and URL formats can change over time; adjust the generated URL manually when a platform changes its public routing.
 

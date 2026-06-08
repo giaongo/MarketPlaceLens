@@ -124,6 +124,7 @@
                       <select id="wizard-source">
                         <option value="kleinanzeigen">Kleinanzeigen</option>
                         <option value="facebook">Facebook Marketplace</option>
+                        <option value="mobilede">mobile.de</option>
                       </select>
                     </label>
                     <label><span data-i18n="wizard.category">Category</span>
@@ -211,6 +212,7 @@
                 <select id="profile-source" class="visually-hidden" aria-label="Provider">
                   <option value="kleinanzeigen">Kleinanzeigen search URL</option>
                   <option value="facebook">Facebook Marketplace URL</option>
+                  <option value="mobilede">mobile.de search URL</option>
                   <option value="html">Generic HTML listing page</option>
                 </select>
                 <div class="source-card-grid" role="group" aria-label="Provider">
@@ -221,6 +223,10 @@
                   <button class="source-option" type="button" data-source-option="facebook">
                     <strong>Facebook Marketplace</strong>
                     <span data-i18n="source.facebookHelp">Paste a reachable Marketplace URL.</span>
+                  </button>
+                  <button class="source-option" type="button" data-source-option="mobilede">
+                    <strong>mobile.de</strong>
+                    <span data-i18n="source.mobiledeHelp">Paste a public mobile.de search result URL.</span>
                   </button>
                   <button class="source-option" type="button" data-source-option="html">
                     <strong data-i18n="source.generic">Generic HTML</strong>

@@ -151,6 +151,7 @@ const translations = {
     "form.webhookNotifications": "Webhook notifications",
     "source.kleinanzeigenHelp": "Paste a public Kleinanzeigen search URL.",
     "source.facebookHelp": "Use a concrete Marketplace search or category URL.",
+    "source.mobiledeHelp": "Paste a public mobile.de search result URL.",
     "source.generic": "Generic HTML",
     "source.genericHelp": "Use a simple listing result page.",
     "jobSummary.nameMissing": "Name missing",
@@ -424,6 +425,7 @@ const translations = {
     "form.webhookNotifications": "Webhook-Benachrichtigungen",
     "source.kleinanzeigenHelp": "Öffentliche Kleinanzeigen-Such-URL einfügen.",
     "source.facebookHelp": "Konkrete Marketplace-Suche oder Kategorie-URL einfügen.",
+    "source.mobiledeHelp": "Öffentliche mobile.de-Suchergebnis-URL einfügen.",
     "source.generic": "Generic HTML",
     "source.genericHelp": "Einfache Listing-Ergebnisseite verwenden.",
     "jobSummary.nameMissing": "Name fehlt",
@@ -607,6 +609,10 @@ const providerCategories = {
     { label: "Sporting goods", slug: "sportinggoods" },
     { label: "Toys & games", slug: "toys" },
     { label: "Books, movies & music", slug: "bookmoviesmusic" },
+  ],
+  mobilede: [
+    { label: "Cars", path: "fahrzeuge/auto/search.html" },
+    { label: "Used cars", path: "auto/gebrauchtwagen.html" },
   ],
 };
 
@@ -974,7 +980,7 @@ async function loadProfiles() {
 }
 
 function groupedProfilesMarkup(profiles) {
-  const order = ["kleinanzeigen", "facebook", "html"];
+  const order = ["kleinanzeigen", "facebook", "mobilede", "html"];
   return order.map((source) => {
     const items = profiles.filter((profile) => profile.source_type === source);
     return `
@@ -999,6 +1005,7 @@ function sourceLabel(source) {
   return {
     kleinanzeigen: "Kleinanzeigen",
     facebook: "Facebook Marketplace",
+    mobilede: "mobile.de",
     html: "Generic HTML",
   }[source] || source;
 }
@@ -1007,6 +1014,7 @@ function sourceBaseUrl(source) {
   return {
     kleinanzeigen: "https://www.kleinanzeigen.de/",
     facebook: "https://www.facebook.com/marketplace/",
+    mobilede: "https://suchen.mobile.de/fahrzeuge/auto/search.html",
     html: "",
   }[source] || "";
 }
@@ -1104,6 +1112,7 @@ function parseSearchUrlParameters(value) {
   const host = url.hostname.toLowerCase();
   if (host.includes("kleinanzeigen.de")) return parseKleinanzeigenUrl(url);
   if (host === "facebook.com" || host.endsWith(".facebook.com")) return parseFacebookMarketplaceUrl(url);
+  if (host === "mobile.de" || host.endsWith(".mobile.de")) return parseMobileDeUrl(url);
   return {};
 }
 
@@ -1129,6 +1138,15 @@ function parseFacebookMarketplaceUrl(url) {
   return {
     source: "facebook",
     query: humanizeUrlTerm(url.searchParams.get("query") || ""),
+    category,
+  };
+}
+
+function parseMobileDeUrl(url) {
+  const category = providerCategories.mobilede.find((item) => url.pathname.includes(item.path))?.label || "";
+  return {
+    source: "mobilede",
+    query: humanizeUrlTerm(url.searchParams.get("ft") || url.searchParams.get("q") || ""),
     category,
   };
 }
@@ -1531,6 +1549,10 @@ function buildWizardSearchUrl(source, query, category, kleinanzeigenTypes = sele
       : "https://www.facebook.com/marketplace/search/";
     return `${base}?query=${encodeURIComponent(query)}`;
   }
+  if (source === "mobilede") {
+    const path = category?.path || "fahrzeuge/auto/search.html";
+    return `https://suchen.mobile.de/${path}?ft=${encodeURIComponent(query)}`;
+  }
   if (source === "kleinanzeigen" && category?.id && category?.path) {
     return `https://www.kleinanzeigen.de/s-${category.path}${kleinanzeigenTypeSegment(kleinanzeigenTypes)}/${keywordUrlPath(query)}/k0c${category.id}`;
   }
@@ -1661,6 +1683,7 @@ function updateSourcePlaceholder() {
   $("#profile-url").placeholder = {
     kleinanzeigen: "https://www.kleinanzeigen.de/...",
     facebook: "https://www.facebook.com/marketplace/search/?query=defekt",
+    mobilede: "https://suchen.mobile.de/fahrzeuge/auto/search.html?ft=tesla",
     html: "https://example.com/search-results",
   }[source] || "https://example.com/search-results";
   updateSourceOptions();
