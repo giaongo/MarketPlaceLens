@@ -230,6 +230,22 @@
             </div>
           </form>
         </section>
+        <section class="panel narrow settings-section">
+          <div class="panel-heading">
+            <div>
+              <h2>Password</h2>
+              <p class="panel-subtitle">Change the local admin password for this app.</p>
+            </div>
+          </div>
+          <form id="password-form" class="form-grid">
+            <label class="wide">Current password<input id="current-password" type="password" autocomplete="current-password"></label>
+            <label class="wide">New password<input id="new-password" type="password" autocomplete="new-password" minlength="8"></label>
+            <label class="wide">Repeat new password<input id="repeat-password" type="password" autocomplete="new-password" minlength="8"></label>
+            <div class="actions wide">
+              <button class="button primary" type="submit">Change password</button>
+            </div>
+          </form>
+        </section>
       </section>
     </main>
 

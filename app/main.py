@@ -13,13 +13,13 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from .auth import COOKIE_NAME, create_session, valid_credentials, valid_session
+from .auth import COOKIE_NAME, create_session, hash_password, valid_credentials, valid_session
 from .config import settings
 from .connectors import ListingCandidate, get_connector
 from .database import connect, encode_list, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import apply_filters
 from .notifier import TelegramNotifier
-from .schemas import ListingStatusPayload, LoginPayload, ProfilePayload, SettingsPayload
+from .schemas import ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload
 
 app = FastAPI(title="MarketPlaceLens", version="0.1.0")
 static_dir = Path(__file__).parent / "static"
@@ -295,6 +295,18 @@ async def update_settings(payload: SettingsPayload) -> dict[str, Any]:
                 (key, value),
             )
     return await get_settings()
+
+
+@app.post("/api/settings/password")
+async def update_password(payload: PasswordPayload) -> dict[str, bool]:
+    if not valid_credentials(settings.admin_username, payload.current_password):
+        raise HTTPException(401, "Current password is incorrect")
+    with connect() as db:
+        db.execute(
+            "INSERT INTO app_settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            ("admin_password_hash", hash_password(payload.new_password)),
+        )
+    return {"ok": True}
 
 
 @app.post("/api/settings/telegram/test")

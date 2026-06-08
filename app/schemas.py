@@ -32,3 +32,8 @@ class SettingsPayload(BaseModel):
 class LoginPayload(BaseModel):
     username: str
     password: str
+
+
+class PasswordPayload(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=200)

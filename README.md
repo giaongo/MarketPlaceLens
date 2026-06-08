@@ -54,6 +54,8 @@ admin / admin
 
 Set `MARKETPLACELENS_ADMIN_USERNAME`, `MARKETPLACELENS_ADMIN_PASSWORD`, and `MARKETPLACELENS_SESSION_SECRET` in `.env` for real use.
 
+The password can also be changed from the Settings page. A changed password is stored as a PBKDF2-SHA256 hash in SQLite and overrides the environment default.
+
 ## Configuration
 
 The UI can store Telegram settings in SQLite. Environment variables can seed first-run defaults:
@@ -91,6 +93,7 @@ app/
 - `PATCH /api/listings/{id}`
 - `GET /api/settings`
 - `PUT /api/settings`
+- `POST /api/settings/password`
 - `POST /api/settings/telegram/test`
 
 ## Dependency License Notes

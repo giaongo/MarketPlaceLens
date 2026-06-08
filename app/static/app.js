@@ -56,6 +56,10 @@ function bindForms() {
     event.preventDefault();
     await saveSettings();
   });
+  $("#password-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await changePassword();
+  });
   $("#telegram-test-button").addEventListener("click", testTelegram);
 }
 
@@ -132,13 +136,7 @@ async function loadSummary() {
 async function loadProfiles() {
   state.profiles = await api("/api/profiles");
   $("#profiles-list").innerHTML = state.profiles.length
-    ? state.profiles.map((profile) => `
-      <article class="profile-card ${state.selectedProfile?.id === profile.id ? "active" : ""}" data-id="${profile.id}">
-        <h3>${escapeHtml(profile.name)}</h3>
-        <p class="meta">${profile.enabled ? "enabled" : "paused"} · ${escapeHtml(profile.source_type)} · every ${profile.poll_interval_minutes} min</p>
-        <p class="meta">${escapeHtml(profile.search_url)}</p>
-      </article>
-    `).join("")
+    ? groupedProfilesMarkup(state.profiles)
     : `<article class="profile-card"><h3>No profiles</h3><p class="meta">Add the first search URL on the right.</p></article>`;
   $$(".profile-card[data-id]").forEach((card) => {
     card.addEventListener("click", () => {
@@ -151,6 +149,51 @@ async function loadProfiles() {
     <option value="${profile.id}">${escapeHtml(profile.name)}</option>
   `).join("")}`;
   $("#listing-profile-filter").value = current;
+}
+
+function groupedProfilesMarkup(profiles) {
+  const order = ["kleinanzeigen", "facebook", "html"];
+  return order.map((source) => {
+    const items = profiles.filter((profile) => profile.source_type === source);
+    return `
+      <section class="profile-source-group">
+        <h3>${escapeHtml(sourceLabel(source))}</h3>
+        ${items.length ? items.map((profile) => `
+      <article class="profile-card ${state.selectedProfile?.id === profile.id ? "active" : ""}" data-id="${profile.id}">
+        <div class="profile-card-top">
+          <h4>${escapeHtml(profile.name)}</h4>
+          <span class="source-badge ${escapeAttribute(profile.source_type)}">${escapeHtml(sourceLabel(profile.source_type))}</span>
+        </div>
+        <p class="meta">${profile.enabled ? "enabled" : "paused"} · every ${profile.poll_interval_minutes} min</p>
+        <p class="meta">${escapeHtml(profile.search_url)}</p>
+      </article>
+        `).join("") : `<article class="profile-empty">No ${escapeHtml(sourceLabel(source))} profiles yet</article>`}
+      </section>
+    `;
+  }).join("");
+}
+
+function sourceLabel(source) {
+  return {
+    kleinanzeigen: "Kleinanzeigen",
+    facebook: "Facebook Marketplace",
+    html: "Generic HTML",
+  }[source] || source;
+}
+
+async function changePassword() {
+  const current = $("#current-password").value;
+  const next = $("#new-password").value;
+  const repeated = $("#repeat-password").value;
+  if (next !== repeated) return toast("New passwords do not match");
+  await api("/api/settings/password", {
+    method: "POST",
+    body: JSON.stringify({ current_password: current, new_password: next }),
+  });
+  $("#current-password").value = "";
+  $("#new-password").value = "";
+  $("#repeat-password").value = "";
+  toast("Password changed");
 }
 
 function editProfile(profile) {
@@ -313,10 +356,10 @@ async function loadListings() {
             <a href="${escapeAttribute(listing.listing_url)}" target="_blank" rel="noopener">${escapeHtml(listing.title)}</a>
             <span class="pill ${escapeAttribute(listing.status)}">${escapeHtml(listing.status)}</span>
           </div>
+          <strong class="listing-price">${escapeHtml(listing.price_text || "no price")}</strong>
           <p class="meta">${escapeHtml(listing.description_snippet || "")}</p>
           <div class="listing-facts">
             <span>${escapeHtml(listing.profile_name || "")}</span>
-            <span>${escapeHtml(listing.price_text || "no price")}</span>
             <span>${escapeHtml(listing.location_text || "no location")}</span>
             <span>score ${listing.score}</span>
             <span>${formatDate(listing.first_seen_at)}</span>
