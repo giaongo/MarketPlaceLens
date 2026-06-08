@@ -620,6 +620,81 @@ textarea.chip-source {
   gap: 12px;
 }
 
+.guided-filter-builder {
+  display: grid;
+  gap: 12px;
+}
+
+.guided-filter-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) minmax(220px, 1.3fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.guided-filter-rules {
+  display: grid;
+  gap: 8px;
+}
+
+.guided-filter-rule {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--brand);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 9px 10px;
+  color: var(--text);
+  font-weight: 750;
+}
+
+.guided-filter-rule.exclude {
+  border-left-color: var(--danger);
+}
+
+.guided-filter-rule.include {
+  border-left-color: var(--warning);
+}
+
+.guided-filter-rule span {
+  overflow-wrap: anywhere;
+}
+
+.guided-filter-rule button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.guided-filter-rule button:hover {
+  border-color: rgba(220, 38, 38, 0.28);
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--danger);
+}
+
+.empty-filter-rules {
+  margin: 0;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  padding: 12px;
+}
+
+.filter-storage-fields {
+  display: none;
+}
+
 .switch {
   display: flex;
   grid-auto-flow: column;
@@ -1043,6 +1118,7 @@ textarea.chip-source {
   .form-grid,
   .filter-grid,
   .keyword-grid,
+  .guided-filter-controls,
   .wizard-grid,
   .source-card-grid,
   .provider-url-row {

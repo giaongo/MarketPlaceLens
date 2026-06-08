@@ -204,10 +204,26 @@
                     <p data-i18n="profile.keywordSubtitle">Match, require, or hide terms from listings</p>
                   </div>
                 </div>
+                <div class="guided-filter-builder">
+                  <div class="guided-filter-controls">
+                    <label><span data-i18n="filter.ruleType">Rule</span>
+                      <select id="filter-rule-type">
+                        <option value="required" data-i18n="filter.typeRequired">Only show when text contains</option>
+                        <option value="exclude" data-i18n="filter.typeExclude">Hide when text contains</option>
+                        <option value="include" data-i18n="filter.typeInclude">Prefer when text contains</option>
+                      </select>
+                    </label>
+                    <label><span data-i18n="filter.term">Word or phrase</span><input id="filter-rule-term" placeholder="wäsche" data-i18n-placeholder="filter.termPlaceholder"></label>
+                    <button class="button ghost" type="button" id="add-filter-rule-button" data-i18n="filter.add">Add rule</button>
+                  </div>
+                  <div id="guided-filter-rules" class="guided-filter-rules"></div>
+                  <div class="filter-storage-fields">
+                    <textarea id="profile-include"></textarea>
+                    <textarea id="profile-required"></textarea>
+                    <textarea id="profile-exclude"></textarea>
+                  </div>
+                </div>
                 <div class="keyword-grid">
-                  <label><span data-i18n="profile.include">Include</span><textarea id="profile-include" data-chip-list data-chip-placeholder="keyword.add" placeholder="defekt&#10;reparatur&#10;ersatzteil"></textarea></label>
-                  <label><span data-i18n="profile.required">Required</span><textarea id="profile-required" data-chip-list data-chip-placeholder="keyword.add" placeholder="abholung"></textarea></label>
-                  <label><span data-i18n="profile.exclude">Exclude</span><textarea id="profile-exclude" data-chip-list data-chip-placeholder="keyword.add" placeholder="gesuch&#10;tausch"></textarea></label>
                   <label><span data-i18n="profile.hiddenCategories">Hidden categories</span><textarea id="profile-categories" placeholder="haushaltsgeraete"></textarea></label>
                 </div>
               </div>

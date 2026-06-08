@@ -10,7 +10,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Single-user login for the local web UI
 - Fredy-inspired job builder with provider selection, source URL, criteria, keyword rules, automation, and Telegram toggle
 - Quick-job wizard with Kleinanzeigen and Facebook Marketplace category seeds for URL creation
-- Search profiles/jobs with enable/disable, polling interval, source URL, price limits, removable keyword chips, category filters, and Telegram toggle
+- Search profiles/jobs with enable/disable, polling interval, source URL, price limits, guided keyword filter rules, category filters, and Telegram toggle
 - Generic HTML listing connector for user-supplied search result URLs
 - Source profiles for Kleinanzeigen and Facebook Marketplace URLs
 - Filter engine with explainable hidden reasons

@@ -58,6 +58,17 @@ const translations = {
     "profile.hiddenCategories": "Hidden categories",
     "keyword.add": "Add keyword",
     "keyword.remove": "Remove {item}",
+    "filter.ruleType": "Rule",
+    "filter.typeRequired": "Only show when text contains",
+    "filter.typeExclude": "Hide when text contains",
+    "filter.typeInclude": "Prefer when text contains",
+    "filter.term": "Word or phrase",
+    "filter.termPlaceholder": "washing",
+    "filter.add": "Add rule",
+    "filter.empty": "No keyword rules yet",
+    "filter.requiredRule": "Only show listings when title or description contains \"{term}\"",
+    "filter.excludeRule": "Hide listings when title or description contains \"{term}\"",
+    "filter.includeRule": "Prefer listings when title or description contains \"{term}\"",
     "profile.automationTitle": "Automation & notifications",
     "profile.automationSubtitle": "Choose whether this job runs in the background and sends Telegram alerts.",
     "profile.enabled": "enabled",
@@ -208,6 +219,17 @@ const translations = {
     "profile.hiddenCategories": "Ausgeblendete Kategorien",
     "keyword.add": "Keyword hinzufügen",
     "keyword.remove": "{item} entfernen",
+    "filter.ruleType": "Regel",
+    "filter.typeRequired": "Nur anzeigen, wenn Text enthält",
+    "filter.typeExclude": "Ausblenden, wenn Text enthält",
+    "filter.typeInclude": "Bevorzugen, wenn Text enthält",
+    "filter.term": "Wort oder Satz",
+    "filter.termPlaceholder": "wäsche",
+    "filter.add": "Regel hinzufügen",
+    "filter.empty": "Noch keine Keyword-Regeln",
+    "filter.requiredRule": "Nur anzeigen, wenn Titel oder Beschreibung \"{term}\" enthält",
+    "filter.excludeRule": "Ausblenden, wenn Titel oder Beschreibung \"{term}\" enthält",
+    "filter.includeRule": "Bevorzugen, wenn Titel oder Beschreibung \"{term}\" enthält",
     "profile.automationTitle": "Automation & Benachrichtigungen",
     "profile.automationSubtitle": "Festlegen, ob der Job im Hintergrund läuft und Telegram sendet.",
     "profile.enabled": "aktiv",
@@ -422,6 +444,13 @@ function bindForms() {
     event.preventDefault();
     await changePassword();
   });
+  $("#add-filter-rule-button").addEventListener("click", addGuidedFilterRule);
+  $("#filter-rule-term").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      addGuidedFilterRule();
+    }
+  });
   $("#telegram-test-button").addEventListener("click", testTelegram);
 }
 
@@ -590,6 +619,7 @@ function editProfile(profile) {
   $("#profile-exclude").value = (profile?.exclude_keywords || []).join("\n");
   $("#profile-categories").value = (profile?.excluded_categories || []).join("\n");
   syncAllChipInputs();
+  renderGuidedFilterRules();
   $("#profile-enabled").checked = profile?.enabled ?? true;
   $("#profile-notify").checked = profile?.notify_telegram ?? true;
   updateFilterPreview();
@@ -621,6 +651,7 @@ async function createProfileFromWizard() {
   $("#profile-exclude").value = $("#wizard-exclude").value;
   $("#profile-categories").value = "";
   syncAllChipInputs();
+  renderGuidedFilterRules();
   $("#profile-enabled").checked = $("#wizard-enabled").checked;
   $("#profile-notify").checked = $("#wizard-notify").checked;
   updateSourcePlaceholder();
@@ -961,6 +992,64 @@ async function testTelegram() {
   toast(t("toast.telegramSent"));
 }
 
+function addGuidedFilterRule() {
+  const type = $("#filter-rule-type").value;
+  const term = normalizeFilterTerm($("#filter-rule-term").value);
+  const selector = {
+    include: "#profile-include",
+    required: "#profile-required",
+    exclude: "#profile-exclude",
+  }[type];
+  if (!selector || !term) return;
+  addListValue($(selector), term);
+  $("#filter-rule-term").value = "";
+  renderGuidedFilterRules();
+  updateFilterPreview();
+}
+
+function renderGuidedFilterRules() {
+  const target = $("#guided-filter-rules");
+  if (!target) return;
+  const rules = [
+    ...lines("#profile-required").map((term) => ({ type: "required", term })),
+    ...lines("#profile-exclude").map((term) => ({ type: "exclude", term })),
+    ...lines("#profile-include").map((term) => ({ type: "include", term })),
+  ];
+  if (!rules.length) {
+    target.innerHTML = `<p class="empty-filter-rules">${escapeHtml(t("filter.empty"))}</p>`;
+    return;
+  }
+  target.innerHTML = rules.map((rule) => `
+    <article class="guided-filter-rule ${escapeAttribute(rule.type)}">
+      <span>${escapeHtml(guidedFilterSentence(rule))}</span>
+      <button type="button" data-filter-remove-type="${escapeAttribute(rule.type)}" data-filter-remove-term="${escapeAttribute(rule.term)}" aria-label="${escapeAttribute(t("keyword.remove", { item: rule.term }))}">X</button>
+    </article>
+  `).join("");
+  target.querySelectorAll("[data-filter-remove-type]").forEach((button) => {
+    button.addEventListener("click", () => {
+      removeListValue($(filterSelector(button.dataset.filterRemoveType)), button.dataset.filterRemoveTerm);
+      renderGuidedFilterRules();
+      updateFilterPreview();
+    });
+  });
+}
+
+function guidedFilterSentence(rule) {
+  return t(`filter.${rule.type}Rule`, { term: rule.term });
+}
+
+function filterSelector(type) {
+  return {
+    include: "#profile-include",
+    required: "#profile-required",
+    exclude: "#profile-exclude",
+  }[type];
+}
+
+function normalizeFilterTerm(value) {
+  return String(value || "").trim().replace(/^\*+|\*+$/g, "").trim();
+}
+
 function setupChipInputs() {
   $$("textarea[data-chip-list]").forEach((textarea) => {
     if (textarea.dataset.chipReady) return;
@@ -1034,6 +1123,10 @@ function renderChipInput(textarea) {
 }
 
 function addChipValues(textarea, rawValue) {
+  addListValue(textarea, rawValue);
+}
+
+function addListValue(textarea, rawValue) {
   const current = listFromText(textarea.value);
   const seen = new Set(current.map((item) => item.toLocaleLowerCase()));
   for (const item of listFromText(rawValue)) {
@@ -1048,6 +1141,10 @@ function addChipValues(textarea, rawValue) {
 }
 
 function removeChipValue(textarea, item) {
+  removeListValue(textarea, item);
+}
+
+function removeListValue(textarea, item) {
   if (!item) return;
   textarea.value = listFromText(textarea.value).filter((value) => value !== item).join("\n");
   textarea.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1119,6 +1216,7 @@ function applyTranslations() {
     button.setAttribute("aria-label", t("view.tiles"));
   });
   syncAllChipInputs();
+  renderGuidedFilterRules();
 }
 
 function t(key, values = {}) {
