@@ -18,6 +18,8 @@ function bindNavigation() {
   });
   $("#refresh-button").addEventListener("click", refreshAll);
   $("#logout-button").addEventListener("click", logout);
+  $("#wizard-button").addEventListener("click", () => showWizard(true));
+  $("#wizard-cancel-button").addEventListener("click", () => showWizard(false));
   $("#new-profile-button").addEventListener("click", () => editProfile(null));
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
   $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
@@ -45,6 +47,10 @@ function bindForms() {
     event.preventDefault();
     await saveProfile();
   });
+  $("#profile-wizard").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await createProfileFromWizard();
+  });
   $("#settings-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveSettings();
@@ -62,6 +68,17 @@ function showView(view) {
     settings: "Settings",
   }[view];
   if (view === "listings") loadListings();
+}
+
+function showWizard(visible) {
+  $("#profile-wizard").classList.toggle("hidden", !visible);
+  $("#profile-form").classList.toggle("hidden", visible);
+  if (visible) {
+    $("#profile-form-title").textContent = "Guided setup";
+    $("#wizard-query").focus();
+  } else {
+    editProfile(null);
+  }
 }
 
 async function refreshAll() {
@@ -136,6 +153,8 @@ async function loadProfiles() {
 }
 
 function editProfile(profile) {
+  $("#profile-wizard").classList.add("hidden");
+  $("#profile-form").classList.remove("hidden");
   state.selectedProfile = profile;
   $("#profile-form-title").textContent = profile ? "Edit profile" : "New profile";
   $("#profile-id").value = profile?.id || "";
@@ -154,6 +173,40 @@ function editProfile(profile) {
   $("#profile-notify").checked = profile?.notify_telegram ?? true;
   updateFilterPreview();
   loadProfiles();
+}
+
+async function createProfileFromWizard() {
+  const query = $("#wizard-query").value.trim();
+  if (!query) return toast("Search term is required");
+  $("#profile-id").value = "";
+  $("#profile-name").value = `${query} auf Kleinanzeigen`;
+  $("#profile-source").value = "kleinanzeigen";
+  $("#profile-url").value = `https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=${encodeURIComponent(query)}`;
+  $("#profile-interval").value = 120;
+  $("#profile-location").value = $("#wizard-location").value.trim();
+  $("#profile-min-price").value = "";
+  $("#profile-max-price").value = $("#wizard-max-price").value;
+  $("#profile-include").value = query.split(/\s+/).filter(Boolean).join("\n");
+  $("#profile-required").value = $("#wizard-required").value;
+  $("#profile-exclude").value = $("#wizard-exclude").value;
+  $("#profile-categories").value = "";
+  $("#profile-enabled").checked = $("#wizard-enabled").checked;
+  $("#profile-notify").checked = $("#wizard-notify").checked;
+  updateFilterPreview();
+  await saveProfile();
+  clearWizard();
+  $("#profile-wizard").classList.add("hidden");
+  $("#profile-form").classList.remove("hidden");
+}
+
+function clearWizard() {
+  $("#wizard-query").value = "";
+  $("#wizard-max-price").value = "";
+  $("#wizard-location").value = "";
+  $("#wizard-required").value = "";
+  $("#wizard-exclude").value = "";
+  $("#wizard-enabled").checked = false;
+  $("#wizard-notify").checked = false;
 }
 
 async function saveProfile() {

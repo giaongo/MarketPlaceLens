@@ -177,6 +177,10 @@ h1 {
   display: block;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .status-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -318,6 +322,22 @@ textarea {
 .profile-form {
   display: grid;
   gap: 16px;
+}
+
+.wizard-card {
+  display: grid;
+  gap: 14px;
+  border: 1px solid #b9dcd5;
+  border-radius: 8px;
+  background: var(--brand-soft);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.wizard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .form-section {
@@ -614,7 +634,8 @@ textarea {
   .two-column,
   .form-grid,
   .filter-grid,
-  .keyword-grid {
+  .keyword-grid,
+  .wizard-grid {
     grid-template-columns: 1fr;
   }
 
