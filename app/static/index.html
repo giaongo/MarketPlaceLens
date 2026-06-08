@@ -122,8 +122,8 @@
                 <label class="wide"><span data-i18n="wizard.query">What should be found?</span><input id="wizard-query" required placeholder="defekte elektronik"></label>
                 <label><span data-i18n="wizard.maxPrice">Maximum price</span><input id="wizard-max-price" type="number" step="0.01" placeholder="100"></label>
                 <label><span data-i18n="wizard.location">Location</span><input id="wizard-location" placeholder="Berlin"></label>
-                <label class="wide"><span data-i18n="wizard.mustInclude">Must include</span><textarea id="wizard-required" placeholder="abholung"></textarea></label>
-                <label class="wide"><span data-i18n="wizard.hideWords">Hide words</span><textarea id="wizard-exclude" placeholder="gesuch&#10;tausch"></textarea></label>
+                <label class="wide"><span data-i18n="wizard.mustInclude">Must include</span><textarea id="wizard-required" data-chip-list data-chip-placeholder="keyword.add" placeholder="abholung"></textarea></label>
+                <label class="wide"><span data-i18n="wizard.hideWords">Hide words</span><textarea id="wizard-exclude" data-chip-list data-chip-placeholder="keyword.add" placeholder="gesuch&#10;tausch"></textarea></label>
                 <label class="switch"><input id="wizard-enabled" type="checkbox"> <span data-i18n="form.backgroundPolling">Background polling</span></label>
                 <label class="switch"><input id="wizard-notify" type="checkbox"> <span data-i18n="form.telegram">Telegram</span></label>
               </div>
@@ -205,9 +205,9 @@
                   </div>
                 </div>
                 <div class="keyword-grid">
-                  <label><span data-i18n="profile.include">Include</span><textarea id="profile-include" placeholder="defekt&#10;reparatur&#10;ersatzteil"></textarea></label>
-                  <label><span data-i18n="profile.required">Required</span><textarea id="profile-required" placeholder="abholung"></textarea></label>
-                  <label><span data-i18n="profile.exclude">Exclude</span><textarea id="profile-exclude" placeholder="gesuch&#10;tausch"></textarea></label>
+                  <label><span data-i18n="profile.include">Include</span><textarea id="profile-include" data-chip-list data-chip-placeholder="keyword.add" placeholder="defekt&#10;reparatur&#10;ersatzteil"></textarea></label>
+                  <label><span data-i18n="profile.required">Required</span><textarea id="profile-required" data-chip-list data-chip-placeholder="keyword.add" placeholder="abholung"></textarea></label>
+                  <label><span data-i18n="profile.exclude">Exclude</span><textarea id="profile-exclude" data-chip-list data-chip-placeholder="keyword.add" placeholder="gesuch&#10;tausch"></textarea></label>
                   <label><span data-i18n="profile.hiddenCategories">Hidden categories</span><textarea id="profile-categories" placeholder="haushaltsgeraete"></textarea></label>
                 </div>
               </div>

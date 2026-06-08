@@ -56,6 +56,8 @@ const translations = {
     "profile.required": "Required",
     "profile.exclude": "Exclude",
     "profile.hiddenCategories": "Hidden categories",
+    "keyword.add": "Add keyword",
+    "keyword.remove": "Remove {item}",
     "profile.automationTitle": "Automation & notifications",
     "profile.automationSubtitle": "Choose whether this job runs in the background and sends Telegram alerts.",
     "profile.enabled": "enabled",
@@ -204,6 +206,8 @@ const translations = {
     "profile.required": "Erforderlich",
     "profile.exclude": "Ausschließen",
     "profile.hiddenCategories": "Ausgeblendete Kategorien",
+    "keyword.add": "Keyword hinzufügen",
+    "keyword.remove": "{item} entfernen",
     "profile.automationTitle": "Automation & Benachrichtigungen",
     "profile.automationSubtitle": "Festlegen, ob der Job im Hintergrund läuft und Telegram sendet.",
     "profile.enabled": "aktiv",
@@ -351,6 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindForms();
   $("#language-select").value = state.language;
   applyTranslations();
+  setupChipInputs();
   updateWizardCategories();
   $("#view-title").textContent = t("nav.dashboard");
   refreshAll();
@@ -584,6 +589,7 @@ function editProfile(profile) {
   $("#profile-required").value = (profile?.required_keywords || []).join("\n");
   $("#profile-exclude").value = (profile?.exclude_keywords || []).join("\n");
   $("#profile-categories").value = (profile?.excluded_categories || []).join("\n");
+  syncAllChipInputs();
   $("#profile-enabled").checked = profile?.enabled ?? true;
   $("#profile-notify").checked = profile?.notify_telegram ?? true;
   updateFilterPreview();
@@ -614,6 +620,7 @@ async function createProfileFromWizard() {
   $("#profile-required").value = $("#wizard-required").value;
   $("#profile-exclude").value = $("#wizard-exclude").value;
   $("#profile-categories").value = "";
+  syncAllChipInputs();
   $("#profile-enabled").checked = $("#wizard-enabled").checked;
   $("#profile-notify").checked = $("#wizard-notify").checked;
   updateSourcePlaceholder();
@@ -632,6 +639,7 @@ function clearWizard() {
   $("#wizard-location").value = "";
   $("#wizard-required").value = "";
   $("#wizard-exclude").value = "";
+  syncAllChipInputs();
   $("#wizard-enabled").checked = false;
   $("#wizard-notify").checked = false;
 }
@@ -953,8 +961,104 @@ async function testTelegram() {
   toast(t("toast.telegramSent"));
 }
 
+function setupChipInputs() {
+  $$("textarea[data-chip-list]").forEach((textarea) => {
+    if (textarea.dataset.chipReady) return;
+    textarea.dataset.chipReady = "true";
+    textarea.classList.add("chip-source");
+
+    const control = document.createElement("div");
+    control.className = "chip-list-control";
+    control.innerHTML = `
+      <div class="chip-list"></div>
+      <input class="chip-list-input" type="text" autocomplete="off">
+    `;
+    textarea.insertAdjacentElement("afterend", control);
+
+    const input = control.querySelector(".chip-list-input");
+    control.addEventListener("click", () => input.focus());
+    textarea.addEventListener("input", () => renderChipInput(textarea));
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === "," || event.key === "Tab") {
+        if (input.value.trim()) {
+          event.preventDefault();
+          addChipValues(textarea, input.value);
+          input.value = "";
+        }
+      }
+      if (event.key === "Backspace" && !input.value) {
+        removeChipValue(textarea, listFromText(textarea.value).at(-1));
+      }
+    });
+    input.addEventListener("paste", () => {
+      window.setTimeout(() => {
+        if (input.value.includes("\n") || input.value.includes(",")) {
+          addChipValues(textarea, input.value);
+          input.value = "";
+        }
+      }, 0);
+    });
+    input.addEventListener("blur", () => {
+      if (input.value.trim()) {
+        addChipValues(textarea, input.value);
+        input.value = "";
+      }
+    });
+    renderChipInput(textarea);
+  });
+}
+
+function syncAllChipInputs() {
+  $$("textarea[data-chip-list]").forEach(renderChipInput);
+}
+
+function renderChipInput(textarea) {
+  const control = textarea.nextElementSibling;
+  if (!control?.classList.contains("chip-list-control")) return;
+  const items = listFromText(textarea.value);
+  const list = control.querySelector(".chip-list");
+  const input = control.querySelector(".chip-list-input");
+  list.innerHTML = items.map((item) => `
+    <span class="keyword-chip">
+      <span>${escapeHtml(item)}</span>
+      <button type="button" data-chip-remove="${escapeAttribute(item)}" aria-label="${escapeAttribute(t("keyword.remove", { item }))}">X</button>
+    </span>
+  `).join("");
+  list.querySelectorAll("[data-chip-remove]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      removeChipValue(textarea, button.dataset.chipRemove);
+    });
+  });
+  input.placeholder = items.length ? "" : t(textarea.dataset.chipPlaceholder || "keyword.add");
+}
+
+function addChipValues(textarea, rawValue) {
+  const current = listFromText(textarea.value);
+  const seen = new Set(current.map((item) => item.toLocaleLowerCase()));
+  for (const item of listFromText(rawValue)) {
+    const key = item.toLocaleLowerCase();
+    if (!seen.has(key)) {
+      current.push(item);
+      seen.add(key);
+    }
+  }
+  textarea.value = current.join("\n");
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function removeChipValue(textarea, item) {
+  if (!item) return;
+  textarea.value = listFromText(textarea.value).filter((value) => value !== item).join("\n");
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function listFromText(value) {
+  return String(value || "").split(/\n|,/).map((item) => item.trim()).filter(Boolean);
+}
+
 function lines(selector) {
-  return $(selector).value.split(/\n|,/).map((item) => item.trim()).filter(Boolean);
+  return listFromText($(selector).value);
 }
 
 function numberOrNull(selector) {
@@ -1014,6 +1118,7 @@ function applyTranslations() {
     button.title = t("view.tiles");
     button.setAttribute("aria-label", t("view.tiles"));
   });
+  syncAllChipInputs();
 }
 
 function t(key, values = {}) {
