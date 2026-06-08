@@ -59,9 +59,18 @@ def apply_filters(candidate: ListingCandidate, profile: dict) -> FilterResult:
 
 def location_filter_terms(value: str) -> list[str]:
     terms: list[str] = []
-    for part in value.replace("/", ",").split(","):
+    normalized = value.replace("·", ",").replace("/", ",")
+    if normalized.lower().startswith(("map point:", "kartenpunkt:")):
+        return []
+    for part in normalized.split(","):
         cleaned = part.strip().lower()
-        if not cleaned or cleaned.endswith("km") or cleaned.isdigit():
+        if (
+            not cleaned
+            or cleaned.endswith("km")
+            or cleaned.startswith("+")
+            or (cleaned.isdigit() and len(cleaned) != 5)
+            or cleaned in {"whole place", "ganzer ort"}
+        ):
             continue
         terms.append(cleaned)
     return terms

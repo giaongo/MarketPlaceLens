@@ -125,6 +125,19 @@
                 <label class="wide"><span data-i18n="wizard.query">What should be found?</span><input id="wizard-query" required placeholder="defekte elektronik"></label>
                 <label><span data-i18n="wizard.maxPrice">Maximum price</span><input id="wizard-max-price" type="number" step="0.01" placeholder="100"></label>
                 <label><span data-i18n="wizard.location">Location</span><input id="wizard-location" placeholder="Berlin"></label>
+                <label><span data-i18n="location.radius">Radius</span>
+                  <select id="wizard-location-radius">
+                    <option value="" data-i18n="location.wholePlace">Whole place</option>
+                    <option value="5">+5 km</option>
+                    <option value="10">+10 km</option>
+                    <option value="20">+20 km</option>
+                    <option value="30">+30 km</option>
+                    <option value="50">+50 km</option>
+                    <option value="100">+100 km</option>
+                    <option value="150">+150 km</option>
+                    <option value="200">+200 km</option>
+                  </select>
+                </label>
                 <label class="wide"><span data-i18n="wizard.mustInclude">Must include</span><textarea id="wizard-required" data-chip-list data-chip-placeholder="keyword.add" placeholder="abholung"></textarea></label>
                 <label class="wide"><span data-i18n="wizard.hideWords">Hide words</span><textarea id="wizard-exclude" data-chip-list data-chip-placeholder="keyword.add" placeholder="gesuch&#10;tausch"></textarea></label>
                 <label class="switch"><input id="wizard-enabled" type="checkbox"> <span data-i18n="form.backgroundPolling">Background polling</span></label>
@@ -199,8 +212,54 @@
                     <p data-i18n="profile.filtersSubtitle">Local filters applied after the search page is fetched</p>
                   </div>
                 </div>
+                <div class="location-builder wide">
+                  <input id="profile-location" type="hidden">
+                  <div class="location-mode-row" role="group" aria-label="Location mode">
+                    <button class="segmented active" type="button" data-location-mode="text" data-i18n="location.textMode">ZIP / place</button>
+                    <button class="segmented" type="button" data-location-mode="map" data-i18n="location.mapMode">Map</button>
+                  </div>
+                  <div class="location-fields" data-location-panel="text">
+                    <label><span data-i18n="location.query">ZIP code or place</span><input id="profile-location-query" placeholder="Berlin oder 21279"></label>
+                    <label><span data-i18n="location.radius">Radius</span>
+                      <select id="profile-location-radius">
+                        <option value="" data-i18n="location.wholePlace">Whole place</option>
+                        <option value="5">+5 km</option>
+                        <option value="10">+10 km</option>
+                        <option value="20">+20 km</option>
+                        <option value="30">+30 km</option>
+                        <option value="50">+50 km</option>
+                        <option value="100">+100 km</option>
+                        <option value="150">+150 km</option>
+                        <option value="200">+200 km</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div class="location-map-panel hidden" data-location-panel="map">
+                    <button class="location-map" type="button" id="profile-location-map" aria-label="Set map point">
+                      <span class="map-grid"></span>
+                      <span class="map-pin" id="profile-location-pin"></span>
+                      <span class="map-label" data-i18n="location.mapHint">Click on the map to set an approximate center point</span>
+                    </button>
+                    <div class="location-fields">
+                      <label><span data-i18n="location.coordinates">Coordinates</span><input id="profile-location-coordinates" readonly placeholder="53.5500, 10.0000"></label>
+                      <label><span data-i18n="location.radius">Radius</span>
+                        <select id="profile-map-radius">
+                          <option value="" data-i18n="location.wholePlace">Whole place</option>
+                          <option value="5">+5 km</option>
+                          <option value="10">+10 km</option>
+                          <option value="20">+20 km</option>
+                          <option value="30">+30 km</option>
+                          <option value="50">+50 km</option>
+                          <option value="100">+100 km</option>
+                          <option value="150">+150 km</option>
+                          <option value="200">+200 km</option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                  <p class="location-note" data-i18n="location.help">Use a ZIP/place like Kleinanzeigen, or click a map point and choose a radius.</p>
+                </div>
                 <div class="filter-grid">
-                  <label><span data-i18n="profile.locationHint">Location hint</span><input id="profile-location" placeholder="Berlin, 25 km"></label>
                   <label><span data-i18n="profile.minPrice">Min price</span><input id="profile-min-price" type="number" step="0.01" placeholder="0"></label>
                   <label><span data-i18n="profile.maxPrice">Max price</span><input id="profile-max-price" type="number" step="0.01" placeholder="100"></label>
                 </div>

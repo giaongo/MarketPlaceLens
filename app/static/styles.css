@@ -677,6 +677,108 @@ textarea.chip-source {
   gap: 12px;
 }
 
+.location-builder {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.location-mode-row {
+  display: inline-flex;
+  width: fit-content;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+  padding: 4px;
+}
+
+.segmented {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.segmented.active {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.location-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(150px, 0.6fr);
+  gap: 12px;
+}
+
+.location-map-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.location-map {
+  position: relative;
+  min-height: 190px;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 26% 28%, rgba(20, 160, 133, 0.22), transparent 20%),
+    radial-gradient(circle at 70% 60%, rgba(59, 130, 246, 0.16), transparent 22%),
+    linear-gradient(135deg, var(--brand-soft), var(--input-bg));
+  color: var(--text);
+  cursor: crosshair;
+}
+
+.map-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(100, 116, 139, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 116, 139, 0.16) 1px, transparent 1px);
+  background-size: 38px 38px;
+}
+
+.map-label {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  max-width: min(360px, calc(100% - 28px));
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  padding: 7px 10px;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.map-pin {
+  position: absolute;
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--on-brand);
+  border-radius: 50% 50% 50% 0;
+  background: var(--brand);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.24);
+  transform: translate(-50%, -100%) rotate(-45deg);
+}
+
+.map-pin.visible {
+  display: block;
+}
+
+.location-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
 .keyword-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1238,6 +1340,7 @@ textarea.chip-source {
   .filter-grid,
   .keyword-grid,
   .guided-filter-controls,
+  .location-fields,
   .wizard-grid,
   .source-card-grid,
   .provider-url-row {

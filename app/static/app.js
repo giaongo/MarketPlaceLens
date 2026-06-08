@@ -90,6 +90,15 @@ const translations = {
     "wizard.allCategories": "All categories",
     "wizard.maxPrice": "Maximum price",
     "wizard.location": "Location",
+    "location.textMode": "ZIP / place",
+    "location.mapMode": "Map",
+    "location.query": "ZIP code or place",
+    "location.radius": "Radius",
+    "location.wholePlace": "Whole place",
+    "location.coordinates": "Coordinates",
+    "location.mapHint": "Click on the map to set an approximate center point",
+    "location.help": "Use a ZIP/place like Kleinanzeigen, or click a map point and choose a radius.",
+    "location.mapPrefix": "Map point",
     "wizard.mustInclude": "Must include",
     "wizard.hideWords": "Hide words",
     "wizard.create": "Create job",
@@ -276,6 +285,15 @@ const translations = {
     "wizard.allCategories": "Alle Kategorien",
     "wizard.maxPrice": "Maximalpreis",
     "wizard.location": "Ort",
+    "location.textMode": "PLZ / Ort",
+    "location.mapMode": "Karte",
+    "location.query": "PLZ oder Ort",
+    "location.radius": "Radius",
+    "location.wholePlace": "Ganzer Ort",
+    "location.coordinates": "Koordinaten",
+    "location.mapHint": "In die Karte klicken, um einen ungefähren Mittelpunkt zu setzen",
+    "location.help": "Nutze PLZ/Ort wie bei Kleinanzeigen oder klicke einen Kartenpunkt und wähle einen Radius.",
+    "location.mapPrefix": "Kartenpunkt",
     "wizard.mustInclude": "Muss enthalten",
     "wizard.hideWords": "Wörter ausblenden",
     "wizard.create": "Job erstellen",
@@ -467,6 +485,13 @@ function bindNavigation() {
       updateFilterPreview();
     });
   });
+  $$("[data-location-mode]").forEach((button) => {
+    button.addEventListener("click", () => setLocationMode(button.dataset.locationMode));
+  });
+  ["#profile-location-query", "#profile-location-radius", "#profile-map-radius"].forEach((selector) => {
+    $(selector).addEventListener("input", syncLocationCriteria);
+  });
+  $("#profile-location-map").addEventListener("click", setMapLocation);
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
   $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
   $("#listing-status-filter").addEventListener("change", resetListingsPage);
@@ -490,7 +515,6 @@ function bindNavigation() {
     control.querySelector("[data-page-next]").addEventListener("click", () => changePage(watchlistedOnly, 1));
   });
   [
-    "#profile-location",
     "#profile-name",
     "#profile-url",
     "#profile-interval",
@@ -732,6 +756,96 @@ function syncProfileKleinanzeigenTypesFromUrl() {
   updateFilterPreview();
 }
 
+function setLocationMode(mode) {
+  const selected = mode === "map" ? "map" : "text";
+  $$("[data-location-mode]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.locationMode === selected);
+  });
+  $$("[data-location-panel]").forEach((panel) => {
+    panel.classList.toggle("hidden", panel.dataset.locationPanel !== selected);
+  });
+  syncLocationCriteria();
+}
+
+function currentLocationMode() {
+  return $("[data-location-mode].active")?.dataset.locationMode === "map" ? "map" : "text";
+}
+
+function radiusLabel(value) {
+  return value ? `+${value} km` : t("location.wholePlace");
+}
+
+function formatLocationCriteria() {
+  const mode = currentLocationMode();
+  if (mode === "map") {
+    const coordinates = $("#profile-location-coordinates").value.trim();
+    if (!coordinates) return "";
+    return `${t("location.mapPrefix")}: ${coordinates} · ${radiusLabel($("#profile-map-radius").value)}`;
+  }
+  const query = $("#profile-location-query").value.trim();
+  if (!query) return "";
+  return `${query} · ${radiusLabel($("#profile-location-radius").value)}`;
+}
+
+function syncLocationCriteria() {
+  $("#profile-location").value = formatLocationCriteria();
+  updateFilterPreview();
+}
+
+function setMapLocation(event) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+  const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+  const lat = (55.1 - y * 8.0).toFixed(4);
+  const lng = (5.9 + x * 9.4).toFixed(4);
+  $("#profile-location-coordinates").value = `${lat}, ${lng}`;
+  const pin = $("#profile-location-pin");
+  pin.style.left = `${x * 100}%`;
+  pin.style.top = `${y * 100}%`;
+  pin.classList.add("visible");
+  syncLocationCriteria();
+}
+
+function applyLocationCriteria(value) {
+  const raw = String(value || "").trim();
+  $("#profile-location").value = raw;
+  $("#profile-location-query").value = "";
+  $("#profile-location-radius").value = "";
+  $("#profile-location-coordinates").value = "";
+  $("#profile-map-radius").value = "";
+  $("#profile-location-pin").classList.remove("visible");
+
+  if (!raw) {
+    setLocationMode("text");
+    return;
+  }
+  if (raw.toLowerCase().startsWith("map point:") || raw.toLowerCase().startsWith("kartenpunkt:")) {
+    setLocationMode("map");
+    const coordinateMatch = raw.match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+    if (coordinateMatch) {
+      const lat = Number(coordinateMatch[1]);
+      const lng = Number(coordinateMatch[2]);
+      $("#profile-location-coordinates").value = `${coordinateMatch[1]}, ${coordinateMatch[2]}`;
+      const pin = $("#profile-location-pin");
+      const x = Math.max(0, Math.min(1, (lng - 5.9) / 9.4));
+      const y = Math.max(0, Math.min(1, (55.1 - lat) / 8.0));
+      pin.style.left = `${x * 100}%`;
+      pin.style.top = `${y * 100}%`;
+      pin.classList.add("visible");
+    }
+    const radiusMatch = raw.match(/\+(\d+)\s*km/i);
+    $("#profile-map-radius").value = radiusMatch?.[1] || "";
+    syncLocationCriteria();
+    return;
+  }
+  setLocationMode("text");
+  const [queryPart] = raw.split("·");
+  $("#profile-location-query").value = queryPart.trim();
+  const radiusMatch = raw.match(/\+(\d+)\s*km/i);
+  $("#profile-location-radius").value = radiusMatch?.[1] || "";
+  syncLocationCriteria();
+}
+
 async function changePassword() {
   const current = $("#current-password").value;
   const next = $("#new-password").value;
@@ -760,7 +874,7 @@ function editProfile(profile) {
   updateSourcePlaceholder();
   updateSourceOptions();
   $("#profile-interval").value = profile?.poll_interval_minutes || 60;
-  $("#profile-location").value = profile?.location_hint || "";
+  applyLocationCriteria(profile?.location_hint || "");
   $("#profile-min-price").value = profile?.min_price ?? "";
   $("#profile-max-price").value = profile?.max_price ?? "";
   $("#profile-include").value = (profile?.include_keywords || []).join("\n");
@@ -797,7 +911,10 @@ async function createProfileFromWizard() {
   $("#profile-url").value = buildWizardSearchUrl(source, query, category, selectedTypes);
   setKleinanzeigenTypes("profile", selectedTypes);
   $("#profile-interval").value = 120;
-  $("#profile-location").value = $("#wizard-location").value.trim();
+  const wizardLocation = $("#wizard-location").value.trim();
+  $("#profile-location-query").value = wizardLocation;
+  $("#profile-location-radius").value = wizardLocation ? $("#wizard-location-radius").value : "";
+  setLocationMode("text");
   $("#profile-min-price").value = "";
   $("#profile-max-price").value = $("#wizard-max-price").value;
   $("#profile-include").value = query.split(/\s+/).filter(Boolean).join("\n");
@@ -825,6 +942,7 @@ function clearWizard() {
   $("#wizard-query").value = "";
   $("#wizard-max-price").value = "";
   $("#wizard-location").value = "";
+  $("#wizard-location-radius").value = "";
   $("#wizard-required").value = "";
   $("#wizard-exclude").value = "";
   syncAllChipInputs();
@@ -922,6 +1040,7 @@ async function deleteSelectedProfile() {
 }
 
 function profilePayload() {
+  syncLocationCriteria();
   return {
     name: $("#profile-name").value,
     enabled: $("#profile-enabled").checked,
