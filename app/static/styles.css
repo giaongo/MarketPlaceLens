@@ -959,6 +959,54 @@ textarea.chip-source {
   min-height: 42px;
 }
 
+.collapsible-panel {
+  display: grid;
+  gap: 0;
+}
+
+.collapsible-summary {
+  cursor: pointer;
+  list-style: none;
+  margin: -4px 0 0;
+  user-select: none;
+}
+
+.collapsible-summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapse-indicator {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.collapse-indicator::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.16s ease;
+}
+
+.collapsible-panel[open] .collapse-indicator::before {
+  transform: rotate(225deg) translate(-2px, -2px);
+}
+
+.collapsible-content {
+  display: grid;
+  gap: 14px;
+  padding-top: 16px;
+}
+
 .listing-toolbar {
   display: flex;
   flex-wrap: wrap;
