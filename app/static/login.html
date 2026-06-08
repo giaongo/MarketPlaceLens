@@ -24,6 +24,10 @@
           <option value="en">English</option>
           <option value="de">Deutsch</option>
         </select>
+        <select id="theme-select" class="language-select login-language" aria-label="Theme">
+          <option value="light" data-i18n="theme.light">Light</option>
+          <option value="dark" data-i18n="theme.dark">Dark</option>
+        </select>
         <form id="login-form" class="form-grid">
           <label class="wide"><span data-i18n="login.username">Username</span><input id="username" autocomplete="username" value="admin"></label>
           <label class="wide"><span data-i18n="login.password">Password</span><input id="password" type="password" autocomplete="current-password" value="admin"></label>
@@ -40,6 +44,8 @@
           "login.password": "Password",
           "login.signIn": "Sign in",
           "login.failed": "Login failed",
+          "theme.light": "Light",
+          "theme.dark": "Dark",
         },
         de: {
           "brand.subtitle": "selbst gehosteter Anzeigen-Watcher",
@@ -47,11 +53,16 @@
           "login.password": "Passwort",
           "login.signIn": "Anmelden",
           "login.failed": "Login fehlgeschlagen",
+          "theme.light": "Hell",
+          "theme.dark": "Dunkel",
         },
       };
       let language = localStorage.getItem("marketplacelens.language") || "en";
+      let theme = localStorage.getItem("marketplacelens.theme") || "light";
       const languageSelect = document.querySelector("#language-select");
+      const themeSelect = document.querySelector("#theme-select");
       languageSelect.value = language;
+      themeSelect.value = theme;
       function t(key) {
         return translations[language]?.[key] || translations.en[key] || key;
       }
@@ -61,11 +72,21 @@
           node.textContent = t(node.dataset.i18n);
         });
       }
+      function applyTheme() {
+        document.body.dataset.theme = theme === "dark" ? "dark" : "light";
+        document.documentElement.style.colorScheme = theme === "dark" ? "dark" : "light";
+      }
       languageSelect.addEventListener("change", () => {
         language = languageSelect.value === "de" ? "de" : "en";
         localStorage.setItem("marketplacelens.language", language);
         applyTranslations();
       });
+      themeSelect.addEventListener("change", () => {
+        theme = themeSelect.value === "dark" ? "dark" : "light";
+        localStorage.setItem("marketplacelens.theme", theme);
+        applyTheme();
+      });
+      applyTheme();
       applyTranslations();
       document.querySelector("#login-form").addEventListener("submit", async (event) => {
         event.preventDefault();

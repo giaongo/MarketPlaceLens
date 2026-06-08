@@ -39,6 +39,10 @@
             <option value="en">English</option>
             <option value="de">Deutsch</option>
           </select>
+          <select id="theme-select" class="language-select" aria-label="Theme">
+            <option value="light" data-i18n="theme.light">Light</option>
+            <option value="dark" data-i18n="theme.dark">Dark</option>
+          </select>
           <button id="refresh-button" class="button ghost" data-i18n="action.refresh">Refresh</button>
           <button id="logout-button" class="button ghost" data-i18n="action.logout">Logout</button>
         </div>
@@ -293,6 +297,18 @@
               <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view" data-i18n="view.list">List</button>
               <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view" data-i18n="view.tiles">Tiles</button>
             </div>
+            <div class="pagination-controls" id="listings-pagination">
+              <label><span data-i18n="pagination.pageSize">Per page</span>
+                <select data-page-size>
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                </select>
+              </label>
+              <button class="mini-button" type="button" data-page-prev data-i18n="pagination.prev">Prev</button>
+              <span data-page-info>0-0 / 0</span>
+              <button class="mini-button" type="button" data-page-next data-i18n="pagination.next">Next</button>
+            </div>
           </div>
           <div id="listings-table" class="listing-browser"></div>
         </section>
@@ -309,6 +325,18 @@
               <div class="view-toggle" role="group" aria-label="Watchlist view">
                 <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view" data-i18n="view.list">List</button>
                 <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view" data-i18n="view.tiles">Tiles</button>
+              </div>
+              <div class="pagination-controls" id="watchlist-pagination">
+                <label><span data-i18n="pagination.pageSize">Per page</span>
+                  <select data-page-size>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                  </select>
+                </label>
+                <button class="mini-button" type="button" data-page-prev data-i18n="pagination.prev">Prev</button>
+                <span data-page-info>0-0 / 0</span>
+                <button class="mini-button" type="button" data-page-next data-i18n="pagination.next">Next</button>
               </div>
             </div>
           </div>

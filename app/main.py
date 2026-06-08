@@ -193,7 +193,11 @@ async def list_listings(
     q: str | None = None,
     min_price: float | None = None,
     max_price: float | None = None,
-) -> list[dict[str, Any]]:
+    sort: str = "date_desc",
+    limit: int = 300,
+    offset: int = 0,
+    paged: bool = False,
+) -> list[dict[str, Any]] | dict[str, Any]:
     clauses: list[str] = []
     values: list[Any] = []
     if profile_id:
@@ -218,19 +222,39 @@ async def list_listings(
         clauses.append("(price_value IS NULL OR price_value <= ?)")
         values.append(max_price)
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    order_by = {
+        "price_asc": "price_value IS NULL, price_value ASC, first_seen_at DESC",
+        "price_desc": "price_value IS NULL, price_value DESC, first_seen_at DESC",
+        "score_desc": "score DESC, first_seen_at DESC",
+        "date_desc": "first_seen_at DESC",
+    }.get(sort, "first_seen_at DESC")
+    limit = min(max(limit, 1), 100)
+    offset = max(offset, 0)
     with connect() as db:
+        total = db.execute(
+            f"""
+            SELECT COUNT(*) count
+            FROM listings
+            JOIN watch_profiles ON watch_profiles.id = listings.profile_id
+            {where}
+            """,
+            values,
+        ).fetchone()["count"]
         rows = db.execute(
             f"""
             SELECT listings.*, watch_profiles.name profile_name
             FROM listings
             JOIN watch_profiles ON watch_profiles.id = listings.profile_id
             {where}
-            ORDER BY first_seen_at DESC
-            LIMIT 300
+            ORDER BY {order_by}
+            LIMIT ? OFFSET ?
             """,
-            values,
+            values + [limit, offset],
         ).fetchall()
-    return [row_to_listing(row) for row in rows]
+    items = [row_to_listing(row) for row in rows]
+    if paged:
+        return {"items": items, "total": total, "limit": limit, "offset": offset}
+    return items
 
 
 @app.patch("/api/listings/{listing_id}")

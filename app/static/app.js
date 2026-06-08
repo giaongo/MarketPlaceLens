@@ -3,6 +3,10 @@ const state = {
   selectedProfile: null,
   listingView: localStorage.getItem("marketplacelens.listingView") || "list",
   language: localStorage.getItem("marketplacelens.language") || "en",
+  theme: localStorage.getItem("marketplacelens.theme") || "light",
+  listingPage: 0,
+  watchlistPage: 0,
+  pageSize: Number(localStorage.getItem("marketplacelens.pageSize") || 10),
 };
 
 const translations = {
@@ -17,6 +21,8 @@ const translations = {
     "action.refresh": "Refresh",
     "action.logout": "Logout",
     "action.delete": "Delete",
+    "theme.light": "Light",
+    "theme.dark": "Dark",
     "summary.activeProfiles": "Active profiles",
     "summary.newListings": "New listings",
     "summary.watchlist": "Watchlist",
@@ -124,6 +130,10 @@ const translations = {
     "sort.scoreDesc": "Best score",
     "view.list": "List",
     "view.tiles": "Tiles",
+    "pagination.pageSize": "Per page",
+    "pagination.prev": "Prev",
+    "pagination.next": "Next",
+    "pagination.range": "{start}-{end} / {total}",
     "settings.notifications": "Notifications",
     "settings.telegram": "Telegram",
     "settings.botToken": "Bot token",
@@ -186,6 +196,8 @@ const translations = {
     "action.refresh": "Aktualisieren",
     "action.logout": "Abmelden",
     "action.delete": "Löschen",
+    "theme.light": "Hell",
+    "theme.dark": "Dunkel",
     "summary.activeProfiles": "Aktive Profile",
     "summary.newListings": "Neue Listings",
     "summary.watchlist": "Watchlist",
@@ -293,6 +305,10 @@ const translations = {
     "sort.scoreDesc": "Bester Score",
     "view.list": "Liste",
     "view.tiles": "Kacheln",
+    "pagination.pageSize": "Pro Seite",
+    "pagination.prev": "Zurück",
+    "pagination.next": "Weiter",
+    "pagination.range": "{start}-{end} / {total}",
     "settings.notifications": "Benachrichtigungen",
     "settings.telegram": "Telegram",
     "settings.botToken": "Bot-Token",
@@ -389,9 +405,12 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 document.addEventListener("DOMContentLoaded", () => {
+  applyTheme();
   bindNavigation();
   bindForms();
   $("#language-select").value = state.language;
+  $("#theme-select").value = state.theme;
+  syncPageSizeControls();
   applyTranslations();
   setupChipInputs();
   updateWizardCategories();
@@ -406,6 +425,7 @@ function bindNavigation() {
   $("#refresh-button").addEventListener("click", refreshAll);
   $("#logout-button").addEventListener("click", logout);
   $("#language-select").addEventListener("change", () => setLanguage($("#language-select").value));
+  $("#theme-select").addEventListener("change", () => setTheme($("#theme-select").value));
   $("#wizard-button").addEventListener("click", () => showWizard(true));
   $("#wizard-cancel-button").addEventListener("click", () => showWizard(false));
   $("#wizard-source").addEventListener("change", updateWizardCategories);
@@ -417,15 +437,21 @@ function bindNavigation() {
   });
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
   $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
-  $("#listing-status-filter").addEventListener("change", loadListings);
-  $("#listing-profile-filter").addEventListener("change", loadListings);
-  $("#listing-search-filter").addEventListener("input", debounce(loadListings, 220));
-  $("#listing-min-price-filter").addEventListener("input", debounce(loadListings, 220));
-  $("#listing-max-price-filter").addEventListener("input", debounce(loadListings, 220));
-  $("#listing-sort-filter").addEventListener("change", loadListings);
-  $("#include-hidden").addEventListener("change", loadListings);
+  $("#listing-status-filter").addEventListener("change", resetListingsPage);
+  $("#listing-profile-filter").addEventListener("change", resetListingsPage);
+  $("#listing-search-filter").addEventListener("input", debounce(resetListingsPage, 220));
+  $("#listing-min-price-filter").addEventListener("input", debounce(resetListingsPage, 220));
+  $("#listing-max-price-filter").addEventListener("input", debounce(resetListingsPage, 220));
+  $("#listing-sort-filter").addEventListener("change", resetListingsPage);
+  $("#include-hidden").addEventListener("change", resetListingsPage);
   $$("[data-listing-view]").forEach((button) => {
     button.addEventListener("click", () => setListingView(button.dataset.listingView));
+  });
+  $$(".pagination-controls").forEach((control) => {
+    const watchlistedOnly = control.id === "watchlist-pagination";
+    control.querySelector("[data-page-size]").addEventListener("change", (event) => setPageSize(event.target.value));
+    control.querySelector("[data-page-prev]").addEventListener("click", () => changePage(watchlistedOnly, -1));
+    control.querySelector("[data-page-next]").addEventListener("click", () => changePage(watchlistedOnly, 1));
   });
   [
     "#profile-location",
@@ -852,6 +878,8 @@ async function loadWatchlist() {
 async function loadListingBrowser(containerSelector, watchlistedOnly) {
   const browser = $(containerSelector);
   if (!browser) return;
+  const page = watchlistedOnly ? state.watchlistPage : state.listingPage;
+  const pageSize = state.pageSize;
   const status = $("#listing-status-filter").value;
   const profileId = $("#listing-profile-filter").value;
   const search = $("#listing-search-filter").value;
@@ -868,10 +896,23 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
     query.set("include_hidden", String(includeHidden));
   }
   if (watchlistedOnly) query.set("watchlisted", "true");
-  const listings = sortListings(await api(`/api/listings?${query}`));
+  query.set("sort", $("#listing-sort-filter").value);
+  query.set("limit", String(pageSize));
+  query.set("offset", String(page * pageSize));
+  query.set("paged", "true");
+  const result = await api(`/api/listings?${query}`);
+  const listings = result.items || [];
+  const total = result.total || 0;
+  const maxPage = Math.max(0, Math.ceil(total / pageSize) - 1);
+  if (page > maxPage) {
+    if (watchlistedOnly) state.watchlistPage = maxPage;
+    else state.listingPage = maxPage;
+    return loadListingBrowser(containerSelector, watchlistedOnly);
+  }
   browser.classList.toggle("grid-view", state.listingView === "grid");
   browser.classList.toggle("list-view", state.listingView !== "grid");
   updateListingViewButtons();
+  updatePaginationControls(watchlistedOnly, total);
   browser.innerHTML = listings.length
     ? listings.map((listing) => listingMarkup(listing)).join("")
     : `<article class="listing-card empty-listing"><strong>${escapeHtml(t(watchlistedOnly ? "empty.noWatchlist" : "empty.noListings"))}</strong><p class="meta">${escapeHtml(t(watchlistedOnly ? "empty.noWatchlistHint" : "empty.noListingsHint"))}</p></article>`;
@@ -906,6 +947,49 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
       img.replaceWith(fallback);
     });
   });
+}
+
+function resetListingsPage() {
+  state.listingPage = 0;
+  loadListings();
+}
+
+function setPageSize(value) {
+  state.pageSize = [5, 10, 20].includes(Number(value)) ? Number(value) : 10;
+  localStorage.setItem("marketplacelens.pageSize", String(state.pageSize));
+  state.listingPage = 0;
+  state.watchlistPage = 0;
+  syncPageSizeControls();
+  loadListings();
+  loadWatchlist();
+}
+
+function syncPageSizeControls() {
+  $$("[data-page-size]").forEach((select) => {
+    select.value = String(state.pageSize);
+  });
+}
+
+function changePage(watchlistedOnly, direction) {
+  if (watchlistedOnly) {
+    state.watchlistPage = Math.max(0, state.watchlistPage + direction);
+    loadWatchlist();
+  } else {
+    state.listingPage = Math.max(0, state.listingPage + direction);
+    loadListings();
+  }
+}
+
+function updatePaginationControls(watchlistedOnly, total) {
+  const control = $(watchlistedOnly ? "#watchlist-pagination" : "#listings-pagination");
+  if (!control) return;
+  const page = watchlistedOnly ? state.watchlistPage : state.listingPage;
+  const start = total ? page * state.pageSize + 1 : 0;
+  const end = Math.min(total, (page + 1) * state.pageSize);
+  const maxPage = Math.max(0, Math.ceil(total / state.pageSize) - 1);
+  control.querySelector("[data-page-info]").textContent = t("pagination.range", { start, end, total });
+  control.querySelector("[data-page-prev]").disabled = page <= 0;
+  control.querySelector("[data-page-next]").disabled = page >= maxPage;
 }
 
 function setListingView(view) {
@@ -1228,6 +1312,17 @@ function setLanguage(language) {
   loadProfiles();
   loadListings();
   loadWatchlist();
+}
+
+function setTheme(theme) {
+  state.theme = theme === "dark" ? "dark" : "light";
+  localStorage.setItem("marketplacelens.theme", state.theme);
+  applyTheme();
+}
+
+function applyTheme() {
+  document.body.dataset.theme = state.theme === "dark" ? "dark" : "light";
+  document.documentElement.style.colorScheme = state.theme === "dark" ? "dark" : "light";
 }
 
 function applyTranslations() {

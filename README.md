@@ -16,9 +16,9 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Filter engine with explainable hidden reasons
 - Manual run per profile
 - Background polling with conservative minimum interval
-- Scrollable listing history with adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails
+- Paginated listing history with 5/10/20 items per page, adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails
 - Dedicated watchlist view for saved listings you want to compare or revisit
-- English and German UI language switcher
+- English/German UI language switcher and light/dark theme toggle
 - Telegram and webhook settings with test messages
 
 ## Compliance Boundaries
