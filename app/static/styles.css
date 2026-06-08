@@ -198,6 +198,15 @@ h1 {
   display: none !important;
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .status-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -391,6 +400,28 @@ textarea {
   gap: 16px;
 }
 
+.job-setup-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border: 1px solid #b9dcd5;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff, var(--brand-soft));
+  padding: 12px;
+}
+
+.job-setup-summary span {
+  max-width: 100%;
+  border: 1px solid rgba(20, 160, 133, 0.24);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--brand-dark);
+  padding: 5px 9px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
 .wizard-card {
   display: grid;
   gap: 14px;
@@ -412,6 +443,57 @@ textarea {
   border-radius: 8px;
   background: var(--surface-soft);
   padding: 14px;
+}
+
+.source-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.source-option {
+  display: grid;
+  gap: 6px;
+  min-height: 112px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text);
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.source-option strong {
+  color: var(--text);
+}
+
+.source-option span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.source-option.active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  box-shadow: inset 4px 0 0 var(--brand);
+}
+
+.provider-url-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.provider-url-row .wide {
+  grid-column: auto;
+}
+
+.automation-grid {
+  margin-bottom: 12px;
 }
 
 .compact-section {
@@ -878,8 +960,14 @@ textarea {
   .form-grid,
   .filter-grid,
   .keyword-grid,
-  .wizard-grid {
+  .wizard-grid,
+  .source-card-grid,
+  .provider-url-row {
     grid-template-columns: 1fr;
+  }
+
+  .provider-url-row .wide {
+    grid-column: 1 / -1;
   }
 
   main {

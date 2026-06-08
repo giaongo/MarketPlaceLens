@@ -9,7 +9,7 @@ const translations = {
   en: {
     "brand.subtitle": "self-hosted listing watcher",
     "nav.dashboard": "Dashboard",
-    "nav.profiles": "Search profiles",
+    "nav.profiles": "Jobs",
     "nav.listings": "Listings",
     "nav.watchlist": "Watchlist",
     "nav.settings": "Settings",
@@ -24,20 +24,25 @@ const translations = {
     "summary.notified": "Notified",
     "summary.runErrors": "Run errors",
     "dashboard.recentRuns": "Recent runs",
-    "profiles.title": "Search profiles",
-    "profiles.subtitle": "Saved watches, like Kleinanzeigen searches you can run again.",
-    "profiles.editorSubtitle": "Create a guided profile or fine-tune the manual filters.",
-    "profiles.guidedSetup": "Guided setup",
-    "profiles.manual": "Manual",
+    "profiles.title": "Jobs",
+    "profiles.subtitle": "Saved marketplace jobs grouped by source.",
+    "profiles.editorSubtitle": "Create a job from a provider URL, then add filters and notifications.",
+    "profiles.guidedSetup": "Quick job",
+    "profiles.quickJob": "Quick job",
+    "profiles.manual": "New job",
+    "profiles.newJob": "New job",
     "profiles.all": "All profiles",
-    "profile.new": "New profile",
-    "profile.edit": "Edit profile",
-    "profile.searchTitle": "Search",
-    "profile.searchSubtitle": "Name and source URL",
-    "profile.name": "Name",
+    "profile.new": "New job",
+    "profile.edit": "Edit job",
+    "profile.searchTitle": "Job",
+    "profile.searchSubtitle": "Name this watch so it is easy to scan later",
+    "profile.name": "Job name",
     "profile.source": "Source",
+    "profile.sourceTitle": "Provider",
+    "profile.sourceSubtitle": "Pick the marketplace and paste the sorted search URL.",
     "profile.searchUrl": "Search URL",
-    "profile.filtersTitle": "Marketplace filters",
+    "profile.openSource": "Open source",
+    "profile.filtersTitle": "Criteria",
     "profile.filtersSubtitle": "Local filters applied after the search page is fetched",
     "profile.locationHint": "Location hint",
     "profile.minPrice": "Min price",
@@ -51,10 +56,15 @@ const translations = {
     "profile.required": "Required",
     "profile.exclude": "Exclude",
     "profile.hiddenCategories": "Hidden categories",
-    "profile.save": "Save profile",
+    "profile.automationTitle": "Automation & notifications",
+    "profile.automationSubtitle": "Choose whether this job runs in the background and sends Telegram alerts.",
+    "profile.enabled": "enabled",
+    "profile.paused": "paused",
+    "profile.everyMinutes": "every {minutes} min",
+    "profile.save": "Save job",
     "profile.runNow": "Run now",
-    "wizard.title": "Guided setup",
-    "wizard.subtitle": "Create a profile from a few Kleinanzeigen-style filters",
+    "wizard.title": "Quick job",
+    "wizard.subtitle": "Create a Kleinanzeigen job from a search term, then fine-tune it below.",
     "wizard.query": "What should be found?",
     "wizard.maxPrice": "Maximum price",
     "wizard.location": "Location",
@@ -65,6 +75,18 @@ const translations = {
     "form.backgroundPolling": "Background polling",
     "form.telegram": "Telegram",
     "form.telegramNotifications": "Telegram notifications",
+    "source.kleinanzeigenHelp": "Paste a public Kleinanzeigen search URL.",
+    "source.facebookHelp": "Paste a reachable Marketplace URL.",
+    "source.generic": "Generic HTML",
+    "source.genericHelp": "Use a simple listing result page.",
+    "jobSummary.nameMissing": "Name missing",
+    "jobSummary.urlMissing": "URL missing",
+    "jobSummary.provider": "Provider",
+    "jobSummary.interval": "{minutes} min",
+    "jobSummary.pollingOn": "Polling on",
+    "jobSummary.pollingOff": "Polling off",
+    "jobSummary.telegramOn": "Telegram on",
+    "jobSummary.telegramOff": "Telegram off",
     "listings.title": "Browse listings",
     "listings.subtitle": "Scroll, filter, switch between list and tiles, or open the original listing.",
     "listings.searchPlaceholder": "Search title, location, category",
@@ -98,7 +120,7 @@ const translations = {
     "empty.noRunsHint": "Create a profile and run it manually.",
     "empty.noProfiles": "No profiles",
     "empty.noProfilesHint": "Add the first search URL on the right.",
-    "empty.sourceProfiles": "No {source} profiles yet",
+    "empty.sourceProfiles": "No {source} jobs yet",
     "empty.noListings": "No listings",
     "empty.noListingsHint": "Adjust filters or run a profile.",
     "empty.noWatchlist": "No watchlisted listings",
@@ -126,7 +148,7 @@ const translations = {
   de: {
     "brand.subtitle": "selbst gehosteter Anzeigen-Watcher",
     "nav.dashboard": "Dashboard",
-    "nav.profiles": "Suchprofile",
+    "nav.profiles": "Jobs",
     "nav.listings": "Listings",
     "nav.watchlist": "Watchlist",
     "nav.settings": "Einstellungen",
@@ -141,20 +163,25 @@ const translations = {
     "summary.notified": "Benachrichtigt",
     "summary.runErrors": "Run-Fehler",
     "dashboard.recentRuns": "Letzte Runs",
-    "profiles.title": "Suchprofile",
-    "profiles.subtitle": "Gespeicherte Suchen, die wiederholt laufen können.",
-    "profiles.editorSubtitle": "Profil geführt erstellen oder manuelle Filter feinjustieren.",
-    "profiles.guidedSetup": "Geführtes Setup",
-    "profiles.manual": "Manuell",
+    "profiles.title": "Jobs",
+    "profiles.subtitle": "Gespeicherte Marketplace-Jobs nach Quelle gruppiert.",
+    "profiles.editorSubtitle": "Job aus Provider-URL erstellen, dann Filter und Benachrichtigungen ergänzen.",
+    "profiles.guidedSetup": "Schnelljob",
+    "profiles.quickJob": "Schnelljob",
+    "profiles.manual": "Neuer Job",
+    "profiles.newJob": "Neuer Job",
     "profiles.all": "Alle Profile",
-    "profile.new": "Neues Profil",
-    "profile.edit": "Profil bearbeiten",
-    "profile.searchTitle": "Suche",
-    "profile.searchSubtitle": "Name und Quell-URL",
-    "profile.name": "Name",
+    "profile.new": "Neuer Job",
+    "profile.edit": "Job bearbeiten",
+    "profile.searchTitle": "Job",
+    "profile.searchSubtitle": "So benennen, dass er später schnell erkennbar ist",
+    "profile.name": "Job-Name",
     "profile.source": "Quelle",
+    "profile.sourceTitle": "Provider",
+    "profile.sourceSubtitle": "Marketplace auswählen und sortierte Such-URL einfügen.",
     "profile.searchUrl": "Such-URL",
-    "profile.filtersTitle": "Marketplace-Filter",
+    "profile.openSource": "Quelle öffnen",
+    "profile.filtersTitle": "Kriterien",
     "profile.filtersSubtitle": "Lokale Filter nach dem Abruf der Suchseite",
     "profile.locationHint": "Ortshinweis",
     "profile.minPrice": "Mindestpreis",
@@ -168,10 +195,15 @@ const translations = {
     "profile.required": "Erforderlich",
     "profile.exclude": "Ausschließen",
     "profile.hiddenCategories": "Ausgeblendete Kategorien",
-    "profile.save": "Profil speichern",
+    "profile.automationTitle": "Automation & Benachrichtigungen",
+    "profile.automationSubtitle": "Festlegen, ob der Job im Hintergrund läuft und Telegram sendet.",
+    "profile.enabled": "aktiv",
+    "profile.paused": "pausiert",
+    "profile.everyMinutes": "alle {minutes} Min.",
+    "profile.save": "Job speichern",
     "profile.runNow": "Jetzt ausführen",
-    "wizard.title": "Geführtes Setup",
-    "wizard.subtitle": "Profil aus wenigen Marketplace-Filtern erstellen",
+    "wizard.title": "Schnelljob",
+    "wizard.subtitle": "Kleinanzeigen-Job aus Suchbegriff erstellen und danach unten feinjustieren.",
     "wizard.query": "Was soll gefunden werden?",
     "wizard.maxPrice": "Maximalpreis",
     "wizard.location": "Ort",
@@ -182,6 +214,18 @@ const translations = {
     "form.backgroundPolling": "Automatisch abrufen",
     "form.telegram": "Telegram",
     "form.telegramNotifications": "Telegram-Benachrichtigungen",
+    "source.kleinanzeigenHelp": "Öffentliche Kleinanzeigen-Such-URL einfügen.",
+    "source.facebookHelp": "Erreichbare Marketplace-URL einfügen.",
+    "source.generic": "Generic HTML",
+    "source.genericHelp": "Einfache Listing-Ergebnisseite verwenden.",
+    "jobSummary.nameMissing": "Name fehlt",
+    "jobSummary.urlMissing": "URL fehlt",
+    "jobSummary.provider": "Provider",
+    "jobSummary.interval": "{minutes} Min.",
+    "jobSummary.pollingOn": "Polling an",
+    "jobSummary.pollingOff": "Polling aus",
+    "jobSummary.telegramOn": "Telegram an",
+    "jobSummary.telegramOff": "Telegram aus",
     "listings.title": "Listings durchsuchen",
     "listings.subtitle": "Scrollen, filtern, zwischen Liste und Kacheln wechseln oder Original öffnen.",
     "listings.searchPlaceholder": "Titel, Ort, Kategorie suchen",
@@ -215,7 +259,7 @@ const translations = {
     "empty.noRunsHint": "Erstelle ein Profil und starte es manuell.",
     "empty.noProfiles": "Keine Profile",
     "empty.noProfilesHint": "Lege rechts die erste Such-URL an.",
-    "empty.sourceProfiles": "Noch keine {source}-Profile",
+    "empty.sourceProfiles": "Noch keine {source}-Jobs",
     "empty.noListings": "Keine Listings",
     "empty.noListingsHint": "Filter anpassen oder Profil ausführen.",
     "empty.noWatchlist": "Keine Watchlist-Listings",
@@ -265,6 +309,10 @@ function bindNavigation() {
   $("#wizard-cancel-button").addEventListener("click", () => showWizard(false));
   $("#new-profile-button").addEventListener("click", () => editProfile(null));
   $("#profile-source").addEventListener("change", updateSourcePlaceholder);
+  $("#open-source-button").addEventListener("click", openSelectedSource);
+  $$("[data-source-option]").forEach((button) => {
+    button.addEventListener("click", () => selectSource(button.dataset.sourceOption));
+  });
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
   $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
   $("#listing-status-filter").addEventListener("change", loadListings);
@@ -279,6 +327,9 @@ function bindNavigation() {
   });
   [
     "#profile-location",
+    "#profile-name",
+    "#profile-url",
+    "#profile-interval",
     "#profile-min-price",
     "#profile-max-price",
     "#profile-include",
@@ -328,7 +379,7 @@ function showWizard(visible) {
   $("#profile-wizard").classList.toggle("hidden", !visible);
   $("#profile-form").classList.toggle("hidden", visible);
   if (visible) {
-    $("#profile-form-title").textContent = t("wizard.title");
+    updateProfileFormTitle(true);
     $("#wizard-query").focus();
   } else {
     editProfile(null);
@@ -414,7 +465,7 @@ function groupedProfilesMarkup(profiles) {
           <h4>${escapeHtml(profile.name)}</h4>
           <span class="source-badge ${escapeAttribute(profile.source_type)}">${escapeHtml(sourceLabel(profile.source_type))}</span>
         </div>
-        <p class="meta">${profile.enabled ? "enabled" : "paused"} · every ${profile.poll_interval_minutes} min</p>
+        <p class="meta">${profile.enabled ? t("profile.enabled") : t("profile.paused")} · ${t("profile.everyMinutes", { minutes: profile.poll_interval_minutes })}</p>
         <p class="meta">${escapeHtml(profile.search_url)}</p>
       </article>
         `).join("") : `<article class="profile-empty">${escapeHtml(t("empty.sourceProfiles", { source: sourceLabel(source) }))}</article>`}
@@ -429,6 +480,14 @@ function sourceLabel(source) {
     facebook: "Facebook Marketplace",
     html: "Generic HTML",
   }[source] || source;
+}
+
+function sourceBaseUrl(source) {
+  return {
+    kleinanzeigen: "https://www.kleinanzeigen.de/",
+    facebook: "https://www.facebook.com/marketplace/",
+    html: "",
+  }[source] || "";
 }
 
 async function changePassword() {
@@ -450,12 +509,13 @@ function editProfile(profile) {
   $("#profile-wizard").classList.add("hidden");
   $("#profile-form").classList.remove("hidden");
   state.selectedProfile = profile;
-  $("#profile-form-title").textContent = profile ? t("profile.edit") : t("profile.new");
+  updateProfileFormTitle(false);
   $("#profile-id").value = profile?.id || "";
   $("#profile-name").value = profile?.name || "";
   $("#profile-source").value = profile?.source_type || "kleinanzeigen";
   $("#profile-url").value = profile?.search_url || "";
   updateSourcePlaceholder();
+  updateSourceOptions();
   $("#profile-interval").value = profile?.poll_interval_minutes || 60;
   $("#profile-location").value = profile?.location_hint || "";
   $("#profile-min-price").value = profile?.min_price ?? "";
@@ -467,7 +527,14 @@ function editProfile(profile) {
   $("#profile-enabled").checked = profile?.enabled ?? true;
   $("#profile-notify").checked = profile?.notify_telegram ?? true;
   updateFilterPreview();
+  updateJobSetupSummary();
   loadProfiles();
+}
+
+function updateProfileFormTitle(wizardVisible = !$("#profile-wizard").classList.contains("hidden")) {
+  $("#profile-form-title").textContent = wizardVisible
+    ? t("wizard.title")
+    : state.selectedProfile ? t("profile.edit") : t("profile.new");
 }
 
 async function createProfileFromWizard() {
@@ -567,6 +634,7 @@ function updateFilterPreview() {
   chips.push($("#profile-enabled").checked ? t("form.backgroundPolling") : "Polling off");
   chips.push($("#profile-notify").checked ? t("form.telegramNotifications") : "Telegram off");
   $("#profile-filter-preview").innerHTML = chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("");
+  updateJobSetupSummary();
 }
 
 function updateSourcePlaceholder() {
@@ -576,6 +644,41 @@ function updateSourcePlaceholder() {
     facebook: "https://www.facebook.com/marketplace/...",
     html: "https://example.com/search-results",
   }[source] || "https://example.com/search-results";
+  updateSourceOptions();
+  updateJobSetupSummary();
+}
+
+function selectSource(source) {
+  $("#profile-source").value = source;
+  updateSourcePlaceholder();
+}
+
+function updateSourceOptions() {
+  const source = $("#profile-source").value;
+  $$("[data-source-option]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.sourceOption === source);
+  });
+}
+
+function openSelectedSource() {
+  const baseUrl = sourceBaseUrl($("#profile-source").value);
+  if (baseUrl) window.open(baseUrl, "_blank", "noopener");
+  else $("#profile-url").focus();
+}
+
+function updateJobSetupSummary() {
+  const name = $("#profile-name").value.trim() || t("jobSummary.nameMissing");
+  const url = $("#profile-url").value.trim() || t("jobSummary.urlMissing");
+  const interval = Number($("#profile-interval").value || 60);
+  const chips = [
+    `${t("profile.name")}: ${name}`,
+    `${t("jobSummary.provider")}: ${sourceLabel($("#profile-source").value)}`,
+    url,
+    t("jobSummary.interval", { minutes: interval }),
+    $("#profile-enabled").checked ? t("jobSummary.pollingOn") : t("jobSummary.pollingOff"),
+    $("#profile-notify").checked ? t("jobSummary.telegramOn") : t("jobSummary.telegramOff"),
+  ];
+  $("#job-setup-summary").innerHTML = chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("");
 }
 
 async function loadListings() {
@@ -766,6 +869,7 @@ function setLanguage(language) {
     watchlist: "nav.watchlist",
     settings: "nav.settings",
   }[activeView]);
+  updateProfileFormTitle();
   updateFilterPreview();
   loadSummary();
   loadProfiles();

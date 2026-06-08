@@ -8,7 +8,8 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Local SQLite database
 - LanLens-inspired web UI
 - Single-user login for the local web UI
-- Search profiles with enable/disable, polling interval, source URL, price limits, keyword filters, category filters, and Telegram toggle
+- Fredy-inspired job builder with provider selection, source URL, criteria, keyword rules, automation, and Telegram toggle
+- Search profiles/jobs with enable/disable, polling interval, source URL, price limits, keyword filters, category filters, and Telegram toggle
 - Generic HTML listing connector for user-supplied search result URLs
 - Source profiles for Kleinanzeigen and Facebook Marketplace URLs
 - Filter engine with explainable hidden reasons
