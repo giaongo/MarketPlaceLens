@@ -137,6 +137,7 @@ const translations = {
     "listing.seen": "Seen",
     "listing.hide": "Hide",
     "listing.new": "New",
+    "date.never": "never",
     "toast.listingHidden": "Listing hidden",
     "toast.listingSeen": "Listing marked as seen",
     "toast.listingNew": "Listing moved back to new",
@@ -284,6 +285,7 @@ const translations = {
     "listing.seen": "Gesehen",
     "listing.hide": "Ausblenden",
     "listing.new": "Neu",
+    "date.never": "nie",
     "toast.listingHidden": "Listing ausgeblendet",
     "toast.listingSeen": "Listing als gesehen markiert",
     "toast.listingNew": "Listing wieder auf neu gesetzt",
@@ -961,7 +963,18 @@ function numberOrNull(selector) {
 }
 
 function formatDate(value) {
-  return value ? new Date(value).toLocaleString(state.language === "de" ? "de-DE" : "en-US") : "never";
+  if (!value) return t("date.never");
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return t("date.never");
+  const locale = state.language === "de" ? "de-DE" : "en-US";
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: state.language !== "de",
+  }).format(date);
 }
 
 function setLanguage(language) {
