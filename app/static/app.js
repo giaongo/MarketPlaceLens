@@ -1,6 +1,7 @@
 const state = {
   profiles: [],
   selectedProfile: null,
+  listingView: localStorage.getItem("marketplacelens.listingView") || "list",
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -29,7 +30,11 @@ function bindNavigation() {
   $("#listing-search-filter").addEventListener("input", debounce(loadListings, 220));
   $("#listing-min-price-filter").addEventListener("input", debounce(loadListings, 220));
   $("#listing-max-price-filter").addEventListener("input", debounce(loadListings, 220));
+  $("#listing-sort-filter").addEventListener("change", loadListings);
   $("#include-hidden").addEventListener("change", loadListings);
+  $$("[data-listing-view]").forEach((button) => {
+    button.addEventListener("click", () => setListingView(button.dataset.listingView));
+  });
   [
     "#profile-location",
     "#profile-min-price",
@@ -342,37 +347,13 @@ async function loadListings() {
   if (minPrice) query.set("min_price", minPrice);
   if (maxPrice) query.set("max_price", maxPrice);
   query.set("include_hidden", String(includeHidden));
-  const listings = await api(`/api/listings?${query}`);
-  $("#listings-table").innerHTML = listings.length
-    ? listings.map((listing) => `
-      <article class="listing-card">
-        <div class="listing-media">
-          ${listing.thumbnail_url ? `
-            <img class="listing-image" src="/api/listings/${listing.id}/image" alt="${escapeAttribute(listing.title)}" loading="lazy">
-          ` : `<span class="no-image">No image</span>`}
-        </div>
-        <div class="listing-main">
-          <div class="listing-title-row">
-            <a href="${escapeAttribute(listing.listing_url)}" target="_blank" rel="noopener">${escapeHtml(listing.title)}</a>
-            <span class="pill ${escapeAttribute(listing.status)}">${escapeHtml(listing.status)}</span>
-          </div>
-          <strong class="listing-price">${escapeHtml(listing.price_text || "no price")}</strong>
-          <p class="meta">${escapeHtml(listing.description_snippet || "")}</p>
-          <div class="listing-facts">
-            <span>${escapeHtml(listing.profile_name || "")}</span>
-            <span>${escapeHtml(listing.location_text || "no location")}</span>
-            <span>score ${listing.score}</span>
-            <span>${formatDate(listing.first_seen_at)}</span>
-          </div>
-          ${listing.filter_reason ? `<p class="filter-reason">${escapeHtml(listing.filter_reason)}</p>` : ""}
-        </div>
-        <div class="row-actions">
-          <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">Seen</button>
-          <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">Hide</button>
-          <button class="mini-button" data-listing-action="new" data-id="${listing.id}">New</button>
-        </div>
-      </article>
-    `).join("")
+  const listings = sortListings(await api(`/api/listings?${query}`));
+  const browser = $("#listings-table");
+  browser.classList.toggle("grid-view", state.listingView === "grid");
+  browser.classList.toggle("list-view", state.listingView !== "grid");
+  updateListingViewButtons();
+  browser.innerHTML = listings.length
+    ? listings.map((listing) => listingMarkup(listing)).join("")
     : `<article class="listing-card"><strong>No listings</strong><p class="meta">Adjust filters or run a profile.</p></article>`;
   $$("[data-listing-action]").forEach((button) => {
     button.addEventListener("click", async () => {
@@ -387,10 +368,75 @@ async function loadListings() {
     img.addEventListener("error", () => {
       const fallback = document.createElement("span");
       fallback.className = "no-image";
-      fallback.textContent = "Image unavailable";
+      fallback.textContent = "No image available";
       img.replaceWith(fallback);
     });
   });
+}
+
+function setListingView(view) {
+  state.listingView = view === "grid" ? "grid" : "list";
+  localStorage.setItem("marketplacelens.listingView", state.listingView);
+  loadListings();
+}
+
+function updateListingViewButtons() {
+  $$("[data-listing-view]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.listingView === state.listingView);
+  });
+}
+
+function sortListings(listings) {
+  const sort = $("#listing-sort-filter").value;
+  const copy = [...listings];
+  const price = (listing) => typeof listing.price_value === "number" ? listing.price_value : null;
+  const comparePrice = (a, b, direction) => {
+    const priceA = price(a);
+    const priceB = price(b);
+    if (priceA === null && priceB === null) return 0;
+    if (priceA === null) return 1;
+    if (priceB === null) return -1;
+    return direction === "desc" ? priceB - priceA : priceA - priceB;
+  };
+  const seenAt = (listing) => new Date(listing.first_seen_at || 0).getTime();
+  return copy.sort((a, b) => {
+    if (sort === "price_asc") return comparePrice(a, b, "asc");
+    if (sort === "price_desc") return comparePrice(a, b, "desc");
+    if (sort === "score_desc") return (b.score || 0) - (a.score || 0);
+    return seenAt(b) - seenAt(a);
+  });
+}
+
+function listingMarkup(listing) {
+  return `
+    <article class="listing-card">
+      <div class="listing-media">
+        ${listing.thumbnail_url ? `
+          <img class="listing-image" src="/api/listings/${listing.id}/image" alt="${escapeAttribute(listing.title)}" loading="lazy">
+        ` : `<span class="no-image">No image available</span>`}
+      </div>
+      <div class="listing-main">
+        <div class="listing-title-row">
+          <a href="${escapeAttribute(listing.listing_url)}" target="_blank" rel="noopener">${escapeHtml(listing.title)}</a>
+          <span class="pill ${escapeAttribute(listing.status)}">${escapeHtml(listing.status)}</span>
+        </div>
+        <strong class="listing-price">${escapeHtml(listing.price_text || "no price")}</strong>
+        <p class="meta listing-description">${escapeHtml(listing.description_snippet || "")}</p>
+        <div class="listing-facts">
+          <span>${escapeHtml(listing.profile_name || "")}</span>
+          <span>${escapeHtml(listing.location_text || "no location")}</span>
+          <span>score ${listing.score}</span>
+          <span>${formatDate(listing.first_seen_at)}</span>
+        </div>
+        ${listing.filter_reason ? `<p class="filter-reason">${escapeHtml(listing.filter_reason)}</p>` : ""}
+      </div>
+      <div class="row-actions">
+        <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">Seen</button>
+        <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">Hide</button>
+        <button class="mini-button" data-listing-action="new" data-id="${listing.id}">New</button>
+      </div>
+    </article>
+  `;
 }
 
 async function loadSettings() {

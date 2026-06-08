@@ -192,7 +192,7 @@
           <div class="panel-heading">
             <div>
               <h2>Browse listings</h2>
-              <p class="panel-subtitle">Scroll, filter, open the original listing, or load images on demand.</p>
+              <p class="panel-subtitle">Scroll, filter, switch between list and tiles, or open the original listing.</p>
             </div>
             <div class="filters">
               <input id="listing-search-filter" placeholder="Search title, location, category">
@@ -206,9 +206,21 @@
                 <option value="hidden">Hidden</option>
                 <option value="seen">Seen</option>
               </select>
+              <select id="listing-sort-filter">
+                <option value="date_desc">Newest first</option>
+                <option value="price_asc">Price low-high</option>
+                <option value="price_desc">Price high-low</option>
+                <option value="score_desc">Best score</option>
+              </select>
               <input id="listing-min-price-filter" type="number" step="0.01" placeholder="Min">
               <input id="listing-max-price-filter" type="number" step="0.01" placeholder="Max">
               <label class="switch compact"><input id="include-hidden" type="checkbox" checked> Hidden</label>
+            </div>
+          </div>
+          <div class="listing-toolbar" aria-label="Listing display options">
+            <div class="view-toggle" role="group" aria-label="Listing view">
+              <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view">List</button>
+              <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view">Tiles</button>
             </div>
           </div>
           <div id="listings-table" class="listing-browser"></div>

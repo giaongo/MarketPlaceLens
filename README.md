@@ -14,7 +14,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Filter engine with explainable hidden reasons
 - Manual run per profile
 - Background polling with conservative minimum interval
-- Scrollable listing history with adjustable filters, hidden/new/notified/seen states, and lazy-loaded thumbnails
+- Scrollable listing history with adjustable filters, list/tile display modes, hidden/new/notified/seen states, and lazy-loaded thumbnails
 - Telegram settings and test message
 
 ## Compliance Boundaries
