@@ -147,7 +147,7 @@ h1 {
 
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -336,6 +336,26 @@ td a {
   color: #bbf7d0;
 }
 
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mini-button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(23, 32, 51, 0.78);
+  color: var(--text);
+  padding: 5px 7px;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.danger-text {
+  color: #fecdd3;
+}
+
 #toast {
   position: fixed;
   right: 18px;
@@ -376,4 +396,3 @@ td a {
     grid-template-columns: 1fr;
   }
 }
-

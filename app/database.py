@@ -95,6 +95,21 @@ def init_db() -> None:
               key TEXT PRIMARY KEY,
               value TEXT NOT NULL DEFAULT ''
             );
+
+            CREATE TABLE IF NOT EXISTS run_logs (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              profile_id INTEGER REFERENCES watch_profiles(id) ON DELETE SET NULL,
+              profile_name TEXT NOT NULL DEFAULT '',
+              status TEXT NOT NULL,
+              fetched INTEGER NOT NULL DEFAULT 0,
+              new_count INTEGER NOT NULL DEFAULT 0,
+              hidden_count INTEGER NOT NULL DEFAULT 0,
+              duplicate_count INTEGER NOT NULL DEFAULT 0,
+              notified_count INTEGER NOT NULL DEFAULT 0,
+              error_message TEXT NOT NULL DEFAULT '',
+              started_at TEXT NOT NULL,
+              finished_at TEXT NOT NULL
+            );
             """
         )
         defaults = {
@@ -120,4 +135,3 @@ def row_to_profile(row: sqlite3.Row) -> dict[str, Any]:
 
 def row_to_listing(row: sqlite3.Row) -> dict[str, Any]:
     return dict(row)
-

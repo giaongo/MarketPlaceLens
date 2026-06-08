@@ -50,12 +50,14 @@ async def summary() -> dict[str, Any]:
         ).fetchone()
         recent_runs = db.execute(
             """
-            SELECT id, name, enabled, last_run_at
-            FROM watch_profiles
-            ORDER BY COALESCE(last_run_at, created_at) DESC
+            SELECT run_logs.*, watch_profiles.enabled
+            FROM run_logs
+            LEFT JOIN watch_profiles ON watch_profiles.id = run_logs.profile_id
+            ORDER BY finished_at DESC
             LIMIT 5
             """
         ).fetchall()
+        errors = db.execute("SELECT COUNT(*) count FROM run_logs WHERE status = 'error'").fetchone()
     return {
         "profiles_total": profiles["total"] or 0,
         "profiles_enabled": profiles["enabled"] or 0,
@@ -63,6 +65,7 @@ async def summary() -> dict[str, Any]:
         "listings_new": listings["new_count"] or 0,
         "listings_hidden": listings["hidden_count"] or 0,
         "listings_notified": listings["notified_count"] or 0,
+        "run_errors": errors["count"] or 0,
         "recent_runs": [dict(row) for row in recent_runs],
     }
 
@@ -215,6 +218,7 @@ async def test_telegram() -> dict[str, bool]:
 
 
 async def run_profile(profile_id: int) -> dict[str, Any]:
+    started_at = utc_now()
     with connect() as db:
         row = db.execute("SELECT * FROM watch_profiles WHERE id = ?", (profile_id,)).fetchone()
         settings_rows = db.execute("SELECT key, value FROM app_settings").fetchall()
@@ -225,6 +229,15 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
     try:
         candidates = await connector.fetch_listings(profile)
     except Exception as exc:  # surfacing connector failures in manual runs is useful for MVP operations.
+        with connect() as db:
+            record_run(
+                db,
+                profile,
+                "error",
+                {"fetched": 0, "new": 0, "hidden": 0, "duplicates": 0, "notified": 0},
+                started_at,
+                str(exc),
+            )
         raise HTTPException(502, f"Connector failed: {exc}") from exc
 
     app_settings = {item["key"]: item["value"] for item in settings_rows}
@@ -254,6 +267,7 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
                 except Exception:
                     pass
         db.execute("UPDATE watch_profiles SET last_run_at = ?, updated_at = ? WHERE id = ?", (now, now, profile_id))
+        record_run(db, profile, "success", stats, started_at, "")
     return {"profile_id": profile_id, **stats}
 
 
@@ -264,7 +278,7 @@ async def poll_loop() -> None:
             due_profiles = get_due_profiles()
             for profile in due_profiles:
                 await run_profile(profile["id"])
-                await asyncio.sleep(random.randint(8, 18))
+                await asyncio.sleep(max(get_global_rate_limit(), random.randint(8, 18)))
         except Exception:
             pass
         await asyncio.sleep(60)
@@ -285,6 +299,15 @@ def get_due_profiles() -> list[dict[str, Any]]:
             """
         ).fetchall()
     return [row_to_profile(row) for row in rows]
+
+
+def get_global_rate_limit() -> int:
+    with connect() as db:
+        value = get_setting(db, "global_rate_limit_seconds")
+    try:
+        return max(5, int(value or "20"))
+    except ValueError:
+        return 20
 
 
 def profile_values(profile: dict[str, Any], now: str, include_created: bool = True) -> tuple[Any, ...]:
@@ -371,3 +394,33 @@ def insert_listing(
     )
     return int(cursor.lastrowid)
 
+
+def record_run(
+    db: sqlite3.Connection,
+    profile: dict[str, Any],
+    status: str,
+    stats: dict[str, int],
+    started_at: str,
+    error_message: str,
+) -> None:
+    db.execute(
+        """
+        INSERT INTO run_logs(
+          profile_id, profile_name, status, fetched, new_count, hidden_count,
+          duplicate_count, notified_count, error_message, started_at, finished_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            profile["id"],
+            profile["name"],
+            status,
+            stats.get("fetched", 0),
+            stats.get("new", 0),
+            stats.get("hidden", 0),
+            stats.get("duplicates", 0),
+            stats.get("notified", 0),
+            error_message[:500],
+            started_at,
+            utc_now(),
+        ),
+    )

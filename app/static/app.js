@@ -70,11 +70,13 @@ async function loadSummary() {
   $("#summary-new").textContent = summary.listings_new;
   $("#summary-hidden").textContent = summary.listings_hidden;
   $("#summary-notified").textContent = summary.listings_notified;
+  $("#summary-errors").textContent = summary.run_errors;
   $("#recent-runs").innerHTML = summary.recent_runs.length
     ? summary.recent_runs.map((run) => `
       <article>
-        <strong>${escapeHtml(run.name)}</strong>
-        <p class="meta">${run.enabled ? "enabled" : "paused"} · last run ${formatDate(run.last_run_at)}</p>
+        <strong>${escapeHtml(run.profile_name)}</strong>
+        <p class="meta">${escapeHtml(run.status)} · fetched ${run.fetched} · new ${run.new_count} · hidden ${run.hidden_count} · duplicate ${run.duplicate_count} · ${formatDate(run.finished_at)}</p>
+        ${run.error_message ? `<p class="meta danger-text">${escapeHtml(run.error_message)}</p>` : ""}
       </article>
     `).join("")
     : `<article><strong>No runs yet</strong><p class="meta">Create a profile and run it manually.</p></article>`;
@@ -185,9 +187,25 @@ async function loadListings() {
         <td>${listing.score}</td>
         <td>${escapeHtml(listing.filter_reason || "")}</td>
         <td>${formatDate(listing.first_seen_at)}</td>
+        <td>
+          <div class="row-actions">
+            <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">Seen</button>
+            <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">Hide</button>
+            <button class="mini-button" data-listing-action="new" data-id="${listing.id}">New</button>
+          </div>
+        </td>
       </tr>
     `).join("")
-    : `<tr><td colspan="8">No listings yet.</td></tr>`;
+    : `<tr><td colspan="9">No listings yet.</td></tr>`;
+  $$("[data-listing-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await api(`/api/listings/${button.dataset.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: button.dataset.listingAction }),
+      });
+      await Promise.all([loadListings(), loadSummary()]);
+    });
+  });
 }
 
 async function loadSettings() {
@@ -249,4 +267,3 @@ function toast(message) {
   clearTimeout(window.toastTimer);
   window.toastTimer = setTimeout(() => node.classList.remove("visible"), 3600);
 }
-
