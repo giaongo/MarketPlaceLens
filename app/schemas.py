@@ -20,7 +20,8 @@ class ProfilePayload(BaseModel):
 
 
 class ListingStatusPayload(BaseModel):
-    status: str = Field(pattern="^(new|seen|hidden|notified)$")
+    status: str | None = Field(default=None, pattern="^(new|seen|hidden|notified)$")
+    watchlisted: bool | None = None
 
 
 class SettingsPayload(BaseModel):

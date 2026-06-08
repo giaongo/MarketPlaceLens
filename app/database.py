@@ -84,6 +84,7 @@ def init_db() -> None:
               first_seen_at TEXT NOT NULL,
               last_seen_at TEXT NOT NULL,
               status TEXT NOT NULL DEFAULT 'new',
+              watchlisted INTEGER NOT NULL DEFAULT 0,
               score INTEGER NOT NULL DEFAULT 0,
               filter_reason TEXT NOT NULL DEFAULT '',
               notified_at TEXT,
@@ -112,6 +113,7 @@ def init_db() -> None:
             );
             """
         )
+        ensure_column(db, "listings", "watchlisted", "INTEGER NOT NULL DEFAULT 0")
         defaults = {
             "telegram_bot_token": settings.telegram_bot_token,
             "telegram_chat_id": settings.telegram_chat_id,
@@ -134,4 +136,12 @@ def row_to_profile(row: sqlite3.Row) -> dict[str, Any]:
 
 
 def row_to_listing(row: sqlite3.Row) -> dict[str, Any]:
-    return dict(row)
+    data = dict(row)
+    data["watchlisted"] = bool(data.get("watchlisted", False))
+    return data
+
+
+def ensure_column(db: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    columns = {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in columns:
+        db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")

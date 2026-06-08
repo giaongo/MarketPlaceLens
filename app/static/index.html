@@ -16,55 +16,64 @@
         <img class="brand-logo" src="/static/assets/marketplacelens-logo.svg" alt="" width="42" height="42">
         <div>
           <strong>MarketPlaceLens</strong>
-          <small>self-hosted listing watcher</small>
+          <small data-i18n="brand.subtitle">self-hosted listing watcher</small>
         </div>
       </div>
       <nav>
-        <button class="nav-item active" data-view="dashboard">Dashboard</button>
-        <button class="nav-item" data-view="profiles">Search profiles</button>
-        <button class="nav-item" data-view="listings">Listings</button>
-        <button class="nav-item" data-view="settings">Settings</button>
+        <button class="nav-item active" data-view="dashboard" data-i18n="nav.dashboard">Dashboard</button>
+        <button class="nav-item" data-view="profiles" data-i18n="nav.profiles">Search profiles</button>
+        <button class="nav-item" data-view="listings" data-i18n="nav.listings">Listings</button>
+        <button class="nav-item" data-view="watchlist" data-i18n="nav.watchlist">Watchlist</button>
+        <button class="nav-item" data-view="settings" data-i18n="nav.settings">Settings</button>
       </nav>
     </aside>
 
     <main>
       <header class="topbar">
         <div>
-          <p class="eyebrow">Local marketplace watcher</p>
+          <p class="eyebrow" data-i18n="top.eyebrow">Local marketplace watcher</p>
           <h1 id="view-title">Dashboard</h1>
         </div>
         <div class="top-actions">
-          <button id="refresh-button" class="button ghost">Refresh</button>
-          <button id="logout-button" class="button ghost">Logout</button>
+          <select id="language-select" class="language-select" aria-label="Language">
+            <option value="en">English</option>
+            <option value="de">Deutsch</option>
+          </select>
+          <button id="refresh-button" class="button ghost" data-i18n="action.refresh">Refresh</button>
+          <button id="logout-button" class="button ghost" data-i18n="action.logout">Logout</button>
         </div>
       </header>
 
       <section id="dashboard-view" class="view active">
         <div class="status-grid">
           <article>
-            <span>Active profiles</span>
+            <span data-i18n="summary.activeProfiles">Active profiles</span>
             <strong id="summary-active">0</strong>
           </article>
           <article>
-            <span>New listings</span>
+            <span data-i18n="summary.newListings">New listings</span>
             <strong id="summary-new">0</strong>
           </article>
           <article>
-            <span>Hidden</span>
+            <span data-i18n="summary.watchlist">Watchlist</span>
+            <strong id="summary-watchlisted">0</strong>
+          </article>
+          <article>
+            <span data-i18n="summary.hidden">Hidden</span>
             <strong id="summary-hidden">0</strong>
           </article>
           <article>
-            <span>Notified</span>
+            <span data-i18n="summary.notified">Notified</span>
             <strong id="summary-notified">0</strong>
           </article>
           <article>
-            <span>Run errors</span>
+            <span data-i18n="summary.runErrors">Run errors</span>
             <strong id="summary-errors">0</strong>
           </article>
         </div>
         <section class="panel">
           <div class="panel-heading">
-            <h2>Recent runs</h2>
+            <h2 data-i18n="dashboard.recentRuns">Recent runs</h2>
           </div>
           <div id="recent-runs" class="simple-list"></div>
         </section>
@@ -75,12 +84,12 @@
           <section class="panel">
             <div class="panel-heading">
               <div>
-                <h2>Search profiles</h2>
-                <p class="panel-subtitle">Saved watches, like Kleinanzeigen searches you can run again.</p>
+                <h2 data-i18n="profiles.title">Search profiles</h2>
+                <p class="panel-subtitle" data-i18n="profiles.subtitle">Saved watches, like Kleinanzeigen searches you can run again.</p>
               </div>
               <div class="actions">
-                <button id="wizard-button" class="button primary">Guided setup</button>
-                <button id="new-profile-button" class="button">Manual</button>
+                <button id="wizard-button" class="button primary" data-i18n="profiles.guidedSetup">Guided setup</button>
+                <button id="new-profile-button" class="button" data-i18n="profiles.manual">Manual</button>
               </div>
             </div>
             <div id="profiles-list" class="profile-list"></div>
@@ -89,29 +98,29 @@
             <div class="panel-heading">
               <div>
                 <h2 id="profile-form-title">New profile</h2>
-                <p class="panel-subtitle">Create a guided profile or fine-tune the manual filters.</p>
+                <p class="panel-subtitle" data-i18n="profiles.editorSubtitle">Create a guided profile or fine-tune the manual filters.</p>
               </div>
             </div>
             <form id="profile-wizard" class="wizard-card hidden">
               <div class="section-title">
                 <span>+</span>
                 <div>
-                  <h3>Guided setup</h3>
-                  <p>Create a profile from a few Kleinanzeigen-style filters</p>
+                  <h3 data-i18n="wizard.title">Guided setup</h3>
+                  <p data-i18n="wizard.subtitle">Create a profile from a few Kleinanzeigen-style filters</p>
                 </div>
               </div>
               <div class="wizard-grid">
-                <label class="wide">What should be found?<input id="wizard-query" required placeholder="defekte elektronik"></label>
-                <label>Maximum price<input id="wizard-max-price" type="number" step="0.01" placeholder="100"></label>
-                <label>Location<input id="wizard-location" placeholder="Berlin"></label>
-                <label class="wide">Must include<textarea id="wizard-required" placeholder="abholung"></textarea></label>
-                <label class="wide">Hide words<textarea id="wizard-exclude" placeholder="gesuch&#10;tausch"></textarea></label>
-                <label class="switch"><input id="wizard-enabled" type="checkbox"> Background polling</label>
-                <label class="switch"><input id="wizard-notify" type="checkbox"> Telegram</label>
+                <label class="wide"><span data-i18n="wizard.query">What should be found?</span><input id="wizard-query" required placeholder="defekte elektronik"></label>
+                <label><span data-i18n="wizard.maxPrice">Maximum price</span><input id="wizard-max-price" type="number" step="0.01" placeholder="100"></label>
+                <label><span data-i18n="wizard.location">Location</span><input id="wizard-location" placeholder="Berlin"></label>
+                <label class="wide"><span data-i18n="wizard.mustInclude">Must include</span><textarea id="wizard-required" placeholder="abholung"></textarea></label>
+                <label class="wide"><span data-i18n="wizard.hideWords">Hide words</span><textarea id="wizard-exclude" placeholder="gesuch&#10;tausch"></textarea></label>
+                <label class="switch"><input id="wizard-enabled" type="checkbox"> <span data-i18n="form.backgroundPolling">Background polling</span></label>
+                <label class="switch"><input id="wizard-notify" type="checkbox"> <span data-i18n="form.telegram">Telegram</span></label>
               </div>
               <div class="actions">
-                <button class="button primary" type="submit">Create profile</button>
-                <button class="button ghost" type="button" id="wizard-cancel-button">Use manual form</button>
+                <button class="button primary" type="submit" data-i18n="wizard.create">Create profile</button>
+                <button class="button ghost" type="button" id="wizard-cancel-button" data-i18n="wizard.manualForm">Use manual form</button>
               </div>
             </form>
             <form id="profile-form" class="profile-form">
@@ -120,20 +129,20 @@
                 <div class="section-title">
                   <span>1</span>
                   <div>
-                    <h3>Search</h3>
-                    <p>Name and source URL</p>
+                    <h3 data-i18n="profile.searchTitle">Search</h3>
+                    <p data-i18n="profile.searchSubtitle">Name and source URL</p>
                   </div>
                 </div>
                 <div class="form-grid">
-                  <label>Name<input id="profile-name" required placeholder="Defekte Elektronik bis 100 EUR"></label>
-                  <label>Source
+                  <label><span data-i18n="profile.name">Name</span><input id="profile-name" required placeholder="Defekte Elektronik bis 100 EUR"></label>
+                  <label><span data-i18n="profile.source">Source</span>
                     <select id="profile-source">
                       <option value="kleinanzeigen">Kleinanzeigen search URL</option>
                       <option value="facebook">Facebook Marketplace URL</option>
                       <option value="html">Generic HTML listing page</option>
                     </select>
                   </label>
-                  <label class="wide">Search URL<input id="profile-url" type="url" required placeholder="https://www.kleinanzeigen.de/..."></label>
+                  <label class="wide"><span data-i18n="profile.searchUrl">Search URL</span><input id="profile-url" type="url" required placeholder="https://www.kleinanzeigen.de/..."></label>
                 </div>
               </div>
 
@@ -141,15 +150,15 @@
                 <div class="section-title">
                   <span>2</span>
                   <div>
-                    <h3>Kleinanzeigen filters</h3>
-                    <p>Local filters applied after the search page is fetched</p>
+                    <h3 data-i18n="profile.filtersTitle">Marketplace filters</h3>
+                    <p data-i18n="profile.filtersSubtitle">Local filters applied after the search page is fetched</p>
                   </div>
                 </div>
                 <div class="filter-grid">
-                  <label>Location hint<input id="profile-location" placeholder="Berlin, 25 km"></label>
-                  <label>Min price<input id="profile-min-price" type="number" step="0.01" placeholder="0"></label>
-                  <label>Max price<input id="profile-max-price" type="number" step="0.01" placeholder="100"></label>
-                  <label>Poll interval<input id="profile-interval" type="number" min="30" value="60"></label>
+                  <label><span data-i18n="profile.locationHint">Location hint</span><input id="profile-location" placeholder="Berlin, 25 km"></label>
+                  <label><span data-i18n="profile.minPrice">Min price</span><input id="profile-min-price" type="number" step="0.01" placeholder="0"></label>
+                  <label><span data-i18n="profile.maxPrice">Max price</span><input id="profile-max-price" type="number" step="0.01" placeholder="100"></label>
+                  <label><span data-i18n="profile.pollInterval">Poll interval</span><input id="profile-interval" type="number" min="30" value="60"></label>
                 </div>
               </div>
 
@@ -157,30 +166,30 @@
                 <div class="section-title">
                   <span>3</span>
                   <div>
-                    <h3>Keyword rules</h3>
-                    <p>Match, require, or hide terms from listings</p>
+                    <h3 data-i18n="profile.keywordTitle">Keyword rules</h3>
+                    <p data-i18n="profile.keywordSubtitle">Match, require, or hide terms from listings</p>
                   </div>
                 </div>
                 <div class="keyword-grid">
-                  <label>Include<textarea id="profile-include" placeholder="defekt&#10;reparatur&#10;ersatzteil"></textarea></label>
-                  <label>Required<textarea id="profile-required" placeholder="abholung"></textarea></label>
-                  <label>Exclude<textarea id="profile-exclude" placeholder="gesuch&#10;tausch"></textarea></label>
-                  <label>Hidden categories<textarea id="profile-categories" placeholder="haushaltsgeraete"></textarea></label>
+                  <label><span data-i18n="profile.include">Include</span><textarea id="profile-include" placeholder="defekt&#10;reparatur&#10;ersatzteil"></textarea></label>
+                  <label><span data-i18n="profile.required">Required</span><textarea id="profile-required" placeholder="abholung"></textarea></label>
+                  <label><span data-i18n="profile.exclude">Exclude</span><textarea id="profile-exclude" placeholder="gesuch&#10;tausch"></textarea></label>
+                  <label><span data-i18n="profile.hiddenCategories">Hidden categories</span><textarea id="profile-categories" placeholder="haushaltsgeraete"></textarea></label>
                 </div>
               </div>
 
               <div class="form-section compact-section">
                 <div class="toggle-row">
-                  <label class="switch"><input id="profile-enabled" type="checkbox" checked> Background polling</label>
-                  <label class="switch"><input id="profile-notify" type="checkbox" checked> Telegram notifications</label>
+                  <label class="switch"><input id="profile-enabled" type="checkbox" checked> <span data-i18n="form.backgroundPolling">Background polling</span></label>
+                  <label class="switch"><input id="profile-notify" type="checkbox" checked> <span data-i18n="form.telegramNotifications">Telegram notifications</span></label>
                 </div>
                 <div id="profile-filter-preview" class="filter-preview"></div>
               </div>
 
               <div class="actions sticky-actions">
-                <button class="button primary" type="submit">Save profile</button>
-                <button class="button ghost" type="button" id="run-profile-button">Run now</button>
-                <button class="button danger" type="button" id="delete-profile-button">Delete</button>
+                <button class="button primary" type="submit" data-i18n="profile.save">Save profile</button>
+                <button class="button ghost" type="button" id="run-profile-button" data-i18n="profile.runNow">Run now</button>
+                <button class="button danger" type="button" id="delete-profile-button" data-i18n="action.delete">Delete</button>
               </div>
             </form>
           </section>
@@ -191,70 +200,88 @@
         <section class="panel">
           <div class="panel-heading">
             <div>
-              <h2>Browse listings</h2>
-              <p class="panel-subtitle">Scroll, filter, switch between list and tiles, or open the original listing.</p>
+              <h2 data-i18n="listings.title">Browse listings</h2>
+              <p class="panel-subtitle" data-i18n="listings.subtitle">Scroll, filter, switch between list and tiles, or open the original listing.</p>
             </div>
             <div class="filters">
-              <input id="listing-search-filter" placeholder="Search title, location, category">
+              <input id="listing-search-filter" placeholder="Search title, location, category" data-i18n-placeholder="listings.searchPlaceholder">
               <select id="listing-profile-filter">
-                <option value="">All profiles</option>
+                <option value="" data-i18n="profiles.all">All profiles</option>
               </select>
               <select id="listing-status-filter">
-                <option value="">All statuses</option>
-                <option value="new">New</option>
-                <option value="notified">Notified</option>
-                <option value="hidden">Hidden</option>
-                <option value="seen">Seen</option>
+                <option value="" data-i18n="listings.allStatuses">All statuses</option>
+                <option value="new" data-i18n="status.new">New</option>
+                <option value="notified" data-i18n="status.notified">Notified</option>
+                <option value="hidden" data-i18n="status.hidden">Hidden</option>
+                <option value="seen" data-i18n="status.seen">Seen</option>
               </select>
               <select id="listing-sort-filter">
-                <option value="date_desc">Newest first</option>
-                <option value="price_asc">Price low-high</option>
-                <option value="price_desc">Price high-low</option>
-                <option value="score_desc">Best score</option>
+                <option value="date_desc" data-i18n="sort.dateDesc">Newest first</option>
+                <option value="price_asc" data-i18n="sort.priceAsc">Price low-high</option>
+                <option value="price_desc" data-i18n="sort.priceDesc">Price high-low</option>
+                <option value="score_desc" data-i18n="sort.scoreDesc">Best score</option>
               </select>
-              <input id="listing-min-price-filter" type="number" step="0.01" placeholder="Min">
-              <input id="listing-max-price-filter" type="number" step="0.01" placeholder="Max">
-              <label class="switch compact"><input id="include-hidden" type="checkbox" checked> Hidden</label>
+              <input id="listing-min-price-filter" type="number" step="0.01" placeholder="Min" data-i18n-placeholder="profile.minPriceShort">
+              <input id="listing-max-price-filter" type="number" step="0.01" placeholder="Max" data-i18n-placeholder="profile.maxPriceShort">
+              <label class="switch compact"><input id="include-hidden" type="checkbox" checked> <span data-i18n="listings.includeHidden">Hidden</span></label>
             </div>
           </div>
           <div class="listing-toolbar" aria-label="Listing display options">
             <div class="view-toggle" role="group" aria-label="Listing view">
-              <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view">List</button>
-              <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view">Tiles</button>
+              <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view" data-i18n="view.list">List</button>
+              <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view" data-i18n="view.tiles">Tiles</button>
             </div>
           </div>
           <div id="listings-table" class="listing-browser"></div>
         </section>
       </section>
 
+      <section id="watchlist-view" class="view">
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2 data-i18n="watchlist.title">Watchlist</h2>
+              <p class="panel-subtitle" data-i18n="watchlist.subtitle">Saved listings you want to compare or revisit later.</p>
+            </div>
+            <div class="listing-toolbar inline-toolbar" aria-label="Watchlist display options">
+              <div class="view-toggle" role="group" aria-label="Watchlist view">
+                <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view" data-i18n="view.list">List</button>
+                <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view" data-i18n="view.tiles">Tiles</button>
+              </div>
+            </div>
+          </div>
+          <div id="watchlist-table" class="listing-browser"></div>
+        </section>
+      </section>
+
       <section id="settings-view" class="view">
         <section class="panel narrow">
           <div class="panel-heading">
-            <h2>Telegram</h2>
+            <h2 data-i18n="settings.telegram">Telegram</h2>
           </div>
           <form id="settings-form" class="form-grid">
-            <label class="wide">Bot token<input id="telegram-token" type="password" autocomplete="off" placeholder="123456:ABC..."></label>
-            <label class="wide">Chat ID<input id="telegram-chat" placeholder="123456789"></label>
-            <label>Global rate limit seconds<input id="global-rate" type="number" min="5" value="20"></label>
+            <label class="wide"><span data-i18n="settings.botToken">Bot token</span><input id="telegram-token" type="password" autocomplete="off" placeholder="123456:ABC..."></label>
+            <label class="wide"><span data-i18n="settings.chatId">Chat ID</span><input id="telegram-chat" placeholder="123456789"></label>
+            <label><span data-i18n="settings.rateLimit">Global rate limit seconds</span><input id="global-rate" type="number" min="5" value="20"></label>
             <div class="actions wide">
-              <button class="button primary" type="submit">Save settings</button>
-              <button class="button ghost" id="telegram-test-button" type="button">Send test</button>
+              <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
+              <button class="button ghost" id="telegram-test-button" type="button" data-i18n="settings.sendTest">Send test</button>
             </div>
           </form>
         </section>
         <section class="panel narrow settings-section">
           <div class="panel-heading">
             <div>
-              <h2>Password</h2>
-              <p class="panel-subtitle">Change the local admin password for this app.</p>
+              <h2 data-i18n="settings.password">Password</h2>
+              <p class="panel-subtitle" data-i18n="settings.passwordSubtitle">Change the local admin password for this app.</p>
             </div>
           </div>
           <form id="password-form" class="form-grid">
-            <label class="wide">Current password<input id="current-password" type="password" autocomplete="current-password"></label>
-            <label class="wide">New password<input id="new-password" type="password" autocomplete="new-password" minlength="8"></label>
-            <label class="wide">Repeat new password<input id="repeat-password" type="password" autocomplete="new-password" minlength="8"></label>
+            <label class="wide"><span data-i18n="settings.currentPassword">Current password</span><input id="current-password" type="password" autocomplete="current-password"></label>
+            <label class="wide"><span data-i18n="settings.newPassword">New password</span><input id="new-password" type="password" autocomplete="new-password" minlength="8"></label>
+            <label class="wide"><span data-i18n="settings.repeatPassword">Repeat new password</span><input id="repeat-password" type="password" autocomplete="new-password" minlength="8"></label>
             <div class="actions wide">
-              <button class="button primary" type="submit">Change password</button>
+              <button class="button primary" type="submit" data-i18n="settings.changePassword">Change password</button>
             </div>
           </form>
         </section>

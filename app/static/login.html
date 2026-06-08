@@ -17,18 +17,56 @@
           <img class="brand-logo" src="/static/assets/marketplacelens-logo.svg" alt="" width="42" height="42">
           <div>
             <strong>MarketPlaceLens</strong>
-            <small>self-hosted listing watcher</small>
+          <small data-i18n="brand.subtitle">self-hosted listing watcher</small>
           </div>
         </div>
+        <select id="language-select" class="language-select login-language" aria-label="Language">
+          <option value="en">English</option>
+          <option value="de">Deutsch</option>
+        </select>
         <form id="login-form" class="form-grid">
-          <label class="wide">Username<input id="username" autocomplete="username" value="admin"></label>
-          <label class="wide">Password<input id="password" type="password" autocomplete="current-password" value="admin"></label>
-          <button class="button primary wide" type="submit">Sign in</button>
+          <label class="wide"><span data-i18n="login.username">Username</span><input id="username" autocomplete="username" value="admin"></label>
+          <label class="wide"><span data-i18n="login.password">Password</span><input id="password" type="password" autocomplete="current-password" value="admin"></label>
+          <button class="button primary wide" type="submit" data-i18n="login.signIn">Sign in</button>
           <p id="login-error" class="danger-text wide"></p>
         </form>
       </section>
     </main>
     <script>
+      const translations = {
+        en: {
+          "brand.subtitle": "self-hosted listing watcher",
+          "login.username": "Username",
+          "login.password": "Password",
+          "login.signIn": "Sign in",
+          "login.failed": "Login failed",
+        },
+        de: {
+          "brand.subtitle": "selbst gehosteter Anzeigen-Watcher",
+          "login.username": "Benutzername",
+          "login.password": "Passwort",
+          "login.signIn": "Anmelden",
+          "login.failed": "Login fehlgeschlagen",
+        },
+      };
+      let language = localStorage.getItem("marketplacelens.language") || "en";
+      const languageSelect = document.querySelector("#language-select");
+      languageSelect.value = language;
+      function t(key) {
+        return translations[language]?.[key] || translations.en[key] || key;
+      }
+      function applyTranslations() {
+        document.documentElement.lang = language;
+        document.querySelectorAll("[data-i18n]").forEach((node) => {
+          node.textContent = t(node.dataset.i18n);
+        });
+      }
+      languageSelect.addEventListener("change", () => {
+        language = languageSelect.value === "de" ? "de" : "en";
+        localStorage.setItem("marketplacelens.language", language);
+        applyTranslations();
+      });
+      applyTranslations();
       document.querySelector("#login-form").addEventListener("submit", async (event) => {
         event.preventDefault();
         const error = document.querySelector("#login-error");
@@ -42,7 +80,7 @@
           }),
         });
         if (!response.ok) {
-          error.textContent = "Login failed";
+          error.textContent = t("login.failed");
           return;
         }
         window.location.href = "/";

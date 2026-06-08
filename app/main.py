@@ -89,7 +89,8 @@ async def summary() -> dict[str, Any]:
               COUNT(*) total,
               SUM(status = 'new') new_count,
               SUM(status = 'hidden') hidden_count,
-              SUM(status = 'notified') notified_count
+              SUM(status = 'notified') notified_count,
+              SUM(watchlisted = 1) watchlisted_count
             FROM listings
             """
         ).fetchone()
@@ -110,6 +111,7 @@ async def summary() -> dict[str, Any]:
         "listings_new": listings["new_count"] or 0,
         "listings_hidden": listings["hidden_count"] or 0,
         "listings_notified": listings["notified_count"] or 0,
+        "listings_watchlisted": listings["watchlisted_count"] or 0,
         "run_errors": errors["count"] or 0,
         "recent_runs": [dict(row) for row in recent_runs],
     }
@@ -186,6 +188,7 @@ async def run_profile_endpoint(profile_id: int) -> dict[str, Any]:
 async def list_listings(
     profile_id: int | None = None,
     status: str | None = None,
+    watchlisted: bool | None = None,
     include_hidden: bool = True,
     q: str | None = None,
     min_price: float | None = None,
@@ -201,6 +204,9 @@ async def list_listings(
         values.append(status)
     elif not include_hidden:
         clauses.append("status != 'hidden'")
+    if watchlisted is not None:
+        clauses.append("watchlisted = ?")
+        values.append(int(watchlisted))
     if q:
         clauses.append("(listings.title LIKE ? OR listings.description_snippet LIKE ? OR listings.location_text LIKE ? OR listings.category_text LIKE ?)")
         like = f"%{q}%"
@@ -230,7 +236,18 @@ async def list_listings(
 @app.patch("/api/listings/{listing_id}")
 async def update_listing_status(listing_id: int, payload: ListingStatusPayload) -> dict[str, Any]:
     with connect() as db:
-        db.execute("UPDATE listings SET status = ? WHERE id = ?", (payload.status, listing_id))
+        updates: list[str] = []
+        values: list[Any] = []
+        if payload.status is not None:
+            updates.append("status = ?")
+            values.append(payload.status)
+        if payload.watchlisted is not None:
+            updates.append("watchlisted = ?")
+            values.append(int(payload.watchlisted))
+        if not updates:
+            raise HTTPException(400, "No listing changes supplied")
+        values.append(listing_id)
+        db.execute(f"UPDATE listings SET {', '.join(updates)} WHERE id = ?", values)
         row = db.execute("SELECT * FROM listings WHERE id = ?", (listing_id,)).fetchone()
     if not row:
         raise HTTPException(404, "Listing not found")
@@ -483,8 +500,8 @@ def insert_listing(
         INSERT INTO listings(
           source_type, source_listing_id, profile_id, title, price_text, price_value,
           location_text, category_text, posted_at_text, description_snippet, listing_url,
-          thumbnail_url, content_hash, first_seen_at, last_seen_at, status, score, filter_reason
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          thumbnail_url, content_hash, first_seen_at, last_seen_at, status, watchlisted, score, filter_reason
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             candidate.source_type,
@@ -503,6 +520,7 @@ def insert_listing(
             now,
             now,
             status,
+            0,
             score,
             reason,
         ),

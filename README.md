@@ -14,7 +14,9 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Filter engine with explainable hidden reasons
 - Manual run per profile
 - Background polling with conservative minimum interval
-- Scrollable listing history with adjustable filters, list/tile display modes, hidden/new/notified/seen states, and lazy-loaded thumbnails
+- Scrollable listing history with adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails
+- Dedicated watchlist view for saved listings you want to compare or revisit
+- English and German UI language switcher
 - Telegram settings and test message
 
 ## Compliance Boundaries
@@ -91,6 +93,7 @@ app/
 - `POST /api/profiles/{id}/run`
 - `GET /api/listings`
 - `PATCH /api/listings/{id}`
+- `GET /api/listings?watchlisted=true`
 - `GET /api/settings`
 - `PUT /api/settings`
 - `POST /api/settings/password`

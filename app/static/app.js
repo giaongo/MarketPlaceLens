@@ -2,6 +2,244 @@ const state = {
   profiles: [],
   selectedProfile: null,
   listingView: localStorage.getItem("marketplacelens.listingView") || "list",
+  language: localStorage.getItem("marketplacelens.language") || "en",
+};
+
+const translations = {
+  en: {
+    "brand.subtitle": "self-hosted listing watcher",
+    "nav.dashboard": "Dashboard",
+    "nav.profiles": "Search profiles",
+    "nav.listings": "Listings",
+    "nav.watchlist": "Watchlist",
+    "nav.settings": "Settings",
+    "top.eyebrow": "Local marketplace watcher",
+    "action.refresh": "Refresh",
+    "action.logout": "Logout",
+    "action.delete": "Delete",
+    "summary.activeProfiles": "Active profiles",
+    "summary.newListings": "New listings",
+    "summary.watchlist": "Watchlist",
+    "summary.hidden": "Hidden",
+    "summary.notified": "Notified",
+    "summary.runErrors": "Run errors",
+    "dashboard.recentRuns": "Recent runs",
+    "profiles.title": "Search profiles",
+    "profiles.subtitle": "Saved watches, like Kleinanzeigen searches you can run again.",
+    "profiles.editorSubtitle": "Create a guided profile or fine-tune the manual filters.",
+    "profiles.guidedSetup": "Guided setup",
+    "profiles.manual": "Manual",
+    "profiles.all": "All profiles",
+    "profile.new": "New profile",
+    "profile.edit": "Edit profile",
+    "profile.searchTitle": "Search",
+    "profile.searchSubtitle": "Name and source URL",
+    "profile.name": "Name",
+    "profile.source": "Source",
+    "profile.searchUrl": "Search URL",
+    "profile.filtersTitle": "Marketplace filters",
+    "profile.filtersSubtitle": "Local filters applied after the search page is fetched",
+    "profile.locationHint": "Location hint",
+    "profile.minPrice": "Min price",
+    "profile.maxPrice": "Max price",
+    "profile.minPriceShort": "Min",
+    "profile.maxPriceShort": "Max",
+    "profile.pollInterval": "Poll interval",
+    "profile.keywordTitle": "Keyword rules",
+    "profile.keywordSubtitle": "Match, require, or hide terms from listings",
+    "profile.include": "Include",
+    "profile.required": "Required",
+    "profile.exclude": "Exclude",
+    "profile.hiddenCategories": "Hidden categories",
+    "profile.save": "Save profile",
+    "profile.runNow": "Run now",
+    "wizard.title": "Guided setup",
+    "wizard.subtitle": "Create a profile from a few Kleinanzeigen-style filters",
+    "wizard.query": "What should be found?",
+    "wizard.maxPrice": "Maximum price",
+    "wizard.location": "Location",
+    "wizard.mustInclude": "Must include",
+    "wizard.hideWords": "Hide words",
+    "wizard.create": "Create profile",
+    "wizard.manualForm": "Use manual form",
+    "form.backgroundPolling": "Background polling",
+    "form.telegram": "Telegram",
+    "form.telegramNotifications": "Telegram notifications",
+    "listings.title": "Browse listings",
+    "listings.subtitle": "Scroll, filter, switch between list and tiles, or open the original listing.",
+    "listings.searchPlaceholder": "Search title, location, category",
+    "listings.allStatuses": "All statuses",
+    "listings.includeHidden": "Hidden",
+    "watchlist.title": "Watchlist",
+    "watchlist.subtitle": "Saved listings you want to compare or revisit later.",
+    "status.new": "New",
+    "status.notified": "Notified",
+    "status.hidden": "Hidden",
+    "status.seen": "Seen",
+    "sort.dateDesc": "Newest first",
+    "sort.priceAsc": "Price low-high",
+    "sort.priceDesc": "Price high-low",
+    "sort.scoreDesc": "Best score",
+    "view.list": "List",
+    "view.tiles": "Tiles",
+    "settings.telegram": "Telegram",
+    "settings.botToken": "Bot token",
+    "settings.chatId": "Chat ID",
+    "settings.rateLimit": "Global rate limit seconds",
+    "settings.save": "Save settings",
+    "settings.sendTest": "Send test",
+    "settings.password": "Password",
+    "settings.passwordSubtitle": "Change the local admin password for this app.",
+    "settings.currentPassword": "Current password",
+    "settings.newPassword": "New password",
+    "settings.repeatPassword": "Repeat new password",
+    "settings.changePassword": "Change password",
+    "empty.noRuns": "No runs yet",
+    "empty.noRunsHint": "Create a profile and run it manually.",
+    "empty.noProfiles": "No profiles",
+    "empty.noProfilesHint": "Add the first search URL on the right.",
+    "empty.sourceProfiles": "No {source} profiles yet",
+    "empty.noListings": "No listings",
+    "empty.noListingsHint": "Adjust filters or run a profile.",
+    "empty.noWatchlist": "No watchlisted listings",
+    "empty.noWatchlistHint": "Use the star button on a listing to save it here.",
+    "listing.noImage": "No image available",
+    "listing.noPrice": "no price",
+    "listing.noLocation": "no location",
+    "listing.score": "score {score}",
+    "listing.addWatchlist": "Watch",
+    "listing.removeWatchlist": "Remove",
+    "listing.seen": "Seen",
+    "listing.hide": "Hide",
+    "listing.new": "New",
+    "toast.passwordMismatch": "New passwords do not match",
+    "toast.passwordChanged": "Password changed",
+    "toast.profileSaved": "Profile saved",
+    "toast.saveProfileFirst": "Save a profile first",
+    "toast.runStarted": "Run started",
+    "toast.runComplete": "Run complete: {new} new, {hidden} hidden, {duplicates} duplicate",
+    "toast.profileDeleted": "Profile deleted",
+    "toast.searchRequired": "Search term is required",
+    "toast.settingsSaved": "Settings saved",
+    "toast.telegramSent": "Telegram test sent",
+  },
+  de: {
+    "brand.subtitle": "selbst gehosteter Anzeigen-Watcher",
+    "nav.dashboard": "Dashboard",
+    "nav.profiles": "Suchprofile",
+    "nav.listings": "Listings",
+    "nav.watchlist": "Watchlist",
+    "nav.settings": "Einstellungen",
+    "top.eyebrow": "Lokaler Marketplace-Watcher",
+    "action.refresh": "Aktualisieren",
+    "action.logout": "Abmelden",
+    "action.delete": "Löschen",
+    "summary.activeProfiles": "Aktive Profile",
+    "summary.newListings": "Neue Listings",
+    "summary.watchlist": "Watchlist",
+    "summary.hidden": "Ausgeblendet",
+    "summary.notified": "Benachrichtigt",
+    "summary.runErrors": "Run-Fehler",
+    "dashboard.recentRuns": "Letzte Runs",
+    "profiles.title": "Suchprofile",
+    "profiles.subtitle": "Gespeicherte Suchen, die wiederholt laufen können.",
+    "profiles.editorSubtitle": "Profil geführt erstellen oder manuelle Filter feinjustieren.",
+    "profiles.guidedSetup": "Geführtes Setup",
+    "profiles.manual": "Manuell",
+    "profiles.all": "Alle Profile",
+    "profile.new": "Neues Profil",
+    "profile.edit": "Profil bearbeiten",
+    "profile.searchTitle": "Suche",
+    "profile.searchSubtitle": "Name und Quell-URL",
+    "profile.name": "Name",
+    "profile.source": "Quelle",
+    "profile.searchUrl": "Such-URL",
+    "profile.filtersTitle": "Marketplace-Filter",
+    "profile.filtersSubtitle": "Lokale Filter nach dem Abruf der Suchseite",
+    "profile.locationHint": "Ortshinweis",
+    "profile.minPrice": "Mindestpreis",
+    "profile.maxPrice": "Maximalpreis",
+    "profile.minPriceShort": "Min.",
+    "profile.maxPriceShort": "Max.",
+    "profile.pollInterval": "Abrufintervall",
+    "profile.keywordTitle": "Keyword-Regeln",
+    "profile.keywordSubtitle": "Begriffe matchen, erzwingen oder ausblenden",
+    "profile.include": "Einschließen",
+    "profile.required": "Erforderlich",
+    "profile.exclude": "Ausschließen",
+    "profile.hiddenCategories": "Ausgeblendete Kategorien",
+    "profile.save": "Profil speichern",
+    "profile.runNow": "Jetzt ausführen",
+    "wizard.title": "Geführtes Setup",
+    "wizard.subtitle": "Profil aus wenigen Marketplace-Filtern erstellen",
+    "wizard.query": "Was soll gefunden werden?",
+    "wizard.maxPrice": "Maximalpreis",
+    "wizard.location": "Ort",
+    "wizard.mustInclude": "Muss enthalten",
+    "wizard.hideWords": "Wörter ausblenden",
+    "wizard.create": "Profil erstellen",
+    "wizard.manualForm": "Manuelles Formular",
+    "form.backgroundPolling": "Automatisch abrufen",
+    "form.telegram": "Telegram",
+    "form.telegramNotifications": "Telegram-Benachrichtigungen",
+    "listings.title": "Listings durchsuchen",
+    "listings.subtitle": "Scrollen, filtern, zwischen Liste und Kacheln wechseln oder Original öffnen.",
+    "listings.searchPlaceholder": "Titel, Ort, Kategorie suchen",
+    "listings.allStatuses": "Alle Status",
+    "listings.includeHidden": "Ausgeblendete",
+    "watchlist.title": "Watchlist",
+    "watchlist.subtitle": "Gespeicherte Listings zum Vergleichen oder späteren Öffnen.",
+    "status.new": "Neu",
+    "status.notified": "Benachrichtigt",
+    "status.hidden": "Ausgeblendet",
+    "status.seen": "Gesehen",
+    "sort.dateDesc": "Neueste zuerst",
+    "sort.priceAsc": "Preis niedrig-hoch",
+    "sort.priceDesc": "Preis hoch-niedrig",
+    "sort.scoreDesc": "Bester Score",
+    "view.list": "Liste",
+    "view.tiles": "Kacheln",
+    "settings.telegram": "Telegram",
+    "settings.botToken": "Bot-Token",
+    "settings.chatId": "Chat-ID",
+    "settings.rateLimit": "Globales Rate-Limit in Sekunden",
+    "settings.save": "Einstellungen speichern",
+    "settings.sendTest": "Test senden",
+    "settings.password": "Passwort",
+    "settings.passwordSubtitle": "Lokales Admin-Passwort für diese App ändern.",
+    "settings.currentPassword": "Aktuelles Passwort",
+    "settings.newPassword": "Neues Passwort",
+    "settings.repeatPassword": "Neues Passwort wiederholen",
+    "settings.changePassword": "Passwort ändern",
+    "empty.noRuns": "Noch keine Runs",
+    "empty.noRunsHint": "Erstelle ein Profil und starte es manuell.",
+    "empty.noProfiles": "Keine Profile",
+    "empty.noProfilesHint": "Lege rechts die erste Such-URL an.",
+    "empty.sourceProfiles": "Noch keine {source}-Profile",
+    "empty.noListings": "Keine Listings",
+    "empty.noListingsHint": "Filter anpassen oder Profil ausführen.",
+    "empty.noWatchlist": "Keine Watchlist-Listings",
+    "empty.noWatchlistHint": "Speichere Listings über den Stern-Button hier.",
+    "listing.noImage": "Kein Bild verfügbar",
+    "listing.noPrice": "kein Preis",
+    "listing.noLocation": "kein Ort",
+    "listing.score": "Score {score}",
+    "listing.addWatchlist": "Merken",
+    "listing.removeWatchlist": "Entfernen",
+    "listing.seen": "Gesehen",
+    "listing.hide": "Ausblenden",
+    "listing.new": "Neu",
+    "toast.passwordMismatch": "Neue Passwörter stimmen nicht überein",
+    "toast.passwordChanged": "Passwort geändert",
+    "toast.profileSaved": "Profil gespeichert",
+    "toast.saveProfileFirst": "Speichere zuerst ein Profil",
+    "toast.runStarted": "Run gestartet",
+    "toast.runComplete": "Run fertig: {new} neu, {hidden} ausgeblendet, {duplicates} Duplikate",
+    "toast.profileDeleted": "Profil gelöscht",
+    "toast.searchRequired": "Suchbegriff ist erforderlich",
+    "toast.settingsSaved": "Einstellungen gespeichert",
+    "toast.telegramSent": "Telegram-Test gesendet",
+  },
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -10,6 +248,9 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 document.addEventListener("DOMContentLoaded", () => {
   bindNavigation();
   bindForms();
+  $("#language-select").value = state.language;
+  applyTranslations();
+  $("#view-title").textContent = t("nav.dashboard");
   refreshAll();
 });
 
@@ -19,6 +260,7 @@ function bindNavigation() {
   });
   $("#refresh-button").addEventListener("click", refreshAll);
   $("#logout-button").addEventListener("click", logout);
+  $("#language-select").addEventListener("change", () => setLanguage($("#language-select").value));
   $("#wizard-button").addEventListener("click", () => showWizard(true));
   $("#wizard-cancel-button").addEventListener("click", () => showWizard(false));
   $("#new-profile-button").addEventListener("click", () => editProfile(null));
@@ -71,20 +313,22 @@ function bindForms() {
 function showView(view) {
   $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === view));
   $$(".view").forEach((item) => item.classList.toggle("active", item.id === `${view}-view`));
-  $("#view-title").textContent = {
-    dashboard: "Dashboard",
-    profiles: "Search profiles",
-    listings: "Listings",
-    settings: "Settings",
-  }[view];
+  $("#view-title").textContent = t({
+    dashboard: "nav.dashboard",
+    profiles: "nav.profiles",
+    listings: "nav.listings",
+    watchlist: "nav.watchlist",
+    settings: "nav.settings",
+  }[view]);
   if (view === "listings") loadListings();
+  if (view === "watchlist") loadWatchlist();
 }
 
 function showWizard(visible) {
   $("#profile-wizard").classList.toggle("hidden", !visible);
   $("#profile-form").classList.toggle("hidden", visible);
   if (visible) {
-    $("#profile-form-title").textContent = "Guided setup";
+    $("#profile-form-title").textContent = t("wizard.title");
     $("#wizard-query").focus();
   } else {
     editProfile(null);
@@ -93,7 +337,7 @@ function showWizard(visible) {
 
 async function refreshAll() {
   try {
-    await Promise.all([loadSummary(), loadProfiles(), loadListings(), loadSettings()]);
+    await Promise.all([loadSummary(), loadProfiles(), loadListings(), loadWatchlist(), loadSettings()]);
   } catch (error) {
     if (String(error.message).includes("Not authenticated") || String(error.message).includes("401")) {
       window.location.href = "/login";
@@ -124,6 +368,7 @@ async function loadSummary() {
   const summary = await api("/api/summary");
   $("#summary-active").textContent = `${summary.profiles_enabled}/${summary.profiles_total}`;
   $("#summary-new").textContent = summary.listings_new;
+  $("#summary-watchlisted").textContent = summary.listings_watchlisted;
   $("#summary-hidden").textContent = summary.listings_hidden;
   $("#summary-notified").textContent = summary.listings_notified;
   $("#summary-errors").textContent = summary.run_errors;
@@ -135,14 +380,14 @@ async function loadSummary() {
         ${run.error_message ? `<p class="meta danger-text">${escapeHtml(run.error_message)}</p>` : ""}
       </article>
     `).join("")
-    : `<article><strong>No runs yet</strong><p class="meta">Create a profile and run it manually.</p></article>`;
+    : `<article><strong>${escapeHtml(t("empty.noRuns"))}</strong><p class="meta">${escapeHtml(t("empty.noRunsHint"))}</p></article>`;
 }
 
 async function loadProfiles() {
   state.profiles = await api("/api/profiles");
   $("#profiles-list").innerHTML = state.profiles.length
     ? groupedProfilesMarkup(state.profiles)
-    : `<article class="profile-card"><h3>No profiles</h3><p class="meta">Add the first search URL on the right.</p></article>`;
+    : `<article class="profile-card"><h3>${escapeHtml(t("empty.noProfiles"))}</h3><p class="meta">${escapeHtml(t("empty.noProfilesHint"))}</p></article>`;
   $$(".profile-card[data-id]").forEach((card) => {
     card.addEventListener("click", () => {
       const profile = state.profiles.find((item) => item.id === Number(card.dataset.id));
@@ -150,7 +395,7 @@ async function loadProfiles() {
     });
   });
   const current = $("#listing-profile-filter").value;
-  $("#listing-profile-filter").innerHTML = `<option value="">All profiles</option>${state.profiles.map((profile) => `
+  $("#listing-profile-filter").innerHTML = `<option value="">${escapeHtml(t("profiles.all"))}</option>${state.profiles.map((profile) => `
     <option value="${profile.id}">${escapeHtml(profile.name)}</option>
   `).join("")}`;
   $("#listing-profile-filter").value = current;
@@ -172,7 +417,7 @@ function groupedProfilesMarkup(profiles) {
         <p class="meta">${profile.enabled ? "enabled" : "paused"} · every ${profile.poll_interval_minutes} min</p>
         <p class="meta">${escapeHtml(profile.search_url)}</p>
       </article>
-        `).join("") : `<article class="profile-empty">No ${escapeHtml(sourceLabel(source))} profiles yet</article>`}
+        `).join("") : `<article class="profile-empty">${escapeHtml(t("empty.sourceProfiles", { source: sourceLabel(source) }))}</article>`}
       </section>
     `;
   }).join("");
@@ -190,7 +435,7 @@ async function changePassword() {
   const current = $("#current-password").value;
   const next = $("#new-password").value;
   const repeated = $("#repeat-password").value;
-  if (next !== repeated) return toast("New passwords do not match");
+  if (next !== repeated) return toast(t("toast.passwordMismatch"));
   await api("/api/settings/password", {
     method: "POST",
     body: JSON.stringify({ current_password: current, new_password: next }),
@@ -198,14 +443,14 @@ async function changePassword() {
   $("#current-password").value = "";
   $("#new-password").value = "";
   $("#repeat-password").value = "";
-  toast("Password changed");
+  toast(t("toast.passwordChanged"));
 }
 
 function editProfile(profile) {
   $("#profile-wizard").classList.add("hidden");
   $("#profile-form").classList.remove("hidden");
   state.selectedProfile = profile;
-  $("#profile-form-title").textContent = profile ? "Edit profile" : "New profile";
+  $("#profile-form-title").textContent = profile ? t("profile.edit") : t("profile.new");
   $("#profile-id").value = profile?.id || "";
   $("#profile-name").value = profile?.name || "";
   $("#profile-source").value = profile?.source_type || "kleinanzeigen";
@@ -227,7 +472,7 @@ function editProfile(profile) {
 
 async function createProfileFromWizard() {
   const query = $("#wizard-query").value.trim();
-  if (!query) return toast("Search term is required");
+  if (!query) return toast(t("toast.searchRequired"));
   $("#profile-id").value = "";
   $("#profile-name").value = `${query} auf Kleinanzeigen`;
   $("#profile-source").value = "kleinanzeigen";
@@ -266,17 +511,17 @@ async function saveProfile() {
     method: id ? "PUT" : "POST",
     body: JSON.stringify(payload),
   });
-  toast("Profile saved");
+  toast(t("toast.profileSaved"));
   editProfile(saved);
   await refreshAll();
 }
 
 async function runSelectedProfile() {
   const id = $("#profile-id").value;
-  if (!id) return toast("Save a profile first");
-  toast("Run started");
+  if (!id) return toast(t("toast.saveProfileFirst"));
+  toast(t("toast.runStarted"));
   const result = await api(`/api/profiles/${id}/run`, { method: "POST" });
-  toast(`Run complete: ${result.new} new, ${result.hidden} hidden, ${result.duplicates} duplicate`);
+  toast(t("toast.runComplete", result));
   await refreshAll();
 }
 
@@ -284,7 +529,7 @@ async function deleteSelectedProfile() {
   const id = $("#profile-id").value;
   if (!id) return;
   await api(`/api/profiles/${id}`, { method: "DELETE" });
-  toast("Profile deleted");
+  toast(t("toast.profileDeleted"));
   editProfile(null);
   await refreshAll();
 }
@@ -312,15 +557,15 @@ function updateFilterPreview() {
   const location = $("#profile-location").value.trim();
   const minPrice = $("#profile-min-price").value;
   const maxPrice = $("#profile-max-price").value;
-  if (location) chips.push(`Ort: ${location}`);
-  if (minPrice) chips.push(`ab ${minPrice} EUR`);
-  if (maxPrice) chips.push(`bis ${maxPrice} EUR`);
-  lines("#profile-required").forEach((item) => chips.push(`muss: ${item}`));
+  if (location) chips.push(`${t("profile.locationHint")}: ${location}`);
+  if (minPrice) chips.push(`${t("profile.minPriceShort")} ${minPrice} EUR`);
+  if (maxPrice) chips.push(`${t("profile.maxPriceShort")} ${maxPrice} EUR`);
+  lines("#profile-required").forEach((item) => chips.push(`${t("profile.required")}: ${item}`));
   lines("#profile-include").slice(0, 5).forEach((item) => chips.push(`match: ${item}`));
-  lines("#profile-exclude").forEach((item) => chips.push(`ausblenden: ${item}`));
-  lines("#profile-categories").forEach((item) => chips.push(`Kategorie aus: ${item}`));
-  chips.push($("#profile-enabled").checked ? "Polling an" : "Polling aus");
-  chips.push($("#profile-notify").checked ? "Telegram an" : "Telegram aus");
+  lines("#profile-exclude").forEach((item) => chips.push(`${t("profile.exclude")}: ${item}`));
+  lines("#profile-categories").forEach((item) => chips.push(`${t("profile.hiddenCategories")}: ${item}`));
+  chips.push($("#profile-enabled").checked ? t("form.backgroundPolling") : "Polling off");
+  chips.push($("#profile-notify").checked ? t("form.telegramNotifications") : "Telegram off");
   $("#profile-filter-preview").innerHTML = chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("");
 }
 
@@ -334,6 +579,16 @@ function updateSourcePlaceholder() {
 }
 
 async function loadListings() {
+  await loadListingBrowser("#listings-table", false);
+}
+
+async function loadWatchlist() {
+  await loadListingBrowser("#watchlist-table", true);
+}
+
+async function loadListingBrowser(containerSelector, watchlistedOnly) {
+  const browser = $(containerSelector);
+  if (!browser) return;
   const status = $("#listing-status-filter").value;
   const profileId = $("#listing-profile-filter").value;
   const search = $("#listing-search-filter").value;
@@ -341,34 +596,45 @@ async function loadListings() {
   const maxPrice = $("#listing-max-price-filter").value;
   const includeHidden = $("#include-hidden").checked;
   const query = new URLSearchParams();
-  if (status) query.set("status", status);
-  if (profileId) query.set("profile_id", profileId);
-  if (search) query.set("q", search);
-  if (minPrice) query.set("min_price", minPrice);
-  if (maxPrice) query.set("max_price", maxPrice);
-  query.set("include_hidden", String(includeHidden));
+  if (!watchlistedOnly) {
+    if (status) query.set("status", status);
+    if (profileId) query.set("profile_id", profileId);
+    if (search) query.set("q", search);
+    if (minPrice) query.set("min_price", minPrice);
+    if (maxPrice) query.set("max_price", maxPrice);
+    query.set("include_hidden", String(includeHidden));
+  }
+  if (watchlistedOnly) query.set("watchlisted", "true");
   const listings = sortListings(await api(`/api/listings?${query}`));
-  const browser = $("#listings-table");
   browser.classList.toggle("grid-view", state.listingView === "grid");
   browser.classList.toggle("list-view", state.listingView !== "grid");
   updateListingViewButtons();
   browser.innerHTML = listings.length
     ? listings.map((listing) => listingMarkup(listing)).join("")
-    : `<article class="listing-card"><strong>No listings</strong><p class="meta">Adjust filters or run a profile.</p></article>`;
-  $$("[data-listing-action]").forEach((button) => {
+    : `<article class="listing-card empty-listing"><strong>${escapeHtml(t(watchlistedOnly ? "empty.noWatchlist" : "empty.noListings"))}</strong><p class="meta">${escapeHtml(t(watchlistedOnly ? "empty.noWatchlistHint" : "empty.noListingsHint"))}</p></article>`;
+  browser.querySelectorAll("[data-listing-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       await api(`/api/listings/${button.dataset.id}`, {
         method: "PATCH",
         body: JSON.stringify({ status: button.dataset.listingAction }),
       });
-      await Promise.all([loadListings(), loadSummary()]);
+      await Promise.all([loadListings(), loadWatchlist(), loadSummary()]);
     });
   });
-  $$(".listing-image").forEach((img) => {
+  browser.querySelectorAll("[data-watchlist-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await api(`/api/listings/${button.dataset.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ watchlisted: button.dataset.watchlistAction === "add" }),
+      });
+      await Promise.all([loadListings(), loadWatchlist(), loadSummary()]);
+    });
+  });
+  browser.querySelectorAll(".listing-image").forEach((img) => {
     img.addEventListener("error", () => {
       const fallback = document.createElement("span");
       fallback.className = "no-image";
-      fallback.textContent = "No image available";
+      fallback.textContent = t("listing.noImage");
       img.replaceWith(fallback);
     });
   });
@@ -378,6 +644,7 @@ function setListingView(view) {
   state.listingView = view === "grid" ? "grid" : "list";
   localStorage.setItem("marketplacelens.listingView", state.listingView);
   loadListings();
+  loadWatchlist();
 }
 
 function updateListingViewButtons() {
@@ -408,35 +675,45 @@ function sortListings(listings) {
 }
 
 function listingMarkup(listing) {
+  const watchlistAction = listing.watchlisted ? "remove" : "add";
+  const watchlistLabel = listing.watchlisted ? t("listing.removeWatchlist") : t("listing.addWatchlist");
   return `
-    <article class="listing-card">
+    <article class="listing-card ${listing.watchlisted ? "watchlisted" : ""}">
       <div class="listing-media">
         ${listing.thumbnail_url ? `
           <img class="listing-image" src="/api/listings/${listing.id}/image" alt="${escapeAttribute(listing.title)}" loading="lazy">
-        ` : `<span class="no-image">No image available</span>`}
+        ` : `<span class="no-image">${escapeHtml(t("listing.noImage"))}</span>`}
       </div>
       <div class="listing-main">
         <div class="listing-title-row">
           <a href="${escapeAttribute(listing.listing_url)}" target="_blank" rel="noopener">${escapeHtml(listing.title)}</a>
-          <span class="pill ${escapeAttribute(listing.status)}">${escapeHtml(listing.status)}</span>
+          <div class="listing-badges">
+            ${listing.watchlisted ? `<span class="pill watchlist-pill">★ ${escapeHtml(t("nav.watchlist"))}</span>` : ""}
+            <span class="pill ${escapeAttribute(listing.status)}">${escapeHtml(statusLabel(listing.status))}</span>
+          </div>
         </div>
-        <strong class="listing-price">${escapeHtml(listing.price_text || "no price")}</strong>
+        <strong class="listing-price">${escapeHtml(listing.price_text || t("listing.noPrice"))}</strong>
         <p class="meta listing-description">${escapeHtml(listing.description_snippet || "")}</p>
         <div class="listing-facts">
           <span>${escapeHtml(listing.profile_name || "")}</span>
-          <span>${escapeHtml(listing.location_text || "no location")}</span>
-          <span>score ${listing.score}</span>
+          <span>${escapeHtml(listing.location_text || t("listing.noLocation"))}</span>
+          <span>${escapeHtml(t("listing.score", { score: listing.score }))}</span>
           <span>${formatDate(listing.first_seen_at)}</span>
         </div>
         ${listing.filter_reason ? `<p class="filter-reason">${escapeHtml(listing.filter_reason)}</p>` : ""}
       </div>
       <div class="row-actions">
-        <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">Seen</button>
-        <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">Hide</button>
-        <button class="mini-button" data-listing-action="new" data-id="${listing.id}">New</button>
+        <button class="mini-button watch-button ${listing.watchlisted ? "active" : ""}" data-watchlist-action="${watchlistAction}" data-id="${listing.id}">${listing.watchlisted ? "★" : "☆"} ${escapeHtml(watchlistLabel)}</button>
+        <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">${escapeHtml(t("listing.seen"))}</button>
+        <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">${escapeHtml(t("listing.hide"))}</button>
+        <button class="mini-button" data-listing-action="new" data-id="${listing.id}">${escapeHtml(t("listing.new"))}</button>
       </div>
     </article>
   `;
+}
+
+function statusLabel(status) {
+  return t(`status.${status}`) || status;
 }
 
 async function loadSettings() {
@@ -455,13 +732,13 @@ async function saveSettings() {
       global_rate_limit_seconds: Number($("#global-rate").value || 20),
     }),
   });
-  toast("Settings saved");
+  toast(t("toast.settingsSaved"));
   await loadSettings();
 }
 
 async function testTelegram() {
   await api("/api/settings/telegram/test", { method: "POST" });
-  toast("Telegram test sent");
+  toast(t("toast.telegramSent"));
 }
 
 function lines(selector) {
@@ -474,7 +751,49 @@ function numberOrNull(selector) {
 }
 
 function formatDate(value) {
-  return value ? new Date(value).toLocaleString() : "never";
+  return value ? new Date(value).toLocaleString(state.language === "de" ? "de-DE" : "en-US") : "never";
+}
+
+function setLanguage(language) {
+  state.language = language === "de" ? "de" : "en";
+  localStorage.setItem("marketplacelens.language", state.language);
+  applyTranslations();
+  const activeView = $(".view.active")?.id?.replace("-view", "") || "dashboard";
+  $("#view-title").textContent = t({
+    dashboard: "nav.dashboard",
+    profiles: "nav.profiles",
+    listings: "nav.listings",
+    watchlist: "nav.watchlist",
+    settings: "nav.settings",
+  }[activeView]);
+  updateFilterPreview();
+  loadSummary();
+  loadProfiles();
+  loadListings();
+  loadWatchlist();
+}
+
+function applyTranslations() {
+  document.documentElement.lang = state.language;
+  $$("[data-i18n]").forEach((node) => {
+    node.textContent = t(node.dataset.i18n);
+  });
+  $$("[data-i18n-placeholder]").forEach((node) => {
+    node.placeholder = t(node.dataset.i18nPlaceholder);
+  });
+  $$("[data-listing-view='list']").forEach((button) => {
+    button.title = t("view.list");
+    button.setAttribute("aria-label", t("view.list"));
+  });
+  $$("[data-listing-view='grid']").forEach((button) => {
+    button.title = t("view.tiles");
+    button.setAttribute("aria-label", t("view.tiles"));
+  });
+}
+
+function t(key, values = {}) {
+  const template = translations[state.language]?.[key] || translations.en[key] || key || "";
+  return template.replace(/\{(\w+)\}/g, (_, name) => values[name] ?? "");
 }
 
 function escapeHtml(value) {
