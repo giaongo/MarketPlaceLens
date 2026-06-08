@@ -800,22 +800,36 @@ textarea.chip-source {
   padding-top: 2px;
 }
 
-.actions,
-.filters {
+.actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
 
-.filters input,
-.filters select {
-  width: auto;
-  min-width: 150px;
+.filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.4fr) repeat(2, minmax(150px, 0.8fr));
+  gap: 10px;
+  align-items: center;
+  width: min(760px, 100%);
 }
 
-#listing-search-filter {
-  min-width: min(360px, 100%);
+.filters input,
+.filters select {
+  width: 100%;
+  min-width: 0;
+}
+
+.filters .switch.compact {
+  justify-self: start;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--muted);
+  padding: 0 12px;
+  white-space: nowrap;
 }
 
 .listing-toolbar {
@@ -922,6 +936,10 @@ textarea.chip-source {
 
 .empty-listing {
   grid-template-columns: 1fr;
+}
+
+.listing-browser.grid-view .empty-listing {
+  grid-column: 1 / -1;
 }
 
 .grid-view .listing-card {

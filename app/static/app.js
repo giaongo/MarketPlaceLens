@@ -1404,6 +1404,7 @@ function formatDate(value) {
 function setLanguage(language) {
   state.language = language === "de" ? "de" : "en";
   localStorage.setItem("marketplacelens.language", state.language);
+  $("#language-select").value = state.language;
   applyTranslations();
   const activeView = $(".view.active")?.id?.replace("-view", "") || "dashboard";
   $("#view-title").textContent = t({
@@ -1425,6 +1426,7 @@ function setLanguage(language) {
 function setTheme(theme) {
   state.theme = theme === "dark" ? "dark" : "light";
   localStorage.setItem("marketplacelens.theme", state.theme);
+  $("#theme-select").value = state.theme;
   applyTheme();
 }
 
