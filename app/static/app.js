@@ -125,6 +125,8 @@ const translations = {
     "listings.searchPlaceholder": "Search title, location, category",
     "listings.allStatuses": "All statuses",
     "listings.includeHidden": "Show hidden",
+    "listings.runSelectedJob": "Run job",
+    "listings.runSelectedJobHint": "Select a job to run it from here.",
     "watchlist.title": "Watchlist",
     "watchlist.subtitle": "Saved listings you want to compare or revisit later.",
     "status.new": "New",
@@ -184,6 +186,7 @@ const translations = {
     "toast.passwordChanged": "Password changed",
     "toast.profileSaved": "Profile saved",
     "toast.saveProfileFirst": "Save a profile first",
+    "toast.selectJobFirst": "Select a job first",
     "toast.runStarted": "Run started",
     "toast.runComplete": "Run complete: {new} new, {hidden} hidden, {duplicates} duplicate",
     "toast.profileDeleted": "Profile deleted",
@@ -308,6 +311,8 @@ const translations = {
     "listings.searchPlaceholder": "Titel, Ort, Kategorie suchen",
     "listings.allStatuses": "Alle Status",
     "listings.includeHidden": "Ausgeblendete anzeigen",
+    "listings.runSelectedJob": "Job starten",
+    "listings.runSelectedJobHint": "Wähle einen Job aus, um ihn hier zu starten.",
     "watchlist.title": "Watchlist",
     "watchlist.subtitle": "Gespeicherte Listings zum Vergleichen oder späteren Öffnen.",
     "status.new": "Neu",
@@ -367,6 +372,7 @@ const translations = {
     "toast.passwordChanged": "Passwort geändert",
     "toast.profileSaved": "Profil gespeichert",
     "toast.saveProfileFirst": "Speichere zuerst ein Profil",
+    "toast.selectJobFirst": "Wähle zuerst einen Job aus",
     "toast.runStarted": "Run gestartet",
     "toast.runComplete": "Run fertig: {new} neu, {hidden} ausgeblendet, {duplicates} Duplikate",
     "toast.profileDeleted": "Profil gelöscht",
@@ -464,7 +470,11 @@ function bindNavigation() {
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
   $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
   $("#listing-status-filter").addEventListener("change", resetListingsPage);
-  $("#listing-profile-filter").addEventListener("change", resetListingsPage);
+  $("#listing-profile-filter").addEventListener("change", () => {
+    updateListingRunButton();
+    resetListingsPage();
+  });
+  $("#run-listing-profile-button").addEventListener("click", runListingProfile);
   $("#listing-search-filter").addEventListener("input", debounce(resetListingsPage, 220));
   $("#listing-min-price-filter").addEventListener("input", debounce(resetListingsPage, 220));
   $("#listing-max-price-filter").addEventListener("input", debounce(resetListingsPage, 220));
@@ -614,6 +624,7 @@ async function loadProfiles() {
     <option value="${profile.id}">${escapeHtml(profile.name)}</option>
   `).join("")}`;
   $("#listing-profile-filter").value = current;
+  updateListingRunButton();
 }
 
 function groupedProfilesMarkup(profiles) {
@@ -876,6 +887,29 @@ async function runSelectedProfile() {
   const result = await api(`/api/profiles/${id}/run`, { method: "POST" });
   toast(t("toast.runComplete", result));
   await refreshAll();
+}
+
+async function runListingProfile() {
+  const id = $("#listing-profile-filter").value;
+  if (!id) return toast(t("toast.selectJobFirst"));
+  $("#run-listing-profile-button").disabled = true;
+  toast(t("toast.runStarted"));
+  try {
+    const result = await api(`/api/profiles/${id}/run`, { method: "POST" });
+    toast(t("toast.runComplete", result));
+    state.listingPage = 0;
+    await refreshAll();
+  } finally {
+    updateListingRunButton();
+  }
+}
+
+function updateListingRunButton() {
+  const button = $("#run-listing-profile-button");
+  if (!button) return;
+  const hasSelection = Boolean($("#listing-profile-filter").value);
+  button.disabled = !hasSelection;
+  button.title = hasSelection ? t("listings.runSelectedJob") : t("listings.runSelectedJobHint");
 }
 
 async function deleteSelectedProfile() {
@@ -1451,6 +1485,7 @@ function applyTranslations() {
     button.title = t("view.tiles");
     button.setAttribute("aria-label", t("view.tiles"));
   });
+  updateListingRunButton();
   syncAllChipInputs();
   renderGuidedFilterRules();
 }

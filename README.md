@@ -14,7 +14,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Generic HTML listing connector for user-supplied search result URLs
 - Source profiles for Kleinanzeigen and Facebook Marketplace URLs
 - Filter engine with explainable hidden reasons
-- Manual run per profile
+- Manual run per profile, including directly from the listing browser for the selected job
 - Background polling with conservative minimum interval
 - Paginated listing history with 5/10/20 items per page, adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails
 - Dedicated watchlist view for saved listings you want to compare or revisit

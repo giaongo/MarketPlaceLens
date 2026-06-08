@@ -809,10 +809,10 @@ textarea.chip-source {
 
 .filters {
   display: grid;
-  grid-template-columns: minmax(240px, 1.4fr) repeat(2, minmax(150px, 0.8fr));
+  grid-template-columns: minmax(220px, 1.2fr) minmax(140px, 0.75fr) minmax(170px, 0.8fr) minmax(140px, 0.75fr);
   gap: 10px;
   align-items: center;
-  width: min(760px, 100%);
+  width: min(860px, 100%);
 }
 
 .filters input,
@@ -822,6 +822,7 @@ textarea.chip-source {
 }
 
 .filters .switch.compact {
+  grid-column: span 2;
   justify-self: start;
   min-height: 40px;
   border: 1px solid var(--line);
@@ -829,7 +830,11 @@ textarea.chip-source {
   background: var(--input-bg);
   color: var(--muted);
   padding: 0 12px;
-  white-space: nowrap;
+}
+
+.filters .filter-action {
+  width: 100%;
+  min-height: 42px;
 }
 
 .listing-toolbar {
@@ -1276,6 +1281,11 @@ textarea.chip-source {
   .filters input,
   .filters select {
     width: 100%;
+  }
+
+  .filters .switch.compact {
+    grid-column: auto;
+    justify-self: stretch;
   }
 
   .listing-card {
