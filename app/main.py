@@ -226,7 +226,7 @@ async def list_listings(
         clauses.append("status = ?")
         values.append(status)
     elif not include_hidden:
-        clauses.append("status != 'hidden'")
+        clauses.append("status NOT IN ('hidden', 'seen')")
     if watchlisted is not None:
         clauses.append("watchlisted = ?")
         values.append(int(watchlisted))

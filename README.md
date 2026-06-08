@@ -20,7 +20,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Manual run per profile, including directly from the listing browser for the selected job
 - One throttled extra check of enabled jobs when the web app is opened
 - Background polling with conservative minimum interval
-- Paginated listing history with 5/10/20 items per page, adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails
+- Paginated listing history with 5/10/20 items per page, adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails; seen and hidden listings drop out of the default active list unless explicitly filtered
 - Tinder-style listing review view with a large image, key facts, double-click watchlisting, and swipe-to-seen queue progression
 - Dedicated watchlist view for saved listings you want to compare or revisit
 - English/German UI language switcher and light/dark theme toggle
