@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MarketPlaceLens Login</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body class="login-page">
+    <main class="login-shell">
+      <section class="login-panel">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <div>
+            <strong>MarketPlaceLens</strong>
+            <small>self-hosted listing watcher</small>
+          </div>
+        </div>
+        <form id="login-form" class="form-grid">
+          <label class="wide">Username<input id="username" autocomplete="username" value="admin"></label>
+          <label class="wide">Password<input id="password" type="password" autocomplete="current-password" value="admin"></label>
+          <button class="button primary wide" type="submit">Sign in</button>
+          <p id="login-error" class="danger-text wide"></p>
+        </form>
+      </section>
+    </main>
+    <script>
+      document.querySelector("#login-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const error = document.querySelector("#login-error");
+        error.textContent = "";
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: document.querySelector("#username").value,
+            password: document.querySelector("#password").value,
+          }),
+        });
+        if (!response.ok) {
+          error.textContent = "Login failed";
+          return;
+        }
+        window.location.href = "/";
+      });
+    </script>
+  </body>
+</html>
+

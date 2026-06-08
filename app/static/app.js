@@ -17,10 +17,15 @@ function bindNavigation() {
     button.addEventListener("click", () => showView(button.dataset.view));
   });
   $("#refresh-button").addEventListener("click", refreshAll);
+  $("#logout-button").addEventListener("click", logout);
   $("#new-profile-button").addEventListener("click", () => editProfile(null));
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
   $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
   $("#listing-status-filter").addEventListener("change", loadListings);
+  $("#listing-profile-filter").addEventListener("change", loadListings);
+  $("#listing-search-filter").addEventListener("input", debounce(loadListings, 220));
+  $("#listing-min-price-filter").addEventListener("input", debounce(loadListings, 220));
+  $("#listing-max-price-filter").addEventListener("input", debounce(loadListings, 220));
   $("#include-hidden").addEventListener("change", loadListings);
 }
 
@@ -49,7 +54,15 @@ function showView(view) {
 }
 
 async function refreshAll() {
-  await Promise.all([loadSummary(), loadProfiles(), loadListings(), loadSettings()]);
+  try {
+    await Promise.all([loadSummary(), loadProfiles(), loadListings(), loadSettings()]);
+  } catch (error) {
+    if (String(error.message).includes("Not authenticated") || String(error.message).includes("401")) {
+      window.location.href = "/login";
+      return;
+    }
+    throw error;
+  }
 }
 
 async function api(path, options = {}) {
@@ -59,9 +72,14 @@ async function api(path, options = {}) {
   });
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || response.statusText);
+    throw new Error(`${response.status} ${message || response.statusText}`);
   }
   return response.json();
+}
+
+async function logout() {
+  await api("/api/auth/logout", { method: "POST" });
+  window.location.href = "/login";
 }
 
 async function loadSummary() {
@@ -99,6 +117,11 @@ async function loadProfiles() {
       editProfile(profile);
     });
   });
+  const current = $("#listing-profile-filter").value;
+  $("#listing-profile-filter").innerHTML = `<option value="">All profiles</option>${state.profiles.map((profile) => `
+    <option value="${profile.id}">${escapeHtml(profile.name)}</option>
+  `).join("")}`;
+  $("#listing-profile-filter").value = current;
 }
 
 function editProfile(profile) {
@@ -171,32 +194,50 @@ function profilePayload() {
 
 async function loadListings() {
   const status = $("#listing-status-filter").value;
+  const profileId = $("#listing-profile-filter").value;
+  const search = $("#listing-search-filter").value;
+  const minPrice = $("#listing-min-price-filter").value;
+  const maxPrice = $("#listing-max-price-filter").value;
   const includeHidden = $("#include-hidden").checked;
   const query = new URLSearchParams();
   if (status) query.set("status", status);
+  if (profileId) query.set("profile_id", profileId);
+  if (search) query.set("q", search);
+  if (minPrice) query.set("min_price", minPrice);
+  if (maxPrice) query.set("max_price", maxPrice);
   query.set("include_hidden", String(includeHidden));
   const listings = await api(`/api/listings?${query}`);
   $("#listings-table").innerHTML = listings.length
     ? listings.map((listing) => `
-      <tr>
-        <td><a href="${escapeAttribute(listing.listing_url)}" target="_blank" rel="noopener">${escapeHtml(listing.title)}</a><p class="meta">${escapeHtml(listing.description_snippet || "")}</p></td>
-        <td>${escapeHtml(listing.profile_name || "")}</td>
-        <td>${escapeHtml(listing.price_text || "")}</td>
-        <td>${escapeHtml(listing.location_text || "")}</td>
-        <td><span class="pill ${escapeAttribute(listing.status)}">${escapeHtml(listing.status)}</span></td>
-        <td>${listing.score}</td>
-        <td>${escapeHtml(listing.filter_reason || "")}</td>
-        <td>${formatDate(listing.first_seen_at)}</td>
-        <td>
-          <div class="row-actions">
-            <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">Seen</button>
-            <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">Hide</button>
-            <button class="mini-button" data-listing-action="new" data-id="${listing.id}">New</button>
+      <article class="listing-card">
+        <div class="listing-media">
+          ${listing.thumbnail_url ? `
+            <button class="image-load" data-image-src="${escapeAttribute(listing.thumbnail_url)}" data-image-alt="${escapeAttribute(listing.title)}">Load image</button>
+          ` : `<span class="no-image">No image</span>`}
+        </div>
+        <div class="listing-main">
+          <div class="listing-title-row">
+            <a href="${escapeAttribute(listing.listing_url)}" target="_blank" rel="noopener">${escapeHtml(listing.title)}</a>
+            <span class="pill ${escapeAttribute(listing.status)}">${escapeHtml(listing.status)}</span>
           </div>
-        </td>
-      </tr>
+          <p class="meta">${escapeHtml(listing.description_snippet || "")}</p>
+          <div class="listing-facts">
+            <span>${escapeHtml(listing.profile_name || "")}</span>
+            <span>${escapeHtml(listing.price_text || "no price")}</span>
+            <span>${escapeHtml(listing.location_text || "no location")}</span>
+            <span>score ${listing.score}</span>
+            <span>${formatDate(listing.first_seen_at)}</span>
+          </div>
+          ${listing.filter_reason ? `<p class="filter-reason">${escapeHtml(listing.filter_reason)}</p>` : ""}
+        </div>
+        <div class="row-actions">
+          <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">Seen</button>
+          <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">Hide</button>
+          <button class="mini-button" data-listing-action="new" data-id="${listing.id}">New</button>
+        </div>
+      </article>
     `).join("")
-    : `<tr><td colspan="9">No listings yet.</td></tr>`;
+    : `<article class="listing-card"><strong>No listings</strong><p class="meta">Adjust filters or run a profile.</p></article>`;
   $$("[data-listing-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       await api(`/api/listings/${button.dataset.id}`, {
@@ -204,6 +245,21 @@ async function loadListings() {
         body: JSON.stringify({ status: button.dataset.listingAction }),
       });
       await Promise.all([loadListings(), loadSummary()]);
+    });
+  });
+  $$(".image-load").forEach((button) => {
+    button.addEventListener("click", () => {
+      const img = document.createElement("img");
+      img.src = button.dataset.imageSrc;
+      img.alt = button.dataset.imageAlt;
+      img.loading = "lazy";
+      img.addEventListener("error", () => {
+        const fallback = document.createElement("span");
+        fallback.className = "no-image";
+        fallback.textContent = "Image unavailable";
+        img.replaceWith(fallback);
+      });
+      button.replaceWith(img);
     });
   });
 }
@@ -266,4 +322,12 @@ function toast(message) {
   node.classList.add("visible");
   clearTimeout(window.toastTimer);
   window.toastTimer = setTimeout(() => node.classList.remove("visible"), 3600);
+}
+
+function debounce(callback, delay) {
+  let timer;
+  return () => {
+    clearTimeout(timer);
+    timer = setTimeout(callback, delay);
+  };
 }

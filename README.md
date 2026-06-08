@@ -7,12 +7,13 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Docker Compose deployment
 - Local SQLite database
 - LanLens-inspired web UI
+- Single-user login for the local web UI
 - Search profiles with enable/disable, polling interval, source URL, price limits, keyword filters, category filters, and Telegram toggle
 - Generic HTML listing connector for user-supplied search result URLs
 - Filter engine with explainable hidden reasons
 - Manual run per profile
 - Background polling with conservative minimum interval
-- Listing history with hidden/new/notified/seen states
+- Scrollable listing history with adjustable filters, hidden/new/notified/seen states, and click-to-load thumbnails
 - Telegram settings and test message
 
 ## Compliance Boundaries
@@ -42,6 +43,14 @@ Open:
 http://localhost:8091
 ```
 
+Default local login:
+
+```text
+admin / admin
+```
+
+Set `MARKETPLACELENS_ADMIN_USERNAME`, `MARKETPLACELENS_ADMIN_PASSWORD`, and `MARKETPLACELENS_SESSION_SECRET` in `.env` for real use.
+
 ## Configuration
 
 The UI can store Telegram settings in SQLite. Environment variables can seed first-run defaults:
@@ -51,6 +60,9 @@ TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
 MARKETPLACELENS_MIN_POLL_MINUTES=30
 MARKETPLACELENS_DEFAULT_POLL_MINUTES=60
+MARKETPLACELENS_ADMIN_USERNAME=admin
+MARKETPLACELENS_ADMIN_PASSWORD=admin
+MARKETPLACELENS_SESSION_SECRET=change-this-long-random-value
 ```
 
 ## Architecture
@@ -90,3 +102,4 @@ Runtime dependencies are commonly used permissive packages:
 
 No scraping, browser automation, proxy, CAPTCHA, or paid third-party SDK dependency is included in this MVP.
 
+Listing images are not mirrored locally. If a connector finds a thumbnail URL, the UI shows a "Load image" button and only requests the remote image after the user clicks it.

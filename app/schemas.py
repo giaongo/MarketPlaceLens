@@ -28,3 +28,7 @@ class SettingsPayload(BaseModel):
     telegram_chat_id: str = ""
     global_rate_limit_seconds: int = Field(default=20, ge=5, le=3600)
 
+
+class LoginPayload(BaseModel):
+    username: str
+    password: str

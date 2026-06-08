@@ -6,20 +6,32 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from .auth import COOKIE_NAME, create_session, valid_credentials, valid_session
 from .config import settings
 from .connectors import ListingCandidate, get_connector
 from .database import connect, encode_list, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import apply_filters
 from .notifier import TelegramNotifier
-from .schemas import ListingStatusPayload, ProfilePayload, SettingsPayload
+from .schemas import ListingStatusPayload, LoginPayload, ProfilePayload, SettingsPayload
 
 app = FastAPI(title="MarketPlaceLens", version="0.1.0")
 static_dir = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+
+@app.middleware("http")
+async def require_session(request: Request, call_next):
+    path = request.url.path
+    public = path.startswith("/static/") or path in {"/login", "/api/auth/login", "/api/auth/status"}
+    if public or valid_session(request.cookies.get(COOKIE_NAME)):
+        return await call_next(request)
+    if path.startswith("/api/"):
+        return JSONResponse({"detail": "Not authenticated"}, status_code=401)
+    return RedirectResponse("/login", status_code=303)
 
 
 @app.on_event("startup")
@@ -32,6 +44,36 @@ async def startup() -> None:
 @app.get("/")
 async def index() -> FileResponse:
     return FileResponse(static_dir / "index.html")
+
+
+@app.get("/login")
+async def login_page() -> FileResponse:
+    return FileResponse(static_dir / "login.html")
+
+
+@app.post("/api/auth/login")
+async def login(payload: LoginPayload, response: Response) -> dict[str, bool]:
+    if not valid_credentials(payload.username, payload.password):
+        raise HTTPException(401, "Invalid login")
+    response.set_cookie(
+        COOKIE_NAME,
+        create_session(payload.username),
+        httponly=True,
+        samesite="lax",
+        max_age=60 * 60 * 24 * 14,
+    )
+    return {"ok": True}
+
+
+@app.post("/api/auth/logout")
+async def logout(response: Response) -> dict[str, bool]:
+    response.delete_cookie(COOKIE_NAME)
+    return {"ok": True}
+
+
+@app.get("/api/auth/status")
+async def auth_status(request: Request) -> dict[str, bool]:
+    return {"authenticated": valid_session(request.cookies.get(COOKIE_NAME))}
 
 
 @app.get("/api/summary")
@@ -142,6 +184,9 @@ async def list_listings(
     profile_id: int | None = None,
     status: str | None = None,
     include_hidden: bool = True,
+    q: str | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
 ) -> list[dict[str, Any]]:
     clauses: list[str] = []
     values: list[Any] = []
@@ -153,6 +198,16 @@ async def list_listings(
         values.append(status)
     elif not include_hidden:
         clauses.append("status != 'hidden'")
+    if q:
+        clauses.append("(listings.title LIKE ? OR listings.description_snippet LIKE ? OR listings.location_text LIKE ? OR listings.category_text LIKE ?)")
+        like = f"%{q}%"
+        values.extend([like, like, like, like])
+    if min_price is not None:
+        clauses.append("(price_value IS NULL OR price_value >= ?)")
+        values.append(min_price)
+    if max_price is not None:
+        clauses.append("(price_value IS NULL OR price_value <= ?)")
+        values.append(max_price)
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     with connect() as db:
         rows = db.execute(

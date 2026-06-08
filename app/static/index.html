@@ -29,7 +29,10 @@
           <p class="eyebrow">Local marketplace watcher</p>
           <h1 id="view-title">Dashboard</h1>
         </div>
-        <button id="refresh-button" class="button ghost">Refresh</button>
+        <div class="top-actions">
+          <button id="refresh-button" class="button ghost">Refresh</button>
+          <button id="logout-button" class="button ghost">Logout</button>
+        </div>
       </header>
 
       <section id="dashboard-view" class="view active">
@@ -111,6 +114,10 @@
           <div class="panel-heading">
             <h2>Listing history</h2>
             <div class="filters">
+              <input id="listing-search-filter" placeholder="Search title, location, category">
+              <select id="listing-profile-filter">
+                <option value="">All profiles</option>
+              </select>
               <select id="listing-status-filter">
                 <option value="">All statuses</option>
                 <option value="new">New</option>
@@ -118,27 +125,12 @@
                 <option value="hidden">Hidden</option>
                 <option value="seen">Seen</option>
               </select>
+              <input id="listing-min-price-filter" type="number" step="0.01" placeholder="Min">
+              <input id="listing-max-price-filter" type="number" step="0.01" placeholder="Max">
               <label class="switch compact"><input id="include-hidden" type="checkbox" checked> Hidden</label>
             </div>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Profile</th>
-                  <th>Price</th>
-                  <th>Location</th>
-                  <th>Status</th>
-                  <th>Score</th>
-                  <th>Reason</th>
-                  <th>Seen</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="listings-table"></tbody>
-            </table>
-          </div>
+          <div id="listings-table" class="listing-browser"></div>
         </section>
       </section>
 
