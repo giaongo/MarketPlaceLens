@@ -64,6 +64,7 @@ def init_db() -> None:
               location_hint TEXT NOT NULL DEFAULT '',
               notify_telegram INTEGER NOT NULL DEFAULT 1,
               notify_webhook INTEGER NOT NULL DEFAULT 0,
+              user_id INTEGER REFERENCES users(id),
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL,
               last_run_at TEXT
@@ -145,7 +146,9 @@ def init_db() -> None:
         ensure_column(db, "listings", "watchlisted", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "listings", "user_hidden", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "watch_profiles", "notify_webhook", "INTEGER NOT NULL DEFAULT 0")
+        ensure_column(db, "watch_profiles", "user_id", "INTEGER REFERENCES users(id)")
         ensure_admin_user(db)
+        assign_unowned_profiles_to_admin(db)
         default_watchlist_id = ensure_default_watchlist(db)
         db.execute(
             """
@@ -226,6 +229,13 @@ def ensure_admin_user(db: sqlite3.Connection) -> None:
         """,
         (settings.admin_username, password_hash, now, now),
     )
+
+
+def assign_unowned_profiles_to_admin(db: sqlite3.Connection) -> None:
+    row = db.execute("SELECT id FROM users WHERE role = 'admin' ORDER BY id LIMIT 1").fetchone()
+    if not row:
+        return
+    db.execute("UPDATE watch_profiles SET user_id = ? WHERE user_id IS NULL", (row["id"],))
 
 
 def hash_password_for_bootstrap(password: str) -> str:

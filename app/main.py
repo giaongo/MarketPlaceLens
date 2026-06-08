@@ -188,11 +188,20 @@ async def delete_user(user_id: int, request: Request) -> dict[str, bool]:
 
 
 @app.get("/api/summary")
-async def summary() -> dict[str, Any]:
+async def summary(request: Request) -> dict[str, Any]:
+    user = request_user(request)
+    profile_clause, profile_values_for_user = profile_owner_filter(user, "watch_profiles")
+    profile_where = f"WHERE {profile_clause}" if profile_clause else ""
+    listing_clause, listing_values_for_user = profile_owner_filter(user, "watch_profiles")
+    listing_where = f"WHERE {listing_clause}" if listing_clause else ""
+    runs_where = f"WHERE {profile_clause}" if profile_clause else ""
     with connect() as db:
-        profiles = db.execute("SELECT COUNT(*) total, SUM(enabled) enabled FROM watch_profiles").fetchone()
+        profiles = db.execute(
+            f"SELECT COUNT(*) total, SUM(enabled) enabled FROM watch_profiles {profile_where}",
+            profile_values_for_user,
+        ).fetchone()
         listings = db.execute(
-            """
+            f"""
             SELECT
               COUNT(*) total,
               SUM(status = 'new') new_count,
@@ -200,18 +209,35 @@ async def summary() -> dict[str, Any]:
               SUM(status = 'notified') notified_count,
               SUM(watchlisted = 1) watchlisted_count
             FROM listings
+            JOIN watch_profiles ON watch_profiles.id = listings.profile_id
+            {listing_where}
             """
+            ,
+            listing_values_for_user,
         ).fetchone()
         recent_runs = db.execute(
-            """
+            f"""
             SELECT run_logs.*, watch_profiles.enabled
             FROM run_logs
             LEFT JOIN watch_profiles ON watch_profiles.id = run_logs.profile_id
+            {runs_where}
             ORDER BY finished_at DESC
             LIMIT 5
-            """
+            """,
+            profile_values_for_user,
         ).fetchall()
-        errors = db.execute("SELECT COUNT(*) count FROM run_logs WHERE status = 'error'").fetchone()
+        error_clause = "run_logs.status = 'error'"
+        if profile_clause:
+            error_clause += f" AND {profile_clause}"
+        errors = db.execute(
+            f"""
+            SELECT COUNT(*) count
+            FROM run_logs
+            LEFT JOIN watch_profiles ON watch_profiles.id = run_logs.profile_id
+            WHERE {error_clause}
+            """,
+            profile_values_for_user,
+        ).fetchone()
     return {
         "profiles_total": profiles["total"] or 0,
         "profiles_enabled": profiles["enabled"] or 0,
@@ -226,15 +252,18 @@ async def summary() -> dict[str, Any]:
 
 
 @app.get("/api/profiles")
-async def list_profiles() -> list[dict[str, Any]]:
+async def list_profiles(request: Request) -> list[dict[str, Any]]:
+    user = request_user(request)
+    owner_clause, values = profile_owner_filter(user)
+    where = f"WHERE {owner_clause}" if owner_clause else ""
     with connect() as db:
-        rows = db.execute("SELECT * FROM watch_profiles ORDER BY updated_at DESC").fetchall()
+        rows = db.execute(f"SELECT * FROM watch_profiles {where} ORDER BY updated_at DESC", values).fetchall()
     return [row_to_profile(row) for row in rows]
 
 
 @app.post("/api/profiles")
 async def create_profile(payload: ProfilePayload, request: Request) -> dict[str, Any]:
-    require_admin(request)
+    user = request_user(request)
     now = utc_now()
     profile = payload.model_dump()
     profile["search_url"] = str(profile["search_url"])
@@ -246,10 +275,10 @@ async def create_profile(payload: ProfilePayload, request: Request) -> dict[str,
             INSERT INTO watch_profiles(
               name, enabled, source_type, search_url, poll_interval_minutes,
               include_keywords, exclude_keywords, required_keywords, excluded_categories,
-              min_price, max_price, location_hint, notify_telegram, notify_webhook, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              min_price, max_price, location_hint, notify_telegram, notify_webhook, user_id, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            profile_values(profile, now),
+            profile_values(profile, now, user["id"]),
         )
         row = db.execute("SELECT * FROM watch_profiles WHERE id = ?", (cursor.lastrowid,)).fetchone()
     return row_to_profile(row)
@@ -257,13 +286,15 @@ async def create_profile(payload: ProfilePayload, request: Request) -> dict[str,
 
 @app.put("/api/profiles/{profile_id}")
 async def update_profile(profile_id: int, payload: ProfilePayload, request: Request) -> dict[str, Any]:
-    require_admin(request)
+    user = request_user(request)
     now = utc_now()
     profile = payload.model_dump()
     profile["search_url"] = str(profile["search_url"])
     profile["poll_interval_minutes"] = max(settings.min_poll_minutes, profile["poll_interval_minutes"])
     validate_profile_search_url(profile)
     with connect() as db:
+        if not can_access_profile(db, profile_id, user):
+            raise HTTPException(404, "Profile not found")
         db.execute(
             """
             UPDATE watch_profiles SET
@@ -284,8 +315,10 @@ async def update_profile(profile_id: int, payload: ProfilePayload, request: Requ
 
 @app.delete("/api/profiles/{profile_id}")
 async def delete_profile(profile_id: int, request: Request) -> dict[str, bool]:
-    require_admin(request)
+    user = request_user(request)
     with connect() as db:
+        if not can_access_profile(db, profile_id, user):
+            raise HTTPException(404, "Profile not found")
         cursor = db.execute("DELETE FROM watch_profiles WHERE id = ?", (profile_id,))
     if cursor.rowcount == 0:
         raise HTTPException(404, "Profile not found")
@@ -294,7 +327,10 @@ async def delete_profile(profile_id: int, request: Request) -> dict[str, bool]:
 
 @app.post("/api/profiles/{profile_id}/run")
 async def run_profile_endpoint(profile_id: int, request: Request) -> dict[str, Any]:
-    require_admin(request)
+    user = request_user(request)
+    with connect() as db:
+        if not can_access_profile(db, profile_id, user):
+            raise HTTPException(404, "Profile not found")
     return await run_profile(profile_id)
 
 
@@ -354,6 +390,7 @@ async def create_watchlist(payload: WatchlistPayload) -> dict[str, Any]:
 
 @app.get("/api/listings")
 async def list_listings(
+    request: Request,
     profile_id: int | None = None,
     status: str | None = None,
     watchlisted: bool | None = None,
@@ -366,8 +403,13 @@ async def list_listings(
     offset: int = 0,
     paged: bool = False,
 ) -> list[dict[str, Any]] | dict[str, Any]:
+    user = request_user(request)
     clauses: list[str] = []
     values: list[Any] = []
+    owner_clause, owner_values = profile_owner_filter(user, "watch_profiles")
+    if owner_clause:
+        clauses.append(owner_clause)
+        values.extend(owner_values)
     if profile_id:
         clauses.append("profile_id = ?")
         values.append(profile_id)
@@ -426,9 +468,10 @@ async def list_listings(
 
 
 @app.patch("/api/listings/{listing_id}")
-async def update_listing_status(listing_id: int, payload: ListingStatusPayload) -> dict[str, Any]:
+async def update_listing_status(listing_id: int, payload: ListingStatusPayload, request: Request) -> dict[str, Any]:
+    user = request_user(request)
     with connect() as db:
-        if not db.execute("SELECT id FROM listings WHERE id = ?", (listing_id,)).fetchone():
+        if not can_access_listing(db, listing_id, user):
             raise HTTPException(404, "Listing not found")
         updates: list[str] = []
         values: list[Any] = []
@@ -455,8 +498,11 @@ async def update_listing_status(listing_id: int, payload: ListingStatusPayload) 
 
 
 @app.get("/api/listings/{listing_id}/image")
-async def listing_image(listing_id: int) -> Response:
+async def listing_image(listing_id: int, request: Request) -> Response:
+    user = request_user(request)
     with connect() as db:
+        if not can_access_listing(db, listing_id, user):
+            raise HTTPException(404, "Listing not found")
         row = db.execute("SELECT thumbnail_url FROM listings WHERE id = ?", (listing_id,)).fetchone()
     if not row:
         raise HTTPException(404, "Listing not found")
@@ -485,8 +531,11 @@ async def listing_image(listing_id: int) -> Response:
 
 
 @app.post("/api/listings/{listing_id}/inquiry")
-async def generate_listing_inquiry(listing_id: int, payload: InquiryPayload) -> dict[str, str]:
+async def generate_listing_inquiry(listing_id: int, payload: InquiryPayload, request: Request) -> dict[str, str]:
+    user = request_user(request)
     with connect() as db:
+        if not can_access_listing(db, listing_id, user):
+            raise HTTPException(404, "Listing not found")
         listing_row = db.execute(
             """
             SELECT listings.*, watch_profiles.name profile_name
@@ -712,7 +761,7 @@ def get_global_rate_limit() -> int:
         return 20
 
 
-def profile_values(profile: dict[str, Any], now: str, include_created: bool = True) -> tuple[Any, ...]:
+def profile_values(profile: dict[str, Any], now: str, user_id: int | None = None, include_created: bool = True) -> tuple[Any, ...]:
     values = (
         profile["name"],
         int(profile["enabled"]),
@@ -730,7 +779,7 @@ def profile_values(profile: dict[str, Any], now: str, include_created: bool = Tr
         int(profile["notify_webhook"]),
     )
     if include_created:
-        return values + (now, now)
+        return values + (user_id, now, now)
     return values + (now,)
 
 
@@ -753,6 +802,42 @@ def get_setting(db, key: str) -> str:
 def count_enabled_admins(db: sqlite3.Connection) -> int:
     row = db.execute("SELECT COUNT(*) count FROM users WHERE role = 'admin' AND enabled = 1").fetchone()
     return int(row["count"] if row else 0)
+
+
+def profile_owner_filter(user: dict[str, Any], alias: str = "watch_profiles") -> tuple[str, list[Any]]:
+    if user.get("role") == "admin":
+        return "", []
+    return f"{alias}.user_id = ?", [user["id"]]
+
+
+def can_access_profile(db: sqlite3.Connection, profile_id: int, user: dict[str, Any]) -> bool:
+    clause, values = profile_owner_filter(user, "watch_profiles")
+    clauses = ["id = ?"]
+    query_values: list[Any] = [profile_id]
+    if clause:
+        clauses.append(clause)
+        query_values.extend(values)
+    row = db.execute(f"SELECT id FROM watch_profiles WHERE {' AND '.join(clauses)}", query_values).fetchone()
+    return bool(row)
+
+
+def can_access_listing(db: sqlite3.Connection, listing_id: int, user: dict[str, Any]) -> bool:
+    clause, values = profile_owner_filter(user, "watch_profiles")
+    clauses = ["listings.id = ?"]
+    query_values: list[Any] = [listing_id]
+    if clause:
+        clauses.append(clause)
+        query_values.extend(values)
+    row = db.execute(
+        f"""
+        SELECT listings.id
+        FROM listings
+        JOIN watch_profiles ON watch_profiles.id = listings.profile_id
+        WHERE {' AND '.join(clauses)}
+        """,
+        query_values,
+    ).fetchone()
+    return bool(row)
 
 
 def valid_watchlist_id(db: sqlite3.Connection, watchlist_id: int | None) -> int:

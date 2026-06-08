@@ -26,7 +26,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Multiple user-created watchlists, including a settings-controlled default watchlist for the normal Watch action and a per-listing dropdown to choose or create a list
 - Optional AI-generated inquiry texts per listing with OpenAI API, Ollama, or LM Studio compatible chat-completions providers and configurable tone (`very polite`, `normal`, `cheeky`)
 - Dedicated watchlist view for saved listings you want to compare or revisit
-- Categorized Settings with Admin-only areas for jobs, notifications, AI, watchlists, and user/role management; normal users can use listings and change their own password but cannot change global configuration
+- Categorized Settings with Admin-only areas for notifications, AI, watchlists, and user/role management; normal users can create and manage their own jobs, use listings, and change their own password, but cannot change global configuration
 - English/German UI language switcher and light/dark theme toggle
 - Telegram and webhook settings with test messages
 
@@ -77,7 +77,7 @@ admin / admin
 
 Set `MARKETPLACELENS_ADMIN_USERNAME`, `MARKETPLACELENS_ADMIN_PASSWORD`, and `MARKETPLACELENS_SESSION_SECRET` in `.env` for real use.
 
-On first start, MarketPlaceLens bootstraps an admin user from `MARKETPLACELENS_ADMIN_USERNAME` and `MARKETPLACELENS_ADMIN_PASSWORD`. Admins can create more users and choose between `admin` and `user` roles from Settings. Normal users can use the listing and watchlist workflow, but cannot edit global app configuration, jobs, provider settings, or other users.
+On first start, MarketPlaceLens bootstraps an admin user from `MARKETPLACELENS_ADMIN_USERNAME` and `MARKETPLACELENS_ADMIN_PASSWORD`. Admins can create more users and choose between `admin` and `user` roles from Settings. Admins can see and manage all jobs. Normal users can create, edit, delete, and manually run their own jobs, but cannot edit global app configuration, provider settings, or other users.
 
 Passwords can be changed from the Settings page. Passwords are stored as PBKDF2-SHA256 hashes in SQLite.
 

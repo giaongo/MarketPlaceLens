@@ -87,14 +87,14 @@
                 <h2 data-i18n="profiles.title">Jobs</h2>
                 <p class="panel-subtitle" data-i18n="profiles.subtitle">Saved marketplace jobs grouped by source.</p>
               </div>
-              <div class="actions admin-only">
+              <div class="actions">
                 <button id="wizard-button" class="button primary" data-i18n="profiles.quickJob">Quick job</button>
                 <button id="new-profile-button" class="button" data-i18n="profiles.newJob">New job</button>
               </div>
             </div>
             <div id="profiles-list" class="profile-list"></div>
           </section>
-          <section class="panel profile-editor admin-only">
+          <section class="panel profile-editor">
             <div class="panel-heading">
               <div>
                 <h2 id="profile-form-title">New job</h2>
@@ -384,7 +384,7 @@
                 <select id="listing-profile-filter">
                   <option value="" data-i18n="profiles.all">All profiles</option>
                 </select>
-                <button class="button ghost filter-action admin-only" type="button" id="run-listing-profile-button" data-i18n="listings.runSelectedJob">Run selected job</button>
+                <button class="button ghost filter-action" type="button" id="run-listing-profile-button" data-i18n="listings.runSelectedJob">Run selected job</button>
                 <select id="listing-status-filter">
                   <option value="" data-i18n="listings.allStatuses">All statuses</option>
                   <option value="new" data-i18n="status.new">New</option>
