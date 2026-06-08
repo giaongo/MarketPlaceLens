@@ -9,6 +9,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - LanLens-inspired web UI
 - Single-user login for the local web UI
 - Fredy-inspired job builder with provider selection, source URL, criteria, keyword rules, automation, and Telegram toggle
+- Quick-job wizard with Kleinanzeigen and Facebook Marketplace category seeds for URL creation
 - Search profiles/jobs with enable/disable, polling interval, source URL, price limits, keyword filters, category filters, and Telegram toggle
 - Generic HTML listing connector for user-supplied search result URLs
 - Source profiles for Kleinanzeigen and Facebook Marketplace URLs
@@ -35,6 +36,8 @@ MarketPlaceLens is designed for conservative, user-supplied search result monito
 - Use only for sources where you have access and permission to process the listing data
 
 Facebook Marketplace and similar platforms can require login, change their markup, rate-limit access, or disallow automated collection in their terms. MarketPlaceLens does not bypass those controls. If a page is not publicly reachable or returns a consent/login/bot-detection page, the run should be treated as blocked.
+
+The quick-job category lists are local URL-building seeds for convenience. Marketplace category names and URL formats can change over time; adjust the generated URL manually when a platform changes its public routing.
 
 ## Quick Start
 

@@ -64,13 +64,16 @@ const translations = {
     "profile.save": "Save job",
     "profile.runNow": "Run now",
     "wizard.title": "Quick job",
-    "wizard.subtitle": "Create a Kleinanzeigen job from a search term, then fine-tune it below.",
+    "wizard.subtitle": "Create a job from source, category, and search term, then fine-tune it below.",
     "wizard.query": "What should be found?",
+    "wizard.source": "Source",
+    "wizard.category": "Category",
+    "wizard.allCategories": "All categories",
     "wizard.maxPrice": "Maximum price",
     "wizard.location": "Location",
     "wizard.mustInclude": "Must include",
     "wizard.hideWords": "Hide words",
-    "wizard.create": "Create profile",
+    "wizard.create": "Create job",
     "wizard.manualForm": "Use manual form",
     "form.backgroundPolling": "Background polling",
     "form.telegram": "Telegram",
@@ -203,13 +206,16 @@ const translations = {
     "profile.save": "Job speichern",
     "profile.runNow": "Jetzt ausführen",
     "wizard.title": "Schnelljob",
-    "wizard.subtitle": "Kleinanzeigen-Job aus Suchbegriff erstellen und danach unten feinjustieren.",
+    "wizard.subtitle": "Job aus Quelle, Kategorie und Suchbegriff erstellen und danach unten feinjustieren.",
     "wizard.query": "Was soll gefunden werden?",
+    "wizard.source": "Quelle",
+    "wizard.category": "Kategorie",
+    "wizard.allCategories": "Alle Kategorien",
     "wizard.maxPrice": "Maximalpreis",
     "wizard.location": "Ort",
     "wizard.mustInclude": "Muss enthalten",
     "wizard.hideWords": "Wörter ausblenden",
-    "wizard.create": "Profil erstellen",
+    "wizard.create": "Job erstellen",
     "wizard.manualForm": "Manuelles Formular",
     "form.backgroundPolling": "Automatisch abrufen",
     "form.telegram": "Telegram",
@@ -286,6 +292,45 @@ const translations = {
   },
 };
 
+const providerCategories = {
+  kleinanzeigen: [
+    { label: "Auto, Rad & Boot", path: "autos", id: "216" },
+    { label: "Autoteile & Reifen", path: "autoteile-reifen", id: "223" },
+    { label: "Dienstleistungen", path: "dienstleistungen", id: "297" },
+    { label: "Elektronik", path: "elektronik", id: "161" },
+    { label: "Familie, Kind & Baby", path: "familie-kind-baby", id: "17" },
+    { label: "Freizeit, Hobby & Nachbarschaft", path: "freizeit-nachbarschaft", id: "185" },
+    { label: "Haus & Garten", path: "haus-garten", id: "80" },
+    { label: "Haustiere", path: "haustiere", id: "130" },
+    { label: "Immobilien", path: "immobilien", id: "195" },
+    { label: "Jobs", path: "jobs", id: "102" },
+    { label: "Mode & Beauty", path: "mode-beauty", id: "153" },
+    { label: "Musik, Filme & Bücher", path: "musik-filme-buecher", id: "73" },
+    { label: "Unterricht & Kurse", path: "unterricht-kurse", id: "18" },
+    { label: "Verschenken & Tauschen", path: "verschenken-tauschen", id: "192" },
+  ],
+  facebook: [
+    { label: "Vehicles", slug: "vehicles" },
+    { label: "Property rentals", slug: "propertyrentals" },
+    { label: "Apparel", slug: "apparel" },
+    { label: "Classifieds", slug: "classifieds" },
+    { label: "Electronics", slug: "electronics" },
+    { label: "Entertainment", slug: "entertainment" },
+    { label: "Family", slug: "family" },
+    { label: "Free stuff", slug: "free" },
+    { label: "Garden & outdoor", slug: "garden" },
+    { label: "Hobbies", slug: "hobbies" },
+    { label: "Home goods", slug: "home" },
+    { label: "Home improvement supplies", slug: "homeimprovement" },
+    { label: "Musical instruments", slug: "musicalinstruments" },
+    { label: "Office supplies", slug: "officesupplies" },
+    { label: "Pet supplies", slug: "petsupplies" },
+    { label: "Sporting goods", slug: "sportinggoods" },
+    { label: "Toys & games", slug: "toys" },
+    { label: "Books, movies & music", slug: "bookmoviesmusic" },
+  ],
+};
+
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -294,6 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindForms();
   $("#language-select").value = state.language;
   applyTranslations();
+  updateWizardCategories();
   $("#view-title").textContent = t("nav.dashboard");
   refreshAll();
 });
@@ -307,6 +353,7 @@ function bindNavigation() {
   $("#language-select").addEventListener("change", () => setLanguage($("#language-select").value));
   $("#wizard-button").addEventListener("click", () => showWizard(true));
   $("#wizard-cancel-button").addEventListener("click", () => showWizard(false));
+  $("#wizard-source").addEventListener("change", updateWizardCategories);
   $("#new-profile-button").addEventListener("click", () => editProfile(null));
   $("#profile-source").addEventListener("change", updateSourcePlaceholder);
   $("#open-source-button").addEventListener("click", openSelectedSource);
@@ -380,6 +427,7 @@ function showWizard(visible) {
   $("#profile-form").classList.toggle("hidden", visible);
   if (visible) {
     updateProfileFormTitle(true);
+    updateWizardCategories();
     $("#wizard-query").focus();
   } else {
     editProfile(null);
@@ -540,10 +588,12 @@ function updateProfileFormTitle(wizardVisible = !$("#profile-wizard").classList.
 async function createProfileFromWizard() {
   const query = $("#wizard-query").value.trim();
   if (!query) return toast(t("toast.searchRequired"));
+  const source = $("#wizard-source").value;
+  const category = selectedWizardCategory();
   $("#profile-id").value = "";
-  $("#profile-name").value = `${query} auf Kleinanzeigen`;
-  $("#profile-source").value = "kleinanzeigen";
-  $("#profile-url").value = `https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=${encodeURIComponent(query)}`;
+  $("#profile-name").value = category ? `${query} · ${category.label}` : `${query} · ${sourceLabel(source)}`;
+  $("#profile-source").value = source;
+  $("#profile-url").value = buildWizardSearchUrl(source, query, category);
   $("#profile-interval").value = 120;
   $("#profile-location").value = $("#wizard-location").value.trim();
   $("#profile-min-price").value = "";
@@ -554,6 +604,7 @@ async function createProfileFromWizard() {
   $("#profile-categories").value = "";
   $("#profile-enabled").checked = $("#wizard-enabled").checked;
   $("#profile-notify").checked = $("#wizard-notify").checked;
+  updateSourcePlaceholder();
   updateFilterPreview();
   await saveProfile();
   clearWizard();
@@ -562,6 +613,8 @@ async function createProfileFromWizard() {
 }
 
 function clearWizard() {
+  $("#wizard-source").value = "kleinanzeigen";
+  updateWizardCategories();
   $("#wizard-query").value = "";
   $("#wizard-max-price").value = "";
   $("#wizard-location").value = "";
@@ -569,6 +622,38 @@ function clearWizard() {
   $("#wizard-exclude").value = "";
   $("#wizard-enabled").checked = false;
   $("#wizard-notify").checked = false;
+}
+
+function updateWizardCategories() {
+  const source = $("#wizard-source").value;
+  const current = $("#wizard-category").value;
+  const categories = providerCategories[source] || [];
+  $("#wizard-category").innerHTML = `
+    <option value="">${escapeHtml(t("wizard.allCategories"))}</option>
+    ${categories.map((category) => `<option value="${escapeAttribute(category.id || category.slug)}">${escapeHtml(category.label)}</option>`).join("")}
+  `;
+  $("#wizard-category").value = categories.some((category) => (category.id || category.slug) === current) ? current : "";
+}
+
+function selectedWizardCategory() {
+  const source = $("#wizard-source").value;
+  const value = $("#wizard-category").value;
+  if (!value) return null;
+  return (providerCategories[source] || []).find((category) => (category.id || category.slug) === value) || null;
+}
+
+function buildWizardSearchUrl(source, query, category) {
+  if (source === "facebook") {
+    const base = category?.slug
+      ? `https://www.facebook.com/marketplace/category/${category.slug}/`
+      : "https://www.facebook.com/marketplace/search/";
+    return `${base}?query=${encodeURIComponent(query)}`;
+  }
+  if (source === "kleinanzeigen" && category?.id && category?.path) {
+    const keywordPath = encodeURIComponent(query.trim()).replace(/%20/g, "-");
+    return `https://www.kleinanzeigen.de/s-${category.path}/${keywordPath}/k0c${category.id}`;
+  }
+  return `https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=${encodeURIComponent(query)}`;
 }
 
 async function saveProfile() {
@@ -870,6 +955,7 @@ function setLanguage(language) {
     settings: "nav.settings",
   }[activeView]);
   updateProfileFormTitle();
+  updateWizardCategories();
   updateFilterPreview();
   loadSummary();
   loadProfiles();

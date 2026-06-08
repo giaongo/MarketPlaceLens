@@ -110,6 +110,15 @@
                 </div>
               </div>
               <div class="wizard-grid">
+                <label><span data-i18n="wizard.source">Source</span>
+                  <select id="wizard-source">
+                    <option value="kleinanzeigen">Kleinanzeigen</option>
+                    <option value="facebook">Facebook Marketplace</option>
+                  </select>
+                </label>
+                <label><span data-i18n="wizard.category">Category</span>
+                  <select id="wizard-category"></select>
+                </label>
                 <label class="wide"><span data-i18n="wizard.query">What should be found?</span><input id="wizard-query" required placeholder="defekte elektronik"></label>
                 <label><span data-i18n="wizard.maxPrice">Maximum price</span><input id="wizard-max-price" type="number" step="0.01" placeholder="100"></label>
                 <label><span data-i18n="wizard.location">Location</span><input id="wizard-location" placeholder="Berlin"></label>
