@@ -13,6 +13,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Search profiles/jobs with enable/disable, polling interval, source URL, Kleinanzeigen-style location criteria with radius, price limits, guided keyword filter rules, category filters, and Telegram toggle
 - Generic HTML listing connector for user-supplied search result URLs
 - Source profiles for Kleinanzeigen and Facebook Marketplace URLs
+- Facebook Marketplace validation that rejects non-specific `/marketplace` start pages before a job is saved
 - Filter engine with explainable hidden reasons
 - Manual run per profile, including directly from the listing browser for the selected job
 - Background polling with conservative minimum interval
@@ -36,6 +37,8 @@ MarketPlaceLens is designed for conservative, user-supplied search result monito
 - Use only for sources where you have access and permission to process the listing data
 
 Facebook Marketplace and similar platforms can require login, change their markup, rate-limit access, or disallow automated collection in their terms. MarketPlaceLens does not bypass those controls. If a page is not publicly reachable or returns a consent/login/bot-detection page, the run should be treated as blocked.
+
+Facebook jobs should use a concrete Marketplace search or category URL, for example `https://www.facebook.com/marketplace/search/?query=defekt` or `https://www.facebook.com/marketplace/category/electronics/?query=defekt`. The generic `https://www.facebook.com/marketplace/` start page is rejected because it does not describe a stable result set and often returns no public listing HTML to the server.
 
 The quick-job category and Kleinanzeigen listing-type lists are local URL-building seeds for convenience. Marketplace category names, listing type parameters, and URL formats can change over time; adjust the generated URL manually when a platform changes its public routing.
 

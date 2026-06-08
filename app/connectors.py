@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qs, urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup, Tag
@@ -34,6 +34,19 @@ class MarketplaceConnector:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("Search URL must be an absolute http(s) URL.")
+        if self.source_type == "facebook":
+            host = parsed.netloc.lower()
+            path = parsed.path.rstrip("/").lower()
+            if host not in {"facebook.com", "www.facebook.com", "m.facebook.com"}:
+                raise ValueError("Facebook jobs need a facebook.com Marketplace URL.")
+            if path == "/marketplace":
+                raise ValueError(
+                    "Facebook Marketplace start pages cannot be watched. Use a Marketplace search or category URL."
+                )
+            if not path.startswith("/marketplace/"):
+                raise ValueError("Facebook jobs need a Marketplace search or category URL.")
+            if path == "/marketplace/search" and not parse_qs(parsed.query).get("query", [""])[0].strip():
+                raise ValueError("Facebook Marketplace search URLs need a query term.")
 
     async def fetch_listings(self, profile: dict) -> list[ListingCandidate]:
         raise NotImplementedError

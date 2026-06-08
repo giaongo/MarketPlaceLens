@@ -116,7 +116,7 @@ const translations = {
     "form.telegramNotifications": "Telegram notifications",
     "form.webhookNotifications": "Webhook notifications",
     "source.kleinanzeigenHelp": "Paste a public Kleinanzeigen search URL.",
-    "source.facebookHelp": "Paste a reachable Marketplace URL.",
+    "source.facebookHelp": "Use a concrete Marketplace search or category URL.",
     "source.generic": "Generic HTML",
     "source.genericHelp": "Use a simple listing result page.",
     "jobSummary.nameMissing": "Name missing",
@@ -200,6 +200,8 @@ const translations = {
     "toast.runComplete": "Run complete: {new} new, {hidden} hidden, {duplicates} duplicate",
     "toast.profileDeleted": "Profile deleted",
     "toast.searchRequired": "Search term is required",
+    "toast.facebookUrlRequired": "Facebook Marketplace start pages cannot be watched. Use a search or category URL.",
+    "toast.facebookSearchQueryRequired": "Facebook Marketplace search URLs need a search term.",
     "toast.listingTypeRequired": "Select at least one Kleinanzeigen listing type",
     "toast.settingsSaved": "Settings saved",
     "toast.telegramSent": "Telegram test sent",
@@ -311,7 +313,7 @@ const translations = {
     "form.telegramNotifications": "Telegram-Benachrichtigungen",
     "form.webhookNotifications": "Webhook-Benachrichtigungen",
     "source.kleinanzeigenHelp": "Öffentliche Kleinanzeigen-Such-URL einfügen.",
-    "source.facebookHelp": "Erreichbare Marketplace-URL einfügen.",
+    "source.facebookHelp": "Konkrete Marketplace-Suche oder Kategorie-URL einfügen.",
     "source.generic": "Generic HTML",
     "source.genericHelp": "Einfache Listing-Ergebnisseite verwenden.",
     "jobSummary.nameMissing": "Name fehlt",
@@ -395,6 +397,8 @@ const translations = {
     "toast.runComplete": "Run fertig: {new} neu, {hidden} ausgeblendet, {duplicates} Duplikate",
     "toast.profileDeleted": "Profil gelöscht",
     "toast.searchRequired": "Suchbegriff ist erforderlich",
+    "toast.facebookUrlRequired": "Facebook-Marketplace-Startseiten können nicht überwacht werden. Nutze eine Such- oder Kategorie-URL.",
+    "toast.facebookSearchQueryRequired": "Facebook-Marketplace-Such-URLs brauchen einen Suchbegriff.",
     "toast.listingTypeRequired": "Wähle mindestens eine Kleinanzeigen-Anzeigenart aus",
     "toast.settingsSaved": "Einstellungen gespeichert",
     "toast.telegramSent": "Telegram-Test gesendet",
@@ -533,11 +537,19 @@ function bindNavigation() {
 function bindForms() {
   $("#profile-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    await saveProfile();
+    try {
+      await saveProfile();
+    } catch (error) {
+      toast(errorMessage(error));
+    }
   });
   $("#profile-wizard").addEventListener("submit", async (event) => {
     event.preventDefault();
-    await createProfileFromWizard();
+    try {
+      await createProfileFromWizard();
+    } catch (error) {
+      toast(errorMessage(error));
+    }
   });
   $("#settings-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -602,10 +614,20 @@ async function api(path, options = {}) {
     ...options,
   });
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(`${response.status} ${message || response.statusText}`);
+    throw new Error(`${response.status} ${await responseErrorMessage(response)}`);
   }
   return response.json();
+}
+
+async function responseErrorMessage(response) {
+  const text = await response.text();
+  if (!text) return response.statusText;
+  try {
+    const data = JSON.parse(text);
+    return data.detail || text;
+  } catch {
+    return text;
+  }
 }
 
 async function logout() {
@@ -988,6 +1010,8 @@ function buildWizardSearchUrl(source, query, category, kleinanzeigenTypes = sele
 
 async function saveProfile() {
   const payload = profilePayload();
+  const urlError = validateProfileUrl(payload);
+  if (urlError) throw new Error(urlError);
   const id = $("#profile-id").value;
   const saved = await api(id ? `/api/profiles/${id}` : "/api/profiles", {
     method: id ? "PUT" : "POST",
@@ -996,6 +1020,25 @@ async function saveProfile() {
   toast(t("toast.profileSaved"));
   editProfile(saved);
   await refreshAll();
+}
+
+function validateProfileUrl(payload) {
+  if (payload.source_type !== "facebook") return "";
+  try {
+    const url = new URL(payload.search_url);
+    const path = url.pathname.replace(/\/+$/, "").toLowerCase();
+    if (path === "/marketplace") return t("toast.facebookUrlRequired");
+    if (path === "/marketplace/search" && !url.searchParams.get("query")?.trim()) {
+      return t("toast.facebookSearchQueryRequired");
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+function errorMessage(error) {
+  return String(error?.message || error).replace(/^\d+\s+/, "");
 }
 
 async function runSelectedProfile() {
@@ -1085,7 +1128,7 @@ function updateSourcePlaceholder() {
   const source = $("#profile-source").value;
   $("#profile-url").placeholder = {
     kleinanzeigen: "https://www.kleinanzeigen.de/...",
-    facebook: "https://www.facebook.com/marketplace/...",
+    facebook: "https://www.facebook.com/marketplace/search/?query=defekt",
     html: "https://example.com/search-results",
   }[source] || "https://example.com/search-results";
   updateSourceOptions();

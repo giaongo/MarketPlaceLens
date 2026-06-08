@@ -130,7 +130,7 @@ async def create_profile(payload: ProfilePayload) -> dict[str, Any]:
     profile = payload.model_dump()
     profile["search_url"] = str(profile["search_url"])
     profile["poll_interval_minutes"] = max(settings.min_poll_minutes, profile["poll_interval_minutes"])
-    get_connector(profile["source_type"]).validate_search_url(profile["search_url"])
+    validate_profile_search_url(profile)
     with connect() as db:
         cursor = db.execute(
             """
@@ -152,7 +152,7 @@ async def update_profile(profile_id: int, payload: ProfilePayload) -> dict[str, 
     profile = payload.model_dump()
     profile["search_url"] = str(profile["search_url"])
     profile["poll_interval_minutes"] = max(settings.min_poll_minutes, profile["poll_interval_minutes"])
-    get_connector(profile["source_type"]).validate_search_url(profile["search_url"])
+    validate_profile_search_url(profile)
     with connect() as db:
         db.execute(
             """
@@ -496,6 +496,13 @@ def profile_values(profile: dict[str, Any], now: str, include_created: bool = Tr
 
 def clean_words(values: list[str]) -> list[str]:
     return [item.strip() for item in values if item.strip()]
+
+
+def validate_profile_search_url(profile: dict[str, Any]) -> None:
+    try:
+        get_connector(profile["source_type"]).validate_search_url(profile["search_url"])
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 def get_setting(db, key: str) -> str:
