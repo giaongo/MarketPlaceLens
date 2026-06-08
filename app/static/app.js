@@ -70,7 +70,7 @@ const translations = {
     "filter.excludeRule": "Hide listings when title or description contains \"{term}\"",
     "filter.includeRule": "Prefer listings when title or description contains \"{term}\"",
     "profile.automationTitle": "Automation & notifications",
-    "profile.automationSubtitle": "Choose whether this job runs in the background and sends Telegram alerts.",
+    "profile.automationSubtitle": "Choose whether this job runs in the background and sends notifications.",
     "profile.enabled": "enabled",
     "profile.paused": "paused",
     "profile.everyMinutes": "every {minutes} min",
@@ -90,7 +90,9 @@ const translations = {
     "wizard.manualForm": "Use manual form",
     "form.backgroundPolling": "Background polling",
     "form.telegram": "Telegram",
+    "form.webhook": "Webhook",
     "form.telegramNotifications": "Telegram notifications",
+    "form.webhookNotifications": "Webhook notifications",
     "source.kleinanzeigenHelp": "Paste a public Kleinanzeigen search URL.",
     "source.facebookHelp": "Paste a reachable Marketplace URL.",
     "source.generic": "Generic HTML",
@@ -103,6 +105,8 @@ const translations = {
     "jobSummary.pollingOff": "Polling off",
     "jobSummary.telegramOn": "Telegram on",
     "jobSummary.telegramOff": "Telegram off",
+    "jobSummary.webhookOn": "Webhook on",
+    "jobSummary.webhookOff": "Webhook off",
     "listings.title": "Browse listings",
     "listings.subtitle": "Scroll, filter, switch between list and tiles, or open the original listing.",
     "listings.searchPlaceholder": "Search title, location, category",
@@ -120,12 +124,15 @@ const translations = {
     "sort.scoreDesc": "Best score",
     "view.list": "List",
     "view.tiles": "Tiles",
+    "settings.notifications": "Notifications",
     "settings.telegram": "Telegram",
     "settings.botToken": "Bot token",
     "settings.chatId": "Chat ID",
+    "settings.webhookUrl": "Webhook URL",
     "settings.rateLimit": "Global rate limit seconds",
     "settings.save": "Save settings",
     "settings.sendTest": "Send test",
+    "settings.sendWebhookTest": "Send webhook test",
     "settings.password": "Password",
     "settings.passwordSubtitle": "Change the local admin password for this app.",
     "settings.currentPassword": "Current password",
@@ -166,6 +173,7 @@ const translations = {
     "toast.searchRequired": "Search term is required",
     "toast.settingsSaved": "Settings saved",
     "toast.telegramSent": "Telegram test sent",
+    "toast.webhookSent": "Webhook test sent",
   },
   de: {
     "brand.subtitle": "selbst gehosteter Anzeigen-Watcher",
@@ -231,7 +239,7 @@ const translations = {
     "filter.excludeRule": "Ausblenden, wenn Titel oder Beschreibung \"{term}\" enthält",
     "filter.includeRule": "Bevorzugen, wenn Titel oder Beschreibung \"{term}\" enthält",
     "profile.automationTitle": "Automation & Benachrichtigungen",
-    "profile.automationSubtitle": "Festlegen, ob der Job im Hintergrund läuft und Telegram sendet.",
+    "profile.automationSubtitle": "Festlegen, ob der Job im Hintergrund läuft und Benachrichtigungen sendet.",
     "profile.enabled": "aktiv",
     "profile.paused": "pausiert",
     "profile.everyMinutes": "alle {minutes} Min.",
@@ -251,7 +259,9 @@ const translations = {
     "wizard.manualForm": "Manuelles Formular",
     "form.backgroundPolling": "Automatisch abrufen",
     "form.telegram": "Telegram",
+    "form.webhook": "Webhook",
     "form.telegramNotifications": "Telegram-Benachrichtigungen",
+    "form.webhookNotifications": "Webhook-Benachrichtigungen",
     "source.kleinanzeigenHelp": "Öffentliche Kleinanzeigen-Such-URL einfügen.",
     "source.facebookHelp": "Erreichbare Marketplace-URL einfügen.",
     "source.generic": "Generic HTML",
@@ -264,6 +274,8 @@ const translations = {
     "jobSummary.pollingOff": "Polling aus",
     "jobSummary.telegramOn": "Telegram an",
     "jobSummary.telegramOff": "Telegram aus",
+    "jobSummary.webhookOn": "Webhook an",
+    "jobSummary.webhookOff": "Webhook aus",
     "listings.title": "Listings durchsuchen",
     "listings.subtitle": "Scrollen, filtern, zwischen Liste und Kacheln wechseln oder Original öffnen.",
     "listings.searchPlaceholder": "Titel, Ort, Kategorie suchen",
@@ -281,12 +293,15 @@ const translations = {
     "sort.scoreDesc": "Bester Score",
     "view.list": "Liste",
     "view.tiles": "Kacheln",
+    "settings.notifications": "Benachrichtigungen",
     "settings.telegram": "Telegram",
     "settings.botToken": "Bot-Token",
     "settings.chatId": "Chat-ID",
+    "settings.webhookUrl": "Webhook-URL",
     "settings.rateLimit": "Globales Rate-Limit in Sekunden",
     "settings.save": "Einstellungen speichern",
     "settings.sendTest": "Test senden",
+    "settings.sendWebhookTest": "Webhook-Test senden",
     "settings.password": "Passwort",
     "settings.passwordSubtitle": "Lokales Admin-Passwort für diese App ändern.",
     "settings.currentPassword": "Aktuelles Passwort",
@@ -327,6 +342,7 @@ const translations = {
     "toast.searchRequired": "Suchbegriff ist erforderlich",
     "toast.settingsSaved": "Einstellungen gespeichert",
     "toast.telegramSent": "Telegram-Test gesendet",
+    "toast.webhookSent": "Webhook-Test gesendet",
   },
 };
 
@@ -424,6 +440,7 @@ function bindNavigation() {
     "#profile-categories",
     "#profile-enabled",
     "#profile-notify",
+    "#profile-notify-webhook",
   ].forEach((selector) => $(selector).addEventListener("input", updateFilterPreview));
 }
 
@@ -452,6 +469,7 @@ function bindForms() {
     }
   });
   $("#telegram-test-button").addEventListener("click", testTelegram);
+  $("#webhook-test-button").addEventListener("click", testWebhook);
 }
 
 function showView(view) {
@@ -622,6 +640,7 @@ function editProfile(profile) {
   renderGuidedFilterRules();
   $("#profile-enabled").checked = profile?.enabled ?? true;
   $("#profile-notify").checked = profile?.notify_telegram ?? true;
+  $("#profile-notify-webhook").checked = profile?.notify_webhook ?? false;
   updateFilterPreview();
   updateJobSetupSummary();
   loadProfiles();
@@ -654,6 +673,7 @@ async function createProfileFromWizard() {
   renderGuidedFilterRules();
   $("#profile-enabled").checked = $("#wizard-enabled").checked;
   $("#profile-notify").checked = $("#wizard-notify").checked;
+  $("#profile-notify-webhook").checked = $("#wizard-notify-webhook").checked;
   updateSourcePlaceholder();
   updateFilterPreview();
   await saveProfile();
@@ -673,6 +693,7 @@ function clearWizard() {
   syncAllChipInputs();
   $("#wizard-enabled").checked = false;
   $("#wizard-notify").checked = false;
+  $("#wizard-notify-webhook").checked = false;
 }
 
 function updateWizardCategories() {
@@ -752,6 +773,7 @@ function profilePayload() {
     max_price: numberOrNull("#profile-max-price"),
     location_hint: $("#profile-location").value,
     notify_telegram: $("#profile-notify").checked,
+    notify_webhook: $("#profile-notify-webhook").checked,
   };
 }
 
@@ -769,6 +791,7 @@ function updateFilterPreview() {
   lines("#profile-categories").forEach((item) => chips.push(`${t("profile.hiddenCategories")}: ${item}`));
   chips.push($("#profile-enabled").checked ? t("form.backgroundPolling") : "Polling off");
   chips.push($("#profile-notify").checked ? t("form.telegramNotifications") : "Telegram off");
+  chips.push($("#profile-notify-webhook").checked ? t("form.webhookNotifications") : t("jobSummary.webhookOff"));
   $("#profile-filter-preview").innerHTML = chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("");
   updateJobSetupSummary();
 }
@@ -813,6 +836,7 @@ function updateJobSetupSummary() {
     t("jobSummary.interval", { minutes: interval }),
     $("#profile-enabled").checked ? t("jobSummary.pollingOn") : t("jobSummary.pollingOff"),
     $("#profile-notify").checked ? t("jobSummary.telegramOn") : t("jobSummary.telegramOff"),
+    $("#profile-notify-webhook").checked ? t("jobSummary.webhookOn") : t("jobSummary.webhookOff"),
   ];
   $("#job-setup-summary").innerHTML = chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("");
 }
@@ -971,6 +995,7 @@ async function loadSettings() {
   const settings = await api("/api/settings");
   $("#telegram-token").value = settings.telegram_bot_token;
   $("#telegram-chat").value = settings.telegram_chat_id;
+  $("#webhook-url").value = settings.webhook_url;
   $("#global-rate").value = settings.global_rate_limit_seconds;
 }
 
@@ -980,6 +1005,7 @@ async function saveSettings() {
     body: JSON.stringify({
       telegram_bot_token: $("#telegram-token").value,
       telegram_chat_id: $("#telegram-chat").value,
+      webhook_url: $("#webhook-url").value,
       global_rate_limit_seconds: Number($("#global-rate").value || 20),
     }),
   });
@@ -990,6 +1016,11 @@ async function saveSettings() {
 async function testTelegram() {
   await api("/api/settings/telegram/test", { method: "POST" });
   toast(t("toast.telegramSent"));
+}
+
+async function testWebhook() {
+  await api("/api/settings/webhook/test", { method: "POST" });
+  toast(t("toast.webhookSent"));
 }
 
 function addGuidedFilterRule() {

@@ -18,7 +18,7 @@ from .config import settings
 from .connectors import ListingCandidate, get_connector
 from .database import connect, encode_list, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import apply_filters
-from .notifier import TelegramNotifier
+from .notifier import TelegramNotifier, WebhookNotifier
 from .schemas import ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload
 
 app = FastAPI(title="MarketPlaceLens", version="0.1.0")
@@ -137,8 +137,8 @@ async def create_profile(payload: ProfilePayload) -> dict[str, Any]:
             INSERT INTO watch_profiles(
               name, enabled, source_type, search_url, poll_interval_minutes,
               include_keywords, exclude_keywords, required_keywords, excluded_categories,
-              min_price, max_price, location_hint, notify_telegram, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              min_price, max_price, location_hint, notify_telegram, notify_webhook, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             profile_values(profile, now),
         )
@@ -159,7 +159,7 @@ async def update_profile(profile_id: int, payload: ProfilePayload) -> dict[str, 
             UPDATE watch_profiles SET
               name = ?, enabled = ?, source_type = ?, search_url = ?, poll_interval_minutes = ?,
               include_keywords = ?, exclude_keywords = ?, required_keywords = ?, excluded_categories = ?,
-              min_price = ?, max_price = ?, location_hint = ?, notify_telegram = ?, updated_at = ?
+              min_price = ?, max_price = ?, location_hint = ?, notify_telegram = ?, notify_webhook = ?, updated_at = ?
             WHERE id = ?
             """,
             profile_values(profile, now, include_created=False) + (profile_id,),
@@ -293,6 +293,8 @@ async def get_settings() -> dict[str, Any]:
         "telegram_bot_token": mask_secret(values.get("telegram_bot_token", "")),
         "telegram_bot_token_set": bool(values.get("telegram_bot_token")),
         "telegram_chat_id": values.get("telegram_chat_id", ""),
+        "webhook_url": values.get("webhook_url", ""),
+        "webhook_url_set": bool(values.get("webhook_url")),
         "global_rate_limit_seconds": int(values.get("global_rate_limit_seconds", "20") or 20),
     }
 
@@ -304,6 +306,7 @@ async def update_settings(payload: SettingsPayload) -> dict[str, Any]:
         values = {
             "telegram_bot_token": current_token if payload.telegram_bot_token == "********" else payload.telegram_bot_token,
             "telegram_chat_id": payload.telegram_chat_id,
+            "webhook_url": payload.webhook_url,
             "global_rate_limit_seconds": str(payload.global_rate_limit_seconds),
         }
         for key, value in values.items():
@@ -334,6 +337,14 @@ async def test_telegram() -> dict[str, bool]:
     return {"ok": True}
 
 
+@app.post("/api/settings/webhook/test")
+async def test_webhook() -> dict[str, bool]:
+    with connect() as db:
+        notifier = WebhookNotifier(get_setting(db, "webhook_url"))
+    await notifier.send_test()
+    return {"ok": True}
+
+
 async def run_profile(profile_id: int) -> dict[str, Any]:
     started_at = utc_now()
     with connect() as db:
@@ -359,6 +370,7 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
 
     app_settings = {item["key"]: item["value"] for item in settings_rows}
     notifier = TelegramNotifier(app_settings.get("telegram_bot_token", ""), app_settings.get("telegram_chat_id", ""))
+    webhook = WebhookNotifier(app_settings.get("webhook_url", ""))
     stats = {"fetched": len(candidates), "new": 0, "hidden": 0, "duplicates": 0, "notified": 0}
     now = utc_now()
     with connect() as db:
@@ -376,13 +388,22 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
                 stats["hidden"] += 1
                 continue
             stats["new"] += 1
+            delivered = False
             if profile["notify_telegram"] and notifier.configured:
                 try:
                     await notifier.send_listing(row_to_listing(listing), profile, result.matched_reason)
-                    db.execute("UPDATE listings SET status = 'notified', notified_at = ? WHERE id = ?", (utc_now(), listing_id))
-                    stats["notified"] += 1
+                    delivered = True
                 except Exception:
                     pass
+            if profile["notify_webhook"] and webhook.configured:
+                try:
+                    await webhook.send_listing(row_to_listing(listing), profile, result.matched_reason)
+                    delivered = True
+                except Exception:
+                    pass
+            if delivered:
+                db.execute("UPDATE listings SET status = 'notified', notified_at = ? WHERE id = ?", (utc_now(), listing_id))
+                stats["notified"] += 1
         db.execute("UPDATE watch_profiles SET last_run_at = ?, updated_at = ? WHERE id = ?", (now, now, profile_id))
         record_run(db, profile, "success", stats, started_at, "")
     return {"profile_id": profile_id, **stats}
@@ -442,6 +463,7 @@ def profile_values(profile: dict[str, Any], now: str, include_created: bool = Tr
         profile["max_price"],
         profile["location_hint"],
         int(profile["notify_telegram"]),
+        int(profile["notify_webhook"]),
     )
     if include_created:
         return values + (now, now)

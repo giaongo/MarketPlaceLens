@@ -17,6 +17,7 @@ class Settings:
     )
     telegram_bot_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     telegram_chat_id: str = os.getenv("TELEGRAM_CHAT_ID", "")
+    webhook_url: str = os.getenv("MARKETPLACELENS_WEBHOOK_URL", "")
     admin_username: str = os.getenv("MARKETPLACELENS_ADMIN_USERNAME", "admin")
     admin_password: str = os.getenv("MARKETPLACELENS_ADMIN_PASSWORD", "admin")
     session_secret: str = os.getenv("MARKETPLACELENS_SESSION_SECRET", secrets.token_urlsafe(32))

@@ -17,6 +17,7 @@ class ProfilePayload(BaseModel):
     max_price: float | None = None
     location_hint: str = ""
     notify_telegram: bool = True
+    notify_webhook: bool = False
 
 
 class ListingStatusPayload(BaseModel):
@@ -27,6 +28,7 @@ class ListingStatusPayload(BaseModel):
 class SettingsPayload(BaseModel):
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
+    webhook_url: str = ""
     global_rate_limit_seconds: int = Field(default=20, ge=5, le=3600)
 
 

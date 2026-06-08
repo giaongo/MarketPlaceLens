@@ -125,7 +125,8 @@
                 <label class="wide"><span data-i18n="wizard.mustInclude">Must include</span><textarea id="wizard-required" data-chip-list data-chip-placeholder="keyword.add" placeholder="abholung"></textarea></label>
                 <label class="wide"><span data-i18n="wizard.hideWords">Hide words</span><textarea id="wizard-exclude" data-chip-list data-chip-placeholder="keyword.add" placeholder="gesuch&#10;tausch"></textarea></label>
                 <label class="switch"><input id="wizard-enabled" type="checkbox"> <span data-i18n="form.backgroundPolling">Background polling</span></label>
-                <label class="switch"><input id="wizard-notify" type="checkbox"> <span data-i18n="form.telegram">Telegram</span></label>
+                  <label class="switch"><input id="wizard-notify" type="checkbox"> <span data-i18n="form.telegram">Telegram</span></label>
+                  <label class="switch"><input id="wizard-notify-webhook" type="checkbox"> <span data-i18n="form.webhook">Webhook</span></label>
               </div>
               <div class="actions">
                 <button class="button primary" type="submit" data-i18n="wizard.create">Create profile</button>
@@ -242,6 +243,7 @@
                 <div class="toggle-row">
                   <label class="switch"><input id="profile-enabled" type="checkbox" checked> <span data-i18n="form.backgroundPolling">Background polling</span></label>
                   <label class="switch"><input id="profile-notify" type="checkbox" checked> <span data-i18n="form.telegramNotifications">Telegram notifications</span></label>
+                  <label class="switch"><input id="profile-notify-webhook" type="checkbox"> <span data-i18n="form.webhookNotifications">Webhook notifications</span></label>
                 </div>
                 <div id="profile-filter-preview" class="filter-preview"></div>
               </div>
@@ -317,15 +319,17 @@
       <section id="settings-view" class="view">
         <section class="panel narrow">
           <div class="panel-heading">
-            <h2 data-i18n="settings.telegram">Telegram</h2>
+            <h2 data-i18n="settings.notifications">Notifications</h2>
           </div>
           <form id="settings-form" class="form-grid">
             <label class="wide"><span data-i18n="settings.botToken">Bot token</span><input id="telegram-token" type="password" autocomplete="off" placeholder="123456:ABC..."></label>
             <label class="wide"><span data-i18n="settings.chatId">Chat ID</span><input id="telegram-chat" placeholder="123456789"></label>
+            <label class="wide"><span data-i18n="settings.webhookUrl">Webhook URL</span><input id="webhook-url" type="url" placeholder="https://example.com/webhook"></label>
             <label><span data-i18n="settings.rateLimit">Global rate limit seconds</span><input id="global-rate" type="number" min="5" value="20"></label>
             <div class="actions wide">
               <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
               <button class="button ghost" id="telegram-test-button" type="button" data-i18n="settings.sendTest">Send test</button>
+              <button class="button ghost" id="webhook-test-button" type="button" data-i18n="settings.sendWebhookTest">Send webhook test</button>
             </div>
           </form>
         </section>

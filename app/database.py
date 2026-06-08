@@ -61,6 +61,7 @@ def init_db() -> None:
               max_price REAL,
               location_hint TEXT NOT NULL DEFAULT '',
               notify_telegram INTEGER NOT NULL DEFAULT 1,
+              notify_webhook INTEGER NOT NULL DEFAULT 0,
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL,
               last_run_at TEXT
@@ -114,9 +115,11 @@ def init_db() -> None:
             """
         )
         ensure_column(db, "listings", "watchlisted", "INTEGER NOT NULL DEFAULT 0")
+        ensure_column(db, "watch_profiles", "notify_webhook", "INTEGER NOT NULL DEFAULT 0")
         defaults = {
             "telegram_bot_token": settings.telegram_bot_token,
             "telegram_chat_id": settings.telegram_chat_id,
+            "webhook_url": settings.webhook_url,
             "global_rate_limit_seconds": "20",
         }
         for key, value in defaults.items():
@@ -132,6 +135,7 @@ def row_to_profile(row: sqlite3.Row) -> dict[str, Any]:
         data[key] = decode_list(data.get(key))
     data["enabled"] = bool(data["enabled"])
     data["notify_telegram"] = bool(data["notify_telegram"])
+    data["notify_webhook"] = bool(data.get("notify_webhook", False))
     return data
 
 

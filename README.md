@@ -19,7 +19,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Scrollable listing history with adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails
 - Dedicated watchlist view for saved listings you want to compare or revisit
 - English and German UI language switcher
-- Telegram settings and test message
+- Telegram and webhook settings with test messages
 
 ## Compliance Boundaries
 
@@ -69,6 +69,7 @@ The UI can store Telegram settings in SQLite. Environment variables can seed fir
 ```env
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
+MARKETPLACELENS_WEBHOOK_URL=
 MARKETPLACELENS_MIN_POLL_MINUTES=30
 MARKETPLACELENS_DEFAULT_POLL_MINUTES=60
 MARKETPLACELENS_ADMIN_USERNAME=admin
@@ -84,7 +85,7 @@ app/
   database.py      SQLite schema and row helpers
   connectors.py    MarketplaceConnector interface and generic HTML connector
   filters.py       include/exclude/required/category/price filter engine
-  notifier.py      Telegram notifier
+  notifier.py      Telegram and webhook notifiers
   static/          no-build frontend
 ```
 
@@ -102,6 +103,7 @@ app/
 - `PUT /api/settings`
 - `POST /api/settings/password`
 - `POST /api/settings/telegram/test`
+- `POST /api/settings/webhook/test`
 
 ## Dependency License Notes
 

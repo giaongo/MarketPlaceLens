@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import html
+from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -41,3 +43,54 @@ class TelegramNotifier:
             )
             response.raise_for_status()
 
+
+class WebhookNotifier:
+    def __init__(self, url: str) -> None:
+        self.url = url.strip()
+
+    @property
+    def configured(self) -> bool:
+        if not self.url:
+            return False
+        parsed = urlparse(self.url)
+        return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+    async def send_listing(self, listing: dict[str, Any], profile: dict[str, Any], matched_reason: str) -> None:
+        await self.send_payload(
+            {
+                "event": "marketplacelens.listing.created",
+                "matched_reason": matched_reason or "matched profile",
+                "profile": {
+                    "id": profile.get("id"),
+                    "name": profile.get("name"),
+                    "source_type": profile.get("source_type"),
+                    "search_url": profile.get("search_url"),
+                },
+                "listing": {
+                    "id": listing.get("id"),
+                    "source_type": listing.get("source_type"),
+                    "source_listing_id": listing.get("source_listing_id"),
+                    "title": listing.get("title"),
+                    "price_text": listing.get("price_text"),
+                    "price_value": listing.get("price_value"),
+                    "location_text": listing.get("location_text"),
+                    "category_text": listing.get("category_text"),
+                    "description_snippet": listing.get("description_snippet"),
+                    "listing_url": listing.get("listing_url"),
+                    "thumbnail_url": listing.get("thumbnail_url"),
+                    "score": listing.get("score"),
+                    "filter_reason": listing.get("filter_reason"),
+                    "first_seen_at": listing.get("first_seen_at"),
+                },
+            }
+        )
+
+    async def send_test(self) -> None:
+        await self.send_payload({"event": "marketplacelens.test", "message": "MarketPlaceLens webhook test successful."})
+
+    async def send_payload(self, payload: dict[str, Any]) -> None:
+        if not self.configured:
+            raise RuntimeError("Webhook is not configured.")
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.post(self.url, json=payload)
+            response.raise_for_status()
