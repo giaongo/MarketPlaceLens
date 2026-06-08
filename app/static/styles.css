@@ -877,6 +877,11 @@ textarea {
   font-size: 0.82rem;
 }
 
+.mini-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .watch-button.active {
   border-color: rgba(180, 83, 9, 0.38);
   background: #fef3c7;

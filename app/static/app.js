@@ -94,7 +94,7 @@ const translations = {
     "listings.subtitle": "Scroll, filter, switch between list and tiles, or open the original listing.",
     "listings.searchPlaceholder": "Search title, location, category",
     "listings.allStatuses": "All statuses",
-    "listings.includeHidden": "Hidden",
+    "listings.includeHidden": "Show hidden",
     "watchlist.title": "Watchlist",
     "watchlist.subtitle": "Saved listings you want to compare or revisit later.",
     "status.new": "New",
@@ -137,6 +137,11 @@ const translations = {
     "listing.seen": "Seen",
     "listing.hide": "Hide",
     "listing.new": "New",
+    "toast.listingHidden": "Listing hidden",
+    "toast.listingSeen": "Listing marked as seen",
+    "toast.listingNew": "Listing moved back to new",
+    "toast.watchlistAdded": "Added to watchlist",
+    "toast.watchlistRemoved": "Removed from watchlist",
     "toast.passwordMismatch": "New passwords do not match",
     "toast.passwordChanged": "Password changed",
     "toast.profileSaved": "Profile saved",
@@ -236,7 +241,7 @@ const translations = {
     "listings.subtitle": "Scrollen, filtern, zwischen Liste und Kacheln wechseln oder Original öffnen.",
     "listings.searchPlaceholder": "Titel, Ort, Kategorie suchen",
     "listings.allStatuses": "Alle Status",
-    "listings.includeHidden": "Ausgeblendete",
+    "listings.includeHidden": "Ausgeblendete anzeigen",
     "watchlist.title": "Watchlist",
     "watchlist.subtitle": "Gespeicherte Listings zum Vergleichen oder späteren Öffnen.",
     "status.new": "Neu",
@@ -279,6 +284,11 @@ const translations = {
     "listing.seen": "Gesehen",
     "listing.hide": "Ausblenden",
     "listing.new": "Neu",
+    "toast.listingHidden": "Listing ausgeblendet",
+    "toast.listingSeen": "Listing als gesehen markiert",
+    "toast.listingNew": "Listing wieder auf neu gesetzt",
+    "toast.watchlistAdded": "Zur Watchlist hinzugefügt",
+    "toast.watchlistRemoved": "Aus Watchlist entfernt",
     "toast.passwordMismatch": "Neue Passwörter stimmen nicht überein",
     "toast.passwordChanged": "Passwort geändert",
     "toast.profileSaved": "Profil gespeichert",
@@ -802,19 +812,24 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
     : `<article class="listing-card empty-listing"><strong>${escapeHtml(t(watchlistedOnly ? "empty.noWatchlist" : "empty.noListings"))}</strong><p class="meta">${escapeHtml(t(watchlistedOnly ? "empty.noWatchlistHint" : "empty.noListingsHint"))}</p></article>`;
   browser.querySelectorAll("[data-listing-action]").forEach((button) => {
     button.addEventListener("click", async () => {
+      button.disabled = true;
       await api(`/api/listings/${button.dataset.id}`, {
         method: "PATCH",
         body: JSON.stringify({ status: button.dataset.listingAction }),
       });
+      toast(listingActionToast(button.dataset.listingAction));
       await Promise.all([loadListings(), loadWatchlist(), loadSummary()]);
     });
   });
   browser.querySelectorAll("[data-watchlist-action]").forEach((button) => {
     button.addEventListener("click", async () => {
+      button.disabled = true;
+      const added = button.dataset.watchlistAction === "add";
       await api(`/api/listings/${button.dataset.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ watchlisted: button.dataset.watchlistAction === "add" }),
+        body: JSON.stringify({ watchlisted: added }),
       });
+      toast(t(added ? "toast.watchlistAdded" : "toast.watchlistRemoved"));
       await Promise.all([loadListings(), loadWatchlist(), loadSummary()]);
     });
   });
@@ -902,6 +917,13 @@ function listingMarkup(listing) {
 
 function statusLabel(status) {
   return t(`status.${status}`) || status;
+}
+
+function listingActionToast(action) {
+  if (action === "hidden") return t("toast.listingHidden");
+  if (action === "seen") return t("toast.listingSeen");
+  if (action === "new") return t("toast.listingNew");
+  return statusLabel(action);
 }
 
 async function loadSettings() {
