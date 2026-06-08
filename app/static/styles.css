@@ -147,6 +147,19 @@ select {
   color: var(--sidebar-muted);
 }
 
+.app-version {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 6px;
+  border: 1px solid rgba(244, 246, 239, 0.18);
+  border-radius: 999px;
+  color: var(--sidebar-muted);
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
 nav {
   display: grid;
   gap: 8px;

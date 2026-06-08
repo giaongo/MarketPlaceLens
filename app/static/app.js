@@ -16,6 +16,7 @@ const state = {
   wizardStep: 0,
   currentUser: null,
   users: [],
+  version: null,
   locationMap: null,
   locationMarker: null,
   locationCircle: null,
@@ -879,7 +880,7 @@ function validateWizardStep(step) {
 async function refreshAll() {
   try {
     await loadAuthStatus();
-    await Promise.all([loadSummary(), loadProfiles(), loadListings(), loadWatchlist(), loadReviewQueue(), loadSettings(), loadUsers()]);
+    await Promise.all([loadVersion(), loadSummary(), loadProfiles(), loadListings(), loadWatchlist(), loadReviewQueue(), loadSettings(), loadUsers()]);
   } catch (error) {
     if (String(error.message).includes("Not authenticated") || String(error.message).includes("401")) {
       window.location.href = "/login";
@@ -887,6 +888,13 @@ async function refreshAll() {
     }
     throw error;
   }
+}
+
+async function loadVersion() {
+  const version = await api("/api/version");
+  state.version = version;
+  const label = version.build_code || version.version || "";
+  $("#app-version").textContent = label;
 }
 
 async function loadAuthStatus() {

@@ -1,60 +1,53 @@
-# MarketPlaceLens
+<p align="center">
+  <img src="app/static/assets/marketplacelens-logo.png" alt="MarketPlaceLens logo" width="112" height="112">
+</p>
 
-Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens periodically checks configured listing pages, normalizes candidates through source connectors, applies local filters, stores listing history in SQLite, and can notify Telegram when new relevant matches appear.
+<h1 align="center">MarketPlaceLens</h1>
 
-## MVP Scope
+<p align="center">
+  <strong>Self-hosted marketplace monitoring with guided search jobs, review queues, watchlists, and AI-assisted inquiry texts.</strong>
+</p>
 
-- Docker Compose deployment
-- Local SQLite database
-- LanLens-inspired web UI
-- Role-based multi-user login for the local web UI
-- Fredy-inspired job builder with provider selection, source URL, criteria, keyword rules, automation, and Telegram toggle
-- Interactive quick-job assistant that guides admins step by step through source, search terms, filters, and automation before creating the saved job
-- Quick-job wizard with Kleinanzeigen category/listing-type seeds plus Facebook Marketplace and mobile.de seeds for URL creation
-- Search profiles/jobs with enable/disable, polling interval, source URL, Kleinanzeigen-style location criteria with radius, price limits, guided keyword filter rules, category filters, and Telegram toggle
-- URL parameter preview for saved search URLs, including detected source, search term, category, location, and Kleinanzeigen listing type where available
-- Existing listings are re-evaluated when a job's filters or criteria change, while manually hidden listings stay hidden
-- Generic HTML listing connector for user-supplied search result URLs
-- Source profiles for Kleinanzeigen, Facebook Marketplace, mobile.de, and generic HTML URLs
-- Facebook Marketplace validation that rejects non-specific `/marketplace` start pages before a job is saved
-- Filter engine with explainable hidden reasons
-- Manual run per profile, including directly from the listing browser for the selected job
-- One throttled extra check of enabled jobs when the web app is opened
-- Background polling with conservative minimum interval
-- Paginated listing history with a collapsed-by-default browser, 5/10/20 items per page, adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails; seen and hidden listings drop out of the default active list unless explicitly filtered
-- Tinder-style listing review view with a large image, key facts, double-click watchlisting, selectable watchlist saving, and swipe-to-seen queue progression
-- Multiple user-created watchlists, including a settings-controlled default watchlist for the normal Watch action and a per-listing dropdown to choose or create a list
-- Optional AI-generated inquiry texts per listing with OpenAI API, Ollama, or LM Studio compatible chat-completions providers and configurable tone (`very polite`, `normal`, `cheeky`)
-- Dedicated watchlist view for saved listings you want to compare or revisit
-- Categorized Settings with Admin-only areas for notifications, AI, watchlists, and user/role management; normal users can create and manage their own jobs, use listings, and change their own password, but cannot change global configuration
-- English/German UI language switcher and light/dark theme toggle
-- Telegram and webhook settings with test messages
+<p align="center">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.2.0-24745a">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-24745a">
+  <img alt="Docker Compose" src="https://img.shields.io/badge/deploy-Docker%20Compose-24745a">
+  <img alt="Python" src="https://img.shields.io/badge/python-3.12-24745a">
+</p>
 
-## Compliance Boundaries
+MarketPlaceLens watches marketplace search result pages, normalizes listings from different sources, applies local filters, and gives every user a focused place to review, save, hide, or act on found items. It is designed for small self-hosted deployments where the data stays local and the operator controls every source URL.
 
-MarketPlaceLens is designed for conservative, user-supplied search result monitoring. Use it at your own risk and only where you are allowed to access and process the listing data.
+Useful links:
 
-- No login automation
-- No messages, favorites, or private user data extraction
-- No CAPTCHA bypass
-- No proxy rotation
-- No aggressive polling intervals; profiles enforce a 30 minute minimum
-- No full archival of third-party content
-- No local image mirroring; thumbnails are fetched on demand through the local app
-- Search results pages are checked by default; detail pages are not polled
-- Use only for sources where you have access and permission to process the listing data
+- [Documentation](docs/documentation.md)
+- [Changelog](CHANGELOG.md)
+- [Security policy](SECURITY.md)
+- [Issue templates](.github/ISSUE_TEMPLATE)
 
-Facebook Marketplace and similar platforms can require login, change their markup, rate-limit access, or disallow automated collection in their terms. MarketPlaceLens does not bypass those controls. If a page is not publicly reachable or returns a consent/login/bot-detection page, the run should be treated as blocked.
+## Screenshots
 
-Facebook jobs should use a concrete Marketplace search or category URL, for example `https://www.facebook.com/marketplace/search/?query=defekt` or `https://www.facebook.com/marketplace/category/electronics/?query=defekt`. The generic `https://www.facebook.com/marketplace/` start page is rejected because it does not describe a stable result set and often returns no public listing HTML to the server.
+Screenshots below use demo data.
 
-Facebook can also return a public Marketplace shell without any `/marketplace/item/` listing links for anonymous server requests. In that case MarketPlaceLens records the run as a connector error instead of a misleading successful run with `0` fetched listings.
+| Dashboard | Listings |
+| --- | --- |
+| ![MarketPlaceLens dashboard](docs/screenshots/marketplacelens-dashboard.png) | ![MarketPlaceLens listings](docs/screenshots/marketplacelens-listings.png) |
 
-mobile.de jobs should use public `mobile.de` or `suchen.mobile.de` search result URLs. MarketPlaceLens reads the embedded public vehicle result data when present. If mobile.de returns a shell, consent, or protection page without embedded results, the run is recorded as a connector error with a clear message.
+| Mobile wizard | Mobile review |
+| --- | --- |
+| ![Mobile quick-job wizard](docs/screenshots/marketplacelens-mobile-wizard.png) | ![Mobile listing review](docs/screenshots/marketplacelens-mobile-review.png) |
 
-The quick-job category and Kleinanzeigen listing-type lists are local URL-building seeds for convenience. Marketplace category names, listing type parameters, and URL formats can change over time; adjust the generated URL manually when a platform changes its public routing.
+## What It Does
 
-The location map uses Leaflet 1.9.4 from a CDN (BSD-2-Clause) and OpenStreetMap raster tiles. OpenStreetMap data is © OpenStreetMap contributors and available under ODbL. If the browser cannot load the map library or tiles, the app keeps a local fallback picker.
+- Guided search-job wizard for Kleinanzeigen, Facebook Marketplace, mobile.de, and generic HTML result pages
+- Manual job editor with provider URL detection, keyword rules, price limits, location criteria, and map-assisted radius selection
+- Background polling with conservative interval limits and manual run controls
+- Listing inbox with list/tile views, filters, pagination, lazy thumbnails, and clear seen/hidden/watchlist states
+- Tinder-style review mode with large images, double-click watchlisting, swipe-to-seen, and desktop button fallbacks
+- Multiple watchlists, default watchlist selection, and per-listing watchlist dropdowns
+- Optional AI inquiry text generation through OpenAI API, Ollama, or LM Studio compatible chat completions
+- Multi-user roles: admins manage global settings and users; normal users manage their own jobs and listings
+- Telegram and webhook notification settings
+- English/German UI, light/dark theme, and mobile-friendly layouts
 
 ## Quick Start
 
@@ -75,17 +68,50 @@ Default local login:
 admin / admin
 ```
 
-Set `MARKETPLACELENS_ADMIN_USERNAME`, `MARKETPLACELENS_ADMIN_PASSWORD`, and `MARKETPLACELENS_SESSION_SECRET` in `.env` for real use.
+Set a real admin password and session secret before using the app beyond a local preview:
 
-On first start, MarketPlaceLens bootstraps an admin user from `MARKETPLACELENS_ADMIN_USERNAME` and `MARKETPLACELENS_ADMIN_PASSWORD`. Admins can create more users and choose between `admin` and `user` roles from Settings. Admins can see and manage all jobs. Normal users can create, edit, delete, and manually run their own jobs, but cannot edit global app configuration, provider settings, or other users.
+```env
+MARKETPLACELENS_ADMIN_USERNAME=admin
+MARKETPLACELENS_ADMIN_PASSWORD=change-me
+MARKETPLACELENS_SESSION_SECRET=change-this-long-random-value
+```
 
-Passwords can be changed from the Settings page. Passwords are stored as PBKDF2-SHA256 hashes in SQLite.
+On first start, MarketPlaceLens bootstraps the first admin account from the environment. After that, admins manage users from Settings.
 
-AI inquiry generation is configured from Settings and is disabled by default. When enabled, listing cards and the review view show an AI text button that drafts a buyer message for the current listing. The app only generates text for review/copying; it does not send messages to sellers. OpenAI uses `https://api.openai.com/v1` by default. Docker deployments can reach local Ollama and LM Studio via `http://host.docker.internal:11434/v1` and `http://host.docker.internal:1234/v1`.
+## Roles
+
+Admins can manage every job, all users, notification settings, AI settings, watchlists, and global app configuration.
+
+Normal users can create, edit, delete, and manually run their own search jobs. They can review their own listings, mark items seen or hidden, use watchlists, and change their own password. They cannot change global settings, provider configuration, AI configuration, notification secrets, or other users.
+
+## AI Inquiry Texts
+
+AI text generation is disabled by default. When an admin enables and configures it, listings show a `KI-Text` / `AI text` button. The generated text is shown in a copyable dialog only; MarketPlaceLens does not send messages to sellers.
+
+Supported compatible providers:
+
+- OpenAI API: `https://api.openai.com/v1`
+- Ollama: `http://host.docker.internal:11434/v1`
+- LM Studio: `http://host.docker.internal:1234/v1`
+
+Available tones are very polite, normal, and cheeky.
+
+## Sources
+
+MarketPlaceLens works best with concrete search result URLs that are publicly reachable by the server.
+
+- Kleinanzeigen: public search and category URLs
+- Facebook Marketplace: concrete marketplace search/category URLs when Facebook returns public listing links
+- mobile.de: public `mobile.de` / `suchen.mobile.de` search result URLs when embedded vehicle data is present
+- Generic HTML: user-supplied search result pages with ordinary link cards
+
+Some platforms return login, consent, protection, or JavaScript shell pages to anonymous server requests. MarketPlaceLens does not bypass login, CAPTCHA, bot protection, private APIs, or platform access controls. In those cases runs are recorded as connector errors with a clear message.
+
+The official mobile.de Search API requires Basic Auth access, so the built-in connector uses public search pages rather than a private API.
 
 ## Configuration
 
-The UI can store Telegram settings in SQLite. Environment variables can seed first-run defaults:
+Environment variables can seed first-run defaults:
 
 ```env
 TELEGRAM_BOT_TOKEN=
@@ -93,9 +119,49 @@ TELEGRAM_CHAT_ID=
 MARKETPLACELENS_WEBHOOK_URL=
 MARKETPLACELENS_MIN_POLL_MINUTES=30
 MARKETPLACELENS_DEFAULT_POLL_MINUTES=60
+MARKETPLACELENS_POLL_ENABLED=true
 MARKETPLACELENS_ADMIN_USERNAME=admin
 MARKETPLACELENS_ADMIN_PASSWORD=admin
 MARKETPLACELENS_SESSION_SECRET=change-this-long-random-value
+MARKETPLACELENS_BUILD_CODE=0.2.0
+MARKETPLACELENS_BUILD_COMMIT=dev
+MARKETPLACELENS_BUILD_BRANCH=main
+MARKETPLACELENS_BUILD_CREATED=
+```
+
+Runtime settings are stored in SQLite and can be managed from the Settings screen.
+
+## Versioning
+
+The current app version lives in:
+
+- `VERSION`
+- `app/version.py`
+- Docker build args in `docker-compose.yml`
+- the visible app version badge in the sidebar
+
+`GET /api/version` returns version, build code, commit, branch, and build timestamp metadata. Release notes are tracked in [CHANGELOG.md](CHANGELOG.md).
+
+## Development
+
+Local Python validation:
+
+```bash
+python3 -m py_compile app/*.py
+node --check app/static/app.js
+git diff --check
+```
+
+Run locally:
+
+```bash
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8091
+```
+
+Build with Docker Compose:
+
+```bash
+docker compose up -d --build
 ```
 
 ## Architecture
@@ -103,46 +169,28 @@ MARKETPLACELENS_SESSION_SECRET=change-this-long-random-value
 ```text
 app/
   main.py          FastAPI app, API routes, scheduler, run orchestration
-  database.py      SQLite schema and row helpers
-  connectors.py    MarketplaceConnector interface and generic HTML connector
-  filters.py       include/exclude/required/category/price filter engine
-  notifier.py      Telegram and webhook notifiers
+  database.py      SQLite schema and migrations
+  connectors.py    Source connectors for Kleinanzeigen, Facebook, mobile.de, and generic HTML
+  filters.py       Keyword/category/price filter engine
+  notifier.py      Telegram and webhook delivery
   static/          no-build frontend
+  version.py       Runtime version/build metadata
 ```
 
-## API Highlights
+## Compliance Boundaries
 
-- `GET /api/summary`
-- `GET /api/profiles`
-- `POST /api/profiles`
-- `PUT /api/profiles/{id}`
-- `POST /api/profiles/{id}/run`
-- `GET /api/listings`
-- `PATCH /api/listings/{id}`
-- `GET /api/listings?watchlisted=true`
-- `POST /api/listings/{id}/inquiry`
-- `GET /api/watchlists`
-- `POST /api/watchlists`
-- `GET /api/users`
-- `POST /api/users`
-- `PATCH /api/users/{id}`
-- `DELETE /api/users/{id}`
-- `GET /api/settings`
-- `PUT /api/settings`
-- `POST /api/settings/password`
-- `POST /api/settings/telegram/test`
-- `POST /api/settings/webhook/test`
+MarketPlaceLens is a conservative monitoring tool for user-supplied search result pages.
 
-## Dependency License Notes
+- No login automation
+- No CAPTCHA bypass
+- No proxy rotation
+- No aggressive polling
+- No automatic seller messaging
+- No full archival of third-party content
+- No local thumbnail mirroring; images are proxied on demand
 
-Runtime dependencies are commonly used permissive packages:
+Use it only where you are allowed to access and process the listing data.
 
-- FastAPI: MIT
-- Uvicorn: BSD-3-Clause
-- Pydantic: MIT
-- HTTPX: BSD-3-Clause
-- Beautiful Soup 4: MIT
+## License
 
-No browser automation, proxy, CAPTCHA, or paid third-party SDK dependency is included in this MVP.
-
-Listing images are not mirrored locally. If a connector finds a thumbnail URL, the UI requests it through the local image endpoint with browser lazy-loading.
+MarketPlaceLens is released under the [MIT License](LICENSE).

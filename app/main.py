@@ -21,8 +21,9 @@ from .database import connect, encode_list, ensure_default_watchlist, init_db, r
 from .filters import apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
 from .schemas import InquiryPayload, ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, UserPayload, UserUpdatePayload, WatchlistPayload
+from .version import APP_VERSION, version_payload
 
-app = FastAPI(title="MarketPlaceLens", version="0.1.0")
+app = FastAPI(title="MarketPlaceLens", version=APP_VERSION)
 static_dir = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 open_check_state = {"running": False, "last_started": 0.0}
@@ -32,7 +33,7 @@ open_check_lock = asyncio.Lock()
 @app.middleware("http")
 async def require_session(request: Request, call_next):
     path = request.url.path
-    public = path.startswith("/static/") or path in {"/login", "/api/auth/login", "/api/auth/status"}
+    public = path.startswith("/static/") or path in {"/login", "/api/auth/login", "/api/auth/status", "/api/version"}
     user = current_user_from_session(request.cookies.get(COOKIE_NAME))
     request.state.user = user
     if public or user:
@@ -85,6 +86,11 @@ async def logout(response: Response) -> dict[str, bool]:
 async def auth_status(request: Request) -> dict[str, Any]:
     user = current_user_from_session(request.cookies.get(COOKIE_NAME))
     return {"authenticated": bool(user), "user": safe_user(user) if user else None}
+
+
+@app.get("/api/version")
+async def app_version() -> dict[str, str]:
+    return version_payload()
 
 
 def request_user(request: Request) -> dict[str, Any]:
@@ -650,7 +656,7 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
     connector = get_connector(profile["source_type"])
     try:
         candidates = await connector.fetch_listings(profile)
-    except Exception as exc:  # surfacing connector failures in manual runs is useful for MVP operations.
+    except Exception as exc:  # Manual runs should surface connector failures directly.
         with connect() as db:
             record_run(
                 db,

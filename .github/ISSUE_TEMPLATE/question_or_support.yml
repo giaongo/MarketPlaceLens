@@ -1,0 +1,34 @@
+name: Question / support
+description: Ask a usage question or get help with setup, configuration, or expected behavior.
+title: "[Question]: "
+labels:
+  - question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for setup questions, expected behavior, source connector notes, or configuration help.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: What do you need help with?
+      placeholder: How should I configure Ollama when MarketPlaceLens runs in Docker?
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Relevant details
+      placeholder: |
+        - MarketPlaceLens version:
+        - Deployment method:
+        - Source/provider:
+        - What you already tried:
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Logs, screenshots, or extra context
+      description: Remove tokens, API keys, private URLs, and personal data before posting.

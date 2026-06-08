@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest an improvement or a new capability for MarketPlaceLens.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Clear feature requests help keep MarketPlaceLens focused and useful.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      placeholder: I want to compare saved listings across several watchlists without opening each listing manually.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      placeholder: Add a comparison view for selected watchlist items.
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefit
+    attributes:
+      label: Why would this help?
+      placeholder: It would make decisions faster when several listings are similar.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds you considered
+      placeholder: Exporting watchlists would help, but an in-app comparison would be cleaner.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context, mockups, or screenshots

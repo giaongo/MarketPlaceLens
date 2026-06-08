@@ -13,7 +13,7 @@ class Settings:
     default_poll_minutes: int = int(os.getenv("MARKETPLACELENS_DEFAULT_POLL_MINUTES", "60"))
     user_agent: str = os.getenv(
         "MARKETPLACELENS_USER_AGENT",
-        "MarketPlaceLens/0.1 (+self-hosted listing watcher)",
+        "MarketPlaceLens/0.2 (+self-hosted listing watcher)",
     )
     telegram_bot_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     telegram_chat_id: str = os.getenv("TELEGRAM_CHAT_ID", "")
