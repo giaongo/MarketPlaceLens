@@ -1,0 +1,22 @@
+services:
+  marketplacelens:
+    build: .
+    container_name: marketplacelens
+    restart: unless-stopped
+    environment:
+      MARKETPLACELENS_DB_PATH: /data/marketplacelens.db
+      MARKETPLACELENS_POLL_ENABLED: ${MARKETPLACELENS_POLL_ENABLED:-true}
+      MARKETPLACELENS_MIN_POLL_MINUTES: ${MARKETPLACELENS_MIN_POLL_MINUTES:-30}
+      MARKETPLACELENS_DEFAULT_POLL_MINUTES: ${MARKETPLACELENS_DEFAULT_POLL_MINUTES:-60}
+      MARKETPLACELENS_USER_AGENT: ${MARKETPLACELENS_USER_AGENT:-MarketPlaceLens/0.1 (+self-hosted listing watcher)}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    ports:
+      - "8091:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - marketplacelens_data:/data
+
+volumes:
+  marketplacelens_data:

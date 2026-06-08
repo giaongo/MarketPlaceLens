@@ -1,0 +1,252 @@
+const state = {
+  profiles: [],
+  selectedProfile: null,
+};
+
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+document.addEventListener("DOMContentLoaded", () => {
+  bindNavigation();
+  bindForms();
+  refreshAll();
+});
+
+function bindNavigation() {
+  $$(".nav-item").forEach((button) => {
+    button.addEventListener("click", () => showView(button.dataset.view));
+  });
+  $("#refresh-button").addEventListener("click", refreshAll);
+  $("#new-profile-button").addEventListener("click", () => editProfile(null));
+  $("#run-profile-button").addEventListener("click", runSelectedProfile);
+  $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
+  $("#listing-status-filter").addEventListener("change", loadListings);
+  $("#include-hidden").addEventListener("change", loadListings);
+}
+
+function bindForms() {
+  $("#profile-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveProfile();
+  });
+  $("#settings-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveSettings();
+  });
+  $("#telegram-test-button").addEventListener("click", testTelegram);
+}
+
+function showView(view) {
+  $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === view));
+  $$(".view").forEach((item) => item.classList.toggle("active", item.id === `${view}-view`));
+  $("#view-title").textContent = {
+    dashboard: "Dashboard",
+    profiles: "Search profiles",
+    listings: "Listings",
+    settings: "Settings",
+  }[view];
+  if (view === "listings") loadListings();
+}
+
+async function refreshAll() {
+  await Promise.all([loadSummary(), loadProfiles(), loadListings(), loadSettings()]);
+}
+
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options,
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || response.statusText);
+  }
+  return response.json();
+}
+
+async function loadSummary() {
+  const summary = await api("/api/summary");
+  $("#summary-active").textContent = `${summary.profiles_enabled}/${summary.profiles_total}`;
+  $("#summary-new").textContent = summary.listings_new;
+  $("#summary-hidden").textContent = summary.listings_hidden;
+  $("#summary-notified").textContent = summary.listings_notified;
+  $("#recent-runs").innerHTML = summary.recent_runs.length
+    ? summary.recent_runs.map((run) => `
+      <article>
+        <strong>${escapeHtml(run.name)}</strong>
+        <p class="meta">${run.enabled ? "enabled" : "paused"} · last run ${formatDate(run.last_run_at)}</p>
+      </article>
+    `).join("")
+    : `<article><strong>No runs yet</strong><p class="meta">Create a profile and run it manually.</p></article>`;
+}
+
+async function loadProfiles() {
+  state.profiles = await api("/api/profiles");
+  $("#profiles-list").innerHTML = state.profiles.length
+    ? state.profiles.map((profile) => `
+      <article class="profile-card ${state.selectedProfile?.id === profile.id ? "active" : ""}" data-id="${profile.id}">
+        <h3>${escapeHtml(profile.name)}</h3>
+        <p class="meta">${profile.enabled ? "enabled" : "paused"} · ${escapeHtml(profile.source_type)} · every ${profile.poll_interval_minutes} min</p>
+        <p class="meta">${escapeHtml(profile.search_url)}</p>
+      </article>
+    `).join("")
+    : `<article class="profile-card"><h3>No profiles</h3><p class="meta">Add the first search URL on the right.</p></article>`;
+  $$(".profile-card[data-id]").forEach((card) => {
+    card.addEventListener("click", () => {
+      const profile = state.profiles.find((item) => item.id === Number(card.dataset.id));
+      editProfile(profile);
+    });
+  });
+}
+
+function editProfile(profile) {
+  state.selectedProfile = profile;
+  $("#profile-form-title").textContent = profile ? "Edit profile" : "New profile";
+  $("#profile-id").value = profile?.id || "";
+  $("#profile-name").value = profile?.name || "";
+  $("#profile-source").value = profile?.source_type || "html";
+  $("#profile-url").value = profile?.search_url || "";
+  $("#profile-interval").value = profile?.poll_interval_minutes || 60;
+  $("#profile-location").value = profile?.location_hint || "";
+  $("#profile-min-price").value = profile?.min_price ?? "";
+  $("#profile-max-price").value = profile?.max_price ?? "";
+  $("#profile-include").value = (profile?.include_keywords || []).join("\n");
+  $("#profile-required").value = (profile?.required_keywords || []).join("\n");
+  $("#profile-exclude").value = (profile?.exclude_keywords || []).join("\n");
+  $("#profile-categories").value = (profile?.excluded_categories || []).join("\n");
+  $("#profile-enabled").checked = profile?.enabled ?? true;
+  $("#profile-notify").checked = profile?.notify_telegram ?? true;
+  loadProfiles();
+}
+
+async function saveProfile() {
+  const payload = profilePayload();
+  const id = $("#profile-id").value;
+  const saved = await api(id ? `/api/profiles/${id}` : "/api/profiles", {
+    method: id ? "PUT" : "POST",
+    body: JSON.stringify(payload),
+  });
+  toast("Profile saved");
+  editProfile(saved);
+  await refreshAll();
+}
+
+async function runSelectedProfile() {
+  const id = $("#profile-id").value;
+  if (!id) return toast("Save a profile first");
+  toast("Run started");
+  const result = await api(`/api/profiles/${id}/run`, { method: "POST" });
+  toast(`Run complete: ${result.new} new, ${result.hidden} hidden, ${result.duplicates} duplicate`);
+  await refreshAll();
+}
+
+async function deleteSelectedProfile() {
+  const id = $("#profile-id").value;
+  if (!id) return;
+  await api(`/api/profiles/${id}`, { method: "DELETE" });
+  toast("Profile deleted");
+  editProfile(null);
+  await refreshAll();
+}
+
+function profilePayload() {
+  return {
+    name: $("#profile-name").value,
+    enabled: $("#profile-enabled").checked,
+    source_type: $("#profile-source").value,
+    search_url: $("#profile-url").value,
+    poll_interval_minutes: Number($("#profile-interval").value || 60),
+    include_keywords: lines("#profile-include"),
+    required_keywords: lines("#profile-required"),
+    exclude_keywords: lines("#profile-exclude"),
+    excluded_categories: lines("#profile-categories"),
+    min_price: numberOrNull("#profile-min-price"),
+    max_price: numberOrNull("#profile-max-price"),
+    location_hint: $("#profile-location").value,
+    notify_telegram: $("#profile-notify").checked,
+  };
+}
+
+async function loadListings() {
+  const status = $("#listing-status-filter").value;
+  const includeHidden = $("#include-hidden").checked;
+  const query = new URLSearchParams();
+  if (status) query.set("status", status);
+  query.set("include_hidden", String(includeHidden));
+  const listings = await api(`/api/listings?${query}`);
+  $("#listings-table").innerHTML = listings.length
+    ? listings.map((listing) => `
+      <tr>
+        <td><a href="${escapeAttribute(listing.listing_url)}" target="_blank" rel="noopener">${escapeHtml(listing.title)}</a><p class="meta">${escapeHtml(listing.description_snippet || "")}</p></td>
+        <td>${escapeHtml(listing.profile_name || "")}</td>
+        <td>${escapeHtml(listing.price_text || "")}</td>
+        <td>${escapeHtml(listing.location_text || "")}</td>
+        <td><span class="pill ${escapeAttribute(listing.status)}">${escapeHtml(listing.status)}</span></td>
+        <td>${listing.score}</td>
+        <td>${escapeHtml(listing.filter_reason || "")}</td>
+        <td>${formatDate(listing.first_seen_at)}</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="8">No listings yet.</td></tr>`;
+}
+
+async function loadSettings() {
+  const settings = await api("/api/settings");
+  $("#telegram-token").value = settings.telegram_bot_token;
+  $("#telegram-chat").value = settings.telegram_chat_id;
+  $("#global-rate").value = settings.global_rate_limit_seconds;
+}
+
+async function saveSettings() {
+  await api("/api/settings", {
+    method: "PUT",
+    body: JSON.stringify({
+      telegram_bot_token: $("#telegram-token").value,
+      telegram_chat_id: $("#telegram-chat").value,
+      global_rate_limit_seconds: Number($("#global-rate").value || 20),
+    }),
+  });
+  toast("Settings saved");
+  await loadSettings();
+}
+
+async function testTelegram() {
+  await api("/api/settings/telegram/test", { method: "POST" });
+  toast("Telegram test sent");
+}
+
+function lines(selector) {
+  return $(selector).value.split(/\n|,/).map((item) => item.trim()).filter(Boolean);
+}
+
+function numberOrNull(selector) {
+  const value = $(selector).value;
+  return value === "" ? null : Number(value);
+}
+
+function formatDate(value) {
+  return value ? new Date(value).toLocaleString() : "never";
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  }[char]));
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replace(/`/g, "&#096;");
+}
+
+function toast(message) {
+  const node = $("#toast");
+  node.textContent = message;
+  node.classList.add("visible");
+  clearTimeout(window.toastTimer);
+  window.toastTimer = setTimeout(() => node.classList.remove("visible"), 3600);
+}
+
