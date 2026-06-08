@@ -1282,6 +1282,106 @@ textarea.chip-source {
   color: var(--warning);
 }
 
+.review-panel {
+  max-width: 940px;
+  margin-inline: auto;
+}
+
+.review-stage {
+  display: grid;
+  min-height: 560px;
+}
+
+.review-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.review-card.empty-review {
+  place-items: center;
+  min-height: 360px;
+  padding: 28px;
+  text-align: center;
+}
+
+.review-image-wrap {
+  position: relative;
+  min-height: 520px;
+  background: var(--brand-soft);
+}
+
+.review-image {
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  object-fit: cover;
+  display: block;
+}
+
+.review-image.placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.review-gesture-hints {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.review-gesture-hints span {
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.review-details {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 20px;
+}
+
+.review-details h3 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.review-price {
+  font-size: 1.5rem;
+  color: var(--brand-dark);
+}
+
+.review-description {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.review-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
 .grid-view .mini-button {
   border-width: 0 1px 0 0;
   border-radius: 0;
@@ -1414,6 +1514,15 @@ textarea.chip-source {
   .listing-card {
     grid-template-columns: 1fr;
     min-width: 0;
+  }
+
+  .review-card {
+    grid-template-columns: 1fr;
+  }
+
+  .review-image-wrap,
+  .review-image {
+    min-height: 360px;
   }
 
   .listing-browser.grid-view {

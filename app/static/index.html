@@ -24,6 +24,7 @@
         <button class="nav-item active" data-view="dashboard" data-i18n="nav.dashboard">Dashboard</button>
         <button class="nav-item" data-view="profiles" data-i18n="nav.profiles">Jobs</button>
         <button class="nav-item" data-view="listings" data-i18n="nav.listings">Listings</button>
+        <button class="nav-item" data-view="review" data-i18n="nav.review">Review</button>
         <button class="nav-item" data-view="watchlist" data-i18n="nav.watchlist">Watchlist</button>
         <button class="nav-item" data-view="settings" data-i18n="nav.settings">Settings</button>
       </nav>
@@ -378,6 +379,23 @@
             </div>
           </div>
           <div id="listings-table" class="listing-browser"></div>
+        </section>
+      </section>
+
+      <section id="review-view" class="view">
+        <section class="panel review-panel">
+          <div class="panel-heading">
+            <div>
+              <h2 data-i18n="review.title">Listing review</h2>
+              <p class="panel-subtitle" data-i18n="review.subtitle">Scan one listing at a time with image, price, location, and source data.</p>
+            </div>
+          </div>
+          <div id="review-card" class="review-stage"></div>
+          <div class="review-actions">
+            <button class="button ghost" type="button" id="review-watch-button" data-i18n="review.watch">Watchlist</button>
+            <button class="button primary" type="button" id="review-seen-button" data-i18n="review.seen">Seen, next</button>
+            <button class="button ghost" type="button" id="review-open-button" data-i18n="review.open">Open original</button>
+          </div>
         </section>
       </section>
 

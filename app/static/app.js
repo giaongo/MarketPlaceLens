@@ -7,6 +7,9 @@ const state = {
   listingPage: 0,
   watchlistPage: 0,
   pageSize: Number(localStorage.getItem("marketplacelens.pageSize") || 10),
+  reviewQueue: [],
+  reviewIndex: 0,
+  reviewPointer: null,
   locationMap: null,
   locationMarker: null,
   locationCircle: null,
@@ -19,6 +22,7 @@ const translations = {
     "nav.dashboard": "Dashboard",
     "nav.profiles": "Jobs",
     "nav.listings": "Listings",
+    "nav.review": "Review",
     "nav.watchlist": "Watchlist",
     "nav.settings": "Settings",
     "top.eyebrow": "Local marketplace watcher",
@@ -146,6 +150,15 @@ const translations = {
     "listings.runSelectedJobHint": "Select a job to run it from here.",
     "watchlist.title": "Watchlist",
     "watchlist.subtitle": "Saved listings you want to compare or revisit later.",
+    "review.title": "Listing review",
+    "review.subtitle": "Scan one listing at a time with image, price, location, and source data.",
+    "review.empty": "No listings to review",
+    "review.emptyHint": "Run a job or reset seen listings to fill this queue.",
+    "review.watch": "Watchlist",
+    "review.seen": "Seen, next",
+    "review.open": "Open original",
+    "review.doubleClick": "Double-click to add to watchlist",
+    "review.swipe": "Swipe to mark seen",
     "status.new": "New",
     "status.notified": "Notified",
     "status.hidden": "Hidden",
@@ -221,6 +234,7 @@ const translations = {
     "nav.dashboard": "Dashboard",
     "nav.profiles": "Jobs",
     "nav.listings": "Listings",
+    "nav.review": "Review",
     "nav.watchlist": "Watchlist",
     "nav.settings": "Einstellungen",
     "top.eyebrow": "Lokaler Marketplace-Watcher",
@@ -348,6 +362,15 @@ const translations = {
     "listings.runSelectedJobHint": "Wähle einen Job aus, um ihn hier zu starten.",
     "watchlist.title": "Watchlist",
     "watchlist.subtitle": "Gespeicherte Listings zum Vergleichen oder späteren Öffnen.",
+    "review.title": "Listing-Review",
+    "review.subtitle": "Ein Listing nach dem anderen mit Bild, Preis, Ort und Quelle prüfen.",
+    "review.empty": "Keine Listings zum Prüfen",
+    "review.emptyHint": "Starte einen Job oder setze gesehene Listings zurück, um die Queue zu füllen.",
+    "review.watch": "Watchlist",
+    "review.seen": "Gesehen, nächstes",
+    "review.open": "Original öffnen",
+    "review.doubleClick": "Doppelklick speichert in die Watchlist",
+    "review.swipe": "Wischen markiert als gesehen",
     "status.new": "Neu",
     "status.notified": "Benachrichtigt",
     "status.hidden": "Ausgeblendet",
@@ -516,6 +539,9 @@ function bindNavigation() {
   $("#profile-location-map").addEventListener("click", setMapLocation);
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
   $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
+  $("#review-watch-button").addEventListener("click", reviewWatchCurrent);
+  $("#review-seen-button").addEventListener("click", reviewSeenCurrent);
+  $("#review-open-button").addEventListener("click", reviewOpenCurrent);
   $("#listing-status-filter").addEventListener("change", resetListingsPage);
   $("#listing-profile-filter").addEventListener("change", () => {
     updateListingRunButton();
@@ -595,6 +621,7 @@ function showView(view) {
     dashboard: "nav.dashboard",
     profiles: "nav.profiles",
     listings: "nav.listings",
+    review: "nav.review",
     watchlist: "nav.watchlist",
     settings: "nav.settings",
   }[view]);
@@ -616,7 +643,7 @@ function showWizard(visible) {
 
 async function refreshAll() {
   try {
-    await Promise.all([loadSummary(), loadProfiles(), loadListings(), loadWatchlist(), loadSettings()]);
+    await Promise.all([loadSummary(), loadProfiles(), loadListings(), loadWatchlist(), loadReviewQueue(), loadSettings()]);
   } catch (error) {
     if (String(error.message).includes("Not authenticated") || String(error.message).includes("401")) {
       window.location.href = "/login";
@@ -1399,6 +1426,129 @@ async function loadWatchlist() {
   await loadListingBrowser("#watchlist-table", true);
 }
 
+async function loadReviewQueue() {
+  const query = new URLSearchParams({
+    status: "new",
+    include_hidden: "false",
+    sort: "date_desc",
+    limit: "50",
+    offset: "0",
+    paged: "true",
+  });
+  const result = await api(`/api/listings?${query}`);
+  state.reviewQueue = result.items || [];
+  state.reviewIndex = Math.min(state.reviewIndex, Math.max(0, state.reviewQueue.length - 1));
+  renderReviewCard();
+}
+
+function currentReviewListing() {
+  return state.reviewQueue[state.reviewIndex] || null;
+}
+
+function renderReviewCard() {
+  const target = $("#review-card");
+  if (!target) return;
+  const listing = currentReviewListing();
+  const watchButton = $("#review-watch-button");
+  const seenButton = $("#review-seen-button");
+  const openButton = $("#review-open-button");
+  [watchButton, seenButton, openButton].forEach((button) => {
+    if (button) button.disabled = !listing;
+  });
+  if (!listing) {
+    target.innerHTML = `
+      <article class="review-card empty-review">
+        <strong>${escapeHtml(t("review.empty"))}</strong>
+        <p class="meta">${escapeHtml(t("review.emptyHint"))}</p>
+      </article>
+    `;
+    return;
+  }
+  target.innerHTML = reviewListingMarkup(listing);
+  const card = target.querySelector("[data-review-card]");
+  bindReviewGestures(card);
+}
+
+function reviewListingMarkup(listing) {
+  return `
+    <article class="review-card" data-review-card data-id="${listing.id}">
+      <div class="review-image-wrap">
+        ${listing.thumbnail_url ? `<img class="review-image" src="/api/listings/${listing.id}/image" alt="">` : `<div class="review-image placeholder">${escapeHtml(t("listing.noImage"))}</div>`}
+        <div class="review-gesture-hints">
+          <span>${escapeHtml(t("review.doubleClick"))}</span>
+          <span>${escapeHtml(t("review.swipe"))}</span>
+        </div>
+      </div>
+      <div class="review-details">
+        <div>
+          <span class="source-badge ${escapeAttribute(listing.source_type)}">${escapeHtml(sourceLabel(listing.source_type))}</span>
+          ${listing.watchlisted ? `<span class="pill watchlist-pill">${escapeHtml(t("summary.watchlist"))}</span>` : ""}
+        </div>
+        <h3>${escapeHtml(listing.title)}</h3>
+        <strong class="review-price">${escapeHtml(listing.price_text || t("listing.noPrice"))}</strong>
+        <div class="listing-facts">
+          <span>${escapeHtml(listing.location_text || t("listing.noLocation"))}</span>
+          ${listing.category_text ? `<span>${escapeHtml(listing.category_text)}</span>` : ""}
+          ${listing.posted_at_text ? `<span>${escapeHtml(listing.posted_at_text)}</span>` : ""}
+          <span>${escapeHtml(t("listing.score", { score: listing.score }))}</span>
+        </div>
+        ${listing.description_snippet ? `<p class="review-description">${escapeHtml(listing.description_snippet)}</p>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function bindReviewGestures(card) {
+  if (!card) return;
+  card.addEventListener("dblclick", reviewWatchCurrent);
+  card.addEventListener("pointerdown", (event) => {
+    state.reviewPointer = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    card.setPointerCapture?.(event.pointerId);
+  });
+  card.addEventListener("pointerup", async (event) => {
+    const start = state.reviewPointer;
+    state.reviewPointer = null;
+    if (!start || start.id !== event.pointerId) return;
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (Math.abs(dx) > 90 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      await reviewSeenCurrent();
+    }
+  });
+}
+
+async function reviewWatchCurrent() {
+  const listing = currentReviewListing();
+  if (!listing) return;
+  await api(`/api/listings/${listing.id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ watchlisted: true }),
+  });
+  listing.watchlisted = true;
+  toast(t("toast.watchlistAdded"));
+  renderReviewCard();
+  await Promise.all([loadWatchlist(), loadSummary()]);
+}
+
+async function reviewSeenCurrent() {
+  const listing = currentReviewListing();
+  if (!listing) return;
+  await api(`/api/listings/${listing.id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "seen" }),
+  });
+  toast(t("toast.listingSeen"));
+  state.reviewQueue.splice(state.reviewIndex, 1);
+  if (state.reviewIndex >= state.reviewQueue.length) state.reviewIndex = Math.max(0, state.reviewQueue.length - 1);
+  renderReviewCard();
+  await Promise.all([loadListings(), loadSummary()]);
+}
+
+function reviewOpenCurrent() {
+  const listing = currentReviewListing();
+  if (listing?.listing_url) window.open(listing.listing_url, "_blank", "noopener");
+}
+
 async function loadListingBrowser(containerSelector, watchlistedOnly) {
   const browser = $(containerSelector);
   if (!browser) return;
@@ -1448,7 +1598,7 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
         body: JSON.stringify({ status: button.dataset.listingAction }),
       });
       toast(listingActionToast(button.dataset.listingAction));
-      await Promise.all([loadListings(), loadWatchlist(), loadSummary()]);
+      await Promise.all([loadListings(), loadWatchlist(), loadReviewQueue(), loadSummary()]);
     });
   });
   browser.querySelectorAll("[data-watchlist-action]").forEach((button) => {
@@ -1460,7 +1610,7 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
         body: JSON.stringify({ watchlisted: added }),
       });
       toast(t(added ? "toast.watchlistAdded" : "toast.watchlistRemoved"));
-      await Promise.all([loadListings(), loadWatchlist(), loadSummary()]);
+      await Promise.all([loadListings(), loadWatchlist(), loadReviewQueue(), loadSummary()]);
     });
   });
   browser.querySelectorAll(".listing-image").forEach((img) => {
