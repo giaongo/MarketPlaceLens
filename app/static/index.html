@@ -109,46 +109,79 @@
                   <p data-i18n="wizard.subtitle">Create a Kleinanzeigen job from a search term, then fine-tune it below.</p>
                 </div>
               </div>
-              <div class="wizard-grid">
-                <label><span data-i18n="wizard.source">Source</span>
-                  <select id="wizard-source">
-                    <option value="kleinanzeigen">Kleinanzeigen</option>
-                    <option value="facebook">Facebook Marketplace</option>
-                  </select>
-                </label>
-                <label><span data-i18n="wizard.category">Category</span>
-                  <select id="wizard-category"></select>
-                </label>
-                <div id="wizard-kleinanzeigen-types" class="type-choice-row wide">
-                  <span data-i18n="listingTypes.title">Listing types</span>
-                  <label class="switch compact"><input type="checkbox" name="wizard-kleinanzeigen-type" value="angebote" checked> <span data-i18n="listingTypes.offers">Offers</span></label>
-                  <label class="switch compact"><input type="checkbox" name="wizard-kleinanzeigen-type" value="gesuche" checked> <span data-i18n="listingTypes.wanted">Wanted</span></label>
-                </div>
-                <label class="wide"><span data-i18n="wizard.query">What should be found?</span><input id="wizard-query" required placeholder="defekte elektronik"></label>
-                <label><span data-i18n="wizard.maxPrice">Maximum price</span><input id="wizard-max-price" type="number" step="0.01" placeholder="100"></label>
-                <label><span data-i18n="wizard.location">Location</span><input id="wizard-location" placeholder="Berlin"></label>
-                <label><span data-i18n="location.radius">Radius</span>
-                  <select id="wizard-location-radius">
-                    <option value="" data-i18n="location.wholePlace">Whole place</option>
-                    <option value="5">+5 km</option>
-                    <option value="10">+10 km</option>
-                    <option value="20">+20 km</option>
-                    <option value="30">+30 km</option>
-                    <option value="50">+50 km</option>
-                    <option value="100">+100 km</option>
-                    <option value="150">+150 km</option>
-                    <option value="200">+200 km</option>
-                  </select>
-                </label>
-                <label class="wide"><span data-i18n="wizard.mustInclude">Must include</span><textarea id="wizard-required" data-chip-list data-chip-placeholder="keyword.add" placeholder="abholung"></textarea></label>
-                <label class="wide"><span data-i18n="wizard.hideWords">Hide words</span><textarea id="wizard-exclude" data-chip-list data-chip-placeholder="keyword.add" placeholder="gesuch&#10;tausch"></textarea></label>
-                <label class="switch"><input id="wizard-enabled" type="checkbox"> <span data-i18n="form.backgroundPolling">Background polling</span></label>
-                  <label class="switch"><input id="wizard-notify" type="checkbox"> <span data-i18n="form.telegram">Telegram</span></label>
-                  <label class="switch"><input id="wizard-notify-webhook" type="checkbox"> <span data-i18n="form.webhook">Webhook</span></label>
+              <div class="wizard-progress" aria-label="Wizard progress">
+                <button class="wizard-progress-step active" type="button" data-wizard-jump="0"><span>1</span><strong data-i18n="wizard.stepSource">Source</strong></button>
+                <button class="wizard-progress-step" type="button" data-wizard-jump="1"><span>2</span><strong data-i18n="wizard.stepSearch">Search</strong></button>
+                <button class="wizard-progress-step" type="button" data-wizard-jump="2"><span>3</span><strong data-i18n="wizard.stepFilters">Filters</strong></button>
+                <button class="wizard-progress-step" type="button" data-wizard-jump="3"><span>4</span><strong data-i18n="wizard.stepReview">Review</strong></button>
               </div>
-              <div class="actions">
-                <button class="button primary" type="submit" data-i18n="wizard.create">Create profile</button>
+              <div class="wizard-assistant">
+                <div class="wizard-step active" data-wizard-step="0">
+                  <h3 data-i18n="wizard.sourcePrompt">Where should I search?</h3>
+                  <p class="meta" data-i18n="wizard.sourceHelp">Choose the marketplace and optionally narrow it to a category.</p>
+                  <div class="wizard-grid">
+                    <label><span data-i18n="wizard.source">Source</span>
+                      <select id="wizard-source">
+                        <option value="kleinanzeigen">Kleinanzeigen</option>
+                        <option value="facebook">Facebook Marketplace</option>
+                      </select>
+                    </label>
+                    <label><span data-i18n="wizard.category">Category</span>
+                      <select id="wizard-category"></select>
+                    </label>
+                    <div id="wizard-kleinanzeigen-types" class="type-choice-row wide">
+                      <span data-i18n="listingTypes.title">Listing types</span>
+                      <label class="switch compact"><input type="checkbox" name="wizard-kleinanzeigen-type" value="angebote" checked> <span data-i18n="listingTypes.offers">Offers</span></label>
+                      <label class="switch compact"><input type="checkbox" name="wizard-kleinanzeigen-type" value="gesuche" checked> <span data-i18n="listingTypes.wanted">Wanted</span></label>
+                    </div>
+                  </div>
+                </div>
+                <div class="wizard-step" data-wizard-step="1">
+                  <h3 data-i18n="wizard.searchPrompt">What should the job find?</h3>
+                  <p class="meta" data-i18n="wizard.searchHelp">Name the item as you would search for it, then add optional price and location limits.</p>
+                  <div class="wizard-grid">
+                    <label class="wide"><span data-i18n="wizard.query">What should be found?</span><input id="wizard-query" required placeholder="defekte elektronik"></label>
+                    <label><span data-i18n="wizard.maxPrice">Maximum price</span><input id="wizard-max-price" type="number" step="0.01" placeholder="100"></label>
+                    <label><span data-i18n="wizard.location">Location</span><input id="wizard-location" placeholder="Berlin"></label>
+                    <label><span data-i18n="location.radius">Radius</span>
+                      <select id="wizard-location-radius">
+                        <option value="" data-i18n="location.wholePlace">Whole place</option>
+                        <option value="5">+5 km</option>
+                        <option value="10">+10 km</option>
+                        <option value="20">+20 km</option>
+                        <option value="30">+30 km</option>
+                        <option value="50">+50 km</option>
+                        <option value="100">+100 km</option>
+                        <option value="150">+150 km</option>
+                        <option value="200">+200 km</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+                <div class="wizard-step" data-wizard-step="2">
+                  <h3 data-i18n="wizard.filterPrompt">What should I prefer or ignore?</h3>
+                  <p class="meta" data-i18n="wizard.filterHelp">Add words that must appear or words that should hide a listing.</p>
+                  <div class="wizard-grid">
+                    <label class="wide"><span data-i18n="wizard.mustInclude">Must include</span><textarea id="wizard-required" data-chip-list data-chip-placeholder="keyword.add" placeholder="abholung"></textarea></label>
+                    <label class="wide"><span data-i18n="wizard.hideWords">Hide words</span><textarea id="wizard-exclude" data-chip-list data-chip-placeholder="keyword.add" placeholder="gesuch&#10;tausch"></textarea></label>
+                  </div>
+                </div>
+                <div class="wizard-step" data-wizard-step="3">
+                  <h3 data-i18n="wizard.reviewPrompt">How should the job run?</h3>
+                  <p class="meta" data-i18n="wizard.reviewHelp">Decide whether this job should run automatically and send notifications.</p>
+                  <div class="wizard-grid">
+                    <label class="switch"><input id="wizard-enabled" type="checkbox"> <span data-i18n="form.backgroundPolling">Background polling</span></label>
+                    <label class="switch"><input id="wizard-notify" type="checkbox"> <span data-i18n="form.telegram">Telegram</span></label>
+                    <label class="switch"><input id="wizard-notify-webhook" type="checkbox"> <span data-i18n="form.webhook">Webhook</span></label>
+                  </div>
+                  <div id="wizard-summary" class="wizard-summary"></div>
+                </div>
+              </div>
+              <div class="actions wizard-actions">
+                <button class="button ghost" type="button" id="wizard-back-button" data-i18n="wizard.back">Back</button>
                 <button class="button ghost" type="button" id="wizard-cancel-button" data-i18n="wizard.manualForm">Use manual form</button>
+                <button class="button primary" type="button" id="wizard-next-button" data-i18n="wizard.next">Next</button>
+                <button class="button primary hidden" type="submit" id="wizard-create-button" data-i18n="wizard.create">Create profile</button>
               </div>
             </form>
             <form id="profile-form" class="profile-form">

@@ -13,6 +13,7 @@ const state = {
   watchlists: [],
   defaultWatchlistId: null,
   aiEnabled: false,
+  wizardStep: 0,
   currentUser: null,
   users: [],
   locationMap: null,
@@ -100,7 +101,23 @@ const translations = {
     "profile.save": "Save job",
     "profile.runNow": "Run now",
     "wizard.title": "Quick job",
-    "wizard.subtitle": "Create a job from source, category, and search term, then fine-tune it below.",
+    "wizard.subtitle": "I will guide you through source, search, filters, and automation.",
+    "wizard.stepSource": "Source",
+    "wizard.stepSearch": "Search",
+    "wizard.stepFilters": "Filters",
+    "wizard.stepReview": "Review",
+    "wizard.sourcePrompt": "Where should I search?",
+    "wizard.sourceHelp": "Choose the marketplace and optionally narrow it to a category.",
+    "wizard.searchPrompt": "What should the job find?",
+    "wizard.searchHelp": "Name the item as you would search for it, then add optional price and location limits.",
+    "wizard.filterPrompt": "What should I prefer or ignore?",
+    "wizard.filterHelp": "Add words that must appear or words that should hide a listing.",
+    "wizard.reviewPrompt": "How should the job run?",
+    "wizard.reviewHelp": "Decide whether this job should run automatically and send notifications.",
+    "wizard.summaryTitle": "Job preview",
+    "wizard.summaryEmpty": "Add a search term and I will assemble the job.",
+    "wizard.back": "Back",
+    "wizard.next": "Next",
     "wizard.query": "What should be found?",
     "wizard.source": "Source",
     "wizard.category": "Category",
@@ -357,7 +374,23 @@ const translations = {
     "profile.save": "Job speichern",
     "profile.runNow": "Jetzt ausführen",
     "wizard.title": "Schnelljob",
-    "wizard.subtitle": "Job aus Quelle, Kategorie und Suchbegriff erstellen und danach unten feinjustieren.",
+    "wizard.subtitle": "Ich führe dich durch Quelle, Suche, Filter und Automation.",
+    "wizard.stepSource": "Quelle",
+    "wizard.stepSearch": "Suche",
+    "wizard.stepFilters": "Filter",
+    "wizard.stepReview": "Prüfen",
+    "wizard.sourcePrompt": "Wo soll ich suchen?",
+    "wizard.sourceHelp": "Wähle den Marktplatz und optional eine Kategorie.",
+    "wizard.searchPrompt": "Was soll der Job finden?",
+    "wizard.searchHelp": "Beschreibe den Artikel wie bei einer Suche und ergänze optional Preis und Ort.",
+    "wizard.filterPrompt": "Was soll bevorzugt oder ignoriert werden?",
+    "wizard.filterHelp": "Füge Wörter hinzu, die vorkommen müssen oder ein Listing ausblenden sollen.",
+    "wizard.reviewPrompt": "Wie soll der Job laufen?",
+    "wizard.reviewHelp": "Lege fest, ob der Job automatisch läuft und Benachrichtigungen sendet.",
+    "wizard.summaryTitle": "Job-Vorschau",
+    "wizard.summaryEmpty": "Gib einen Suchbegriff ein, dann setze ich den Job zusammen.",
+    "wizard.back": "Zurück",
+    "wizard.next": "Weiter",
     "wizard.query": "Was soll gefunden werden?",
     "wizard.source": "Quelle",
     "wizard.category": "Kategorie",
@@ -604,7 +637,16 @@ function bindNavigation() {
   $("#theme-select").addEventListener("change", () => setTheme($("#theme-select").value));
   $("#wizard-button").addEventListener("click", () => showWizard(true));
   $("#wizard-cancel-button").addEventListener("click", () => showWizard(false));
-  $("#wizard-source").addEventListener("change", updateWizardCategories);
+  $("#wizard-back-button").addEventListener("click", previousWizardStep);
+  $("#wizard-next-button").addEventListener("click", nextWizardStep);
+  $$("[data-wizard-jump]").forEach((button) => {
+    button.addEventListener("click", () => jumpWizardStep(Number(button.dataset.wizardJump)));
+  });
+  $("#wizard-source").addEventListener("change", () => {
+    updateWizardCategories();
+    updateWizardSummary();
+  });
+  $("#wizard-category").addEventListener("change", updateWizardSummary);
   $("#new-profile-button").addEventListener("click", () => editProfile(null));
   $("#profile-source").addEventListener("change", updateSourcePlaceholder);
   $("#profile-url").addEventListener("input", debounce(() => syncProfileParametersFromUrl(false), 220));
@@ -614,8 +656,22 @@ function bindNavigation() {
     button.addEventListener("click", () => selectSource(button.dataset.sourceOption));
   });
   $$("input[name='wizard-kleinanzeigen-type']").forEach((input) => {
-    input.addEventListener("change", updateKleinanzeigenTypeVisibility);
+    input.addEventListener("change", () => {
+      updateKleinanzeigenTypeVisibility();
+      updateWizardSummary();
+    });
   });
+  [
+    "#wizard-query",
+    "#wizard-max-price",
+    "#wizard-location",
+    "#wizard-location-radius",
+    "#wizard-required",
+    "#wizard-exclude",
+    "#wizard-enabled",
+    "#wizard-notify",
+    "#wizard-notify-webhook",
+  ].forEach((selector) => $(selector).addEventListener("input", updateWizardSummary));
   $$("input[name='profile-kleinanzeigen-type']").forEach((input) => {
     input.addEventListener("change", () => {
       syncProfileKleinanzeigenTypeUrl();
@@ -749,10 +805,69 @@ function showWizard(visible) {
   if (visible) {
     updateProfileFormTitle(true);
     updateWizardCategories();
-    $("#wizard-query").focus();
+    setWizardStep(0);
+    updateWizardSummary();
+    focusWizardStep();
   } else {
     editProfile(null);
   }
+}
+
+function setWizardStep(step) {
+  state.wizardStep = Math.max(0, Math.min(3, step));
+  $$("[data-wizard-step]").forEach((panel) => {
+    panel.classList.toggle("active", Number(panel.dataset.wizardStep) === state.wizardStep);
+  });
+  $$("[data-wizard-jump]").forEach((button) => {
+    const index = Number(button.dataset.wizardJump);
+    button.classList.toggle("active", index === state.wizardStep);
+    button.classList.toggle("complete", index < state.wizardStep);
+  });
+  $("#wizard-back-button").disabled = state.wizardStep === 0;
+  $("#wizard-next-button").classList.toggle("hidden", state.wizardStep === 3);
+  $("#wizard-create-button").classList.toggle("hidden", state.wizardStep !== 3);
+  updateWizardSummary();
+}
+
+function nextWizardStep() {
+  if (!validateWizardStep(state.wizardStep)) return;
+  setWizardStep(state.wizardStep + 1);
+  focusWizardStep();
+}
+
+function previousWizardStep() {
+  setWizardStep(state.wizardStep - 1);
+  focusWizardStep();
+}
+
+function jumpWizardStep(step) {
+  for (let index = 0; index < step; index += 1) {
+    if (!validateWizardStep(index)) {
+      setWizardStep(index);
+      focusWizardStep();
+      return;
+    }
+  }
+  setWizardStep(step);
+  focusWizardStep();
+}
+
+function focusWizardStep() {
+  const active = $(`[data-wizard-step="${state.wizardStep}"]`);
+  const field = active?.querySelector("input:not([type='checkbox']), select, textarea");
+  if (field) field.focus();
+}
+
+function validateWizardStep(step) {
+  if (step === 0 && $("#wizard-source").value === "kleinanzeigen" && !selectedKleinanzeigenTypes("wizard").length) {
+    toast(t("toast.listingTypeRequired"));
+    return false;
+  }
+  if (step === 1 && !$("#wizard-query").value.trim()) {
+    toast(t("toast.searchRequired"));
+    return false;
+  }
+  return true;
 }
 
 async function refreshAll() {
@@ -1293,6 +1408,13 @@ function updateProfileFormTitle(wizardVisible = !$("#profile-wizard").classList.
 }
 
 async function createProfileFromWizard() {
+  for (let step = 0; step <= 3; step += 1) {
+    if (!validateWizardStep(step)) {
+      setWizardStep(step);
+      focusWizardStep();
+      return;
+    }
+  }
   const query = $("#wizard-query").value.trim();
   if (!query) return toast(t("toast.searchRequired"));
   const source = $("#wizard-source").value;
@@ -1343,6 +1465,8 @@ function clearWizard() {
   $("#wizard-enabled").checked = false;
   $("#wizard-notify").checked = false;
   $("#wizard-notify-webhook").checked = false;
+  setWizardStep(0);
+  updateWizardSummary();
 }
 
 function updateWizardCategories() {
@@ -1355,6 +1479,7 @@ function updateWizardCategories() {
   `;
   $("#wizard-category").value = categories.some((category) => (category.id || category.slug) === current) ? current : "";
   updateKleinanzeigenTypeVisibility();
+  updateWizardSummary();
 }
 
 function selectedWizardCategory() {
@@ -1362,6 +1487,41 @@ function selectedWizardCategory() {
   const value = $("#wizard-category").value;
   if (!value) return null;
   return (providerCategories[source] || []).find((category) => (category.id || category.slug) === value) || null;
+}
+
+function updateWizardSummary() {
+  const target = $("#wizard-summary");
+  if (!target) return;
+  const query = $("#wizard-query").value.trim();
+  if (!query) {
+    target.innerHTML = `<strong>${escapeHtml(t("wizard.summaryTitle"))}</strong><p class="meta">${escapeHtml(t("wizard.summaryEmpty"))}</p>`;
+    return;
+  }
+  const source = sourceLabel($("#wizard-source").value);
+  const category = selectedWizardCategory()?.label || t("wizard.allCategories");
+  const location = $("#wizard-location").value.trim();
+  const radius = $("#wizard-location-radius").value;
+  const price = $("#wizard-max-price").value;
+  const required = listFromText($("#wizard-required").value);
+  const excluded = listFromText($("#wizard-exclude").value);
+  const automation = [
+    $("#wizard-enabled").checked ? t("form.backgroundPolling") : "",
+    $("#wizard-notify").checked ? t("form.telegram") : "",
+    $("#wizard-notify-webhook").checked ? t("form.webhook") : "",
+  ].filter(Boolean);
+  const lines = [
+    `${source} · ${category}`,
+    price ? `${t("wizard.maxPrice")}: ${price} EUR` : "",
+    location ? `${t("wizard.location")}: ${location}${radius ? ` +${radius} km` : ""}` : "",
+    required.length ? `${t("wizard.mustInclude")}: ${required.join(", ")}` : "",
+    excluded.length ? `${t("wizard.hideWords")}: ${excluded.join(", ")}` : "",
+    automation.length ? automation.join(" · ") : "",
+  ].filter(Boolean);
+  target.innerHTML = `
+    <strong>${escapeHtml(t("wizard.summaryTitle"))}</strong>
+    <h4>${escapeHtml(query)}</h4>
+    ${lines.map((line) => `<p class="meta">${escapeHtml(line)}</p>`).join("")}
+  `;
 }
 
 function buildWizardSearchUrl(source, query, category, kleinanzeigenTypes = selectedKleinanzeigenTypes("wizard")) {

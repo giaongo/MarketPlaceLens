@@ -9,6 +9,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - LanLens-inspired web UI
 - Role-based multi-user login for the local web UI
 - Fredy-inspired job builder with provider selection, source URL, criteria, keyword rules, automation, and Telegram toggle
+- Interactive quick-job assistant that guides admins step by step through source, search terms, filters, and automation before creating the saved job
 - Quick-job wizard with Kleinanzeigen category/listing-type seeds and Facebook Marketplace category seeds for URL creation
 - Search profiles/jobs with enable/disable, polling interval, source URL, Kleinanzeigen-style location criteria with radius, price limits, guided keyword filter rules, category filters, and Telegram toggle
 - URL parameter preview for saved search URLs, including detected source, search term, category, location, and Kleinanzeigen listing type where available
