@@ -32,6 +32,10 @@ def apply_filters(candidate: ListingCandidate, profile: dict) -> FilterResult:
         if candidate.price_value > float(profile["max_price"]):
             return FilterResult("hidden", 0, "above_max_price", "price above maximum")
 
+    location_terms = location_filter_terms(profile.get("location_hint", ""))
+    if location_terms and not any(term in candidate.location_text.lower() for term in location_terms):
+        return FilterResult("hidden", 0, "location_mismatch", "location does not match profile")
+
     for excluded in profile.get("excluded_categories", []):
         if excluded and excluded.lower() in category:
             return FilterResult("hidden", 0, f"excluded_category:{excluded}", "excluded category")
@@ -52,3 +56,12 @@ def apply_filters(candidate: ListingCandidate, profile: dict) -> FilterResult:
     matched = ", ".join(include_hits or required_hits) or "new listing matched profile"
     return FilterResult("new", score, "", matched)
 
+
+def location_filter_terms(value: str) -> list[str]:
+    terms: list[str] = []
+    for part in value.replace("/", ",").split(","):
+        cleaned = part.strip().lower()
+        if not cleaned or cleaned.endswith("km") or cleaned.isdigit():
+            continue
+        terms.append(cleaned)
+    return terms

@@ -27,6 +27,17 @@ function bindNavigation() {
   $("#listing-min-price-filter").addEventListener("input", debounce(loadListings, 220));
   $("#listing-max-price-filter").addEventListener("input", debounce(loadListings, 220));
   $("#include-hidden").addEventListener("change", loadListings);
+  [
+    "#profile-location",
+    "#profile-min-price",
+    "#profile-max-price",
+    "#profile-include",
+    "#profile-required",
+    "#profile-exclude",
+    "#profile-categories",
+    "#profile-enabled",
+    "#profile-notify",
+  ].forEach((selector) => $(selector).addEventListener("input", updateFilterPreview));
 }
 
 function bindForms() {
@@ -129,7 +140,7 @@ function editProfile(profile) {
   $("#profile-form-title").textContent = profile ? "Edit profile" : "New profile";
   $("#profile-id").value = profile?.id || "";
   $("#profile-name").value = profile?.name || "";
-  $("#profile-source").value = profile?.source_type || "html";
+  $("#profile-source").value = profile?.source_type || "kleinanzeigen";
   $("#profile-url").value = profile?.search_url || "";
   $("#profile-interval").value = profile?.poll_interval_minutes || 60;
   $("#profile-location").value = profile?.location_hint || "";
@@ -141,6 +152,7 @@ function editProfile(profile) {
   $("#profile-categories").value = (profile?.excluded_categories || []).join("\n");
   $("#profile-enabled").checked = profile?.enabled ?? true;
   $("#profile-notify").checked = profile?.notify_telegram ?? true;
+  updateFilterPreview();
   loadProfiles();
 }
 
@@ -190,6 +202,23 @@ function profilePayload() {
     location_hint: $("#profile-location").value,
     notify_telegram: $("#profile-notify").checked,
   };
+}
+
+function updateFilterPreview() {
+  const chips = [];
+  const location = $("#profile-location").value.trim();
+  const minPrice = $("#profile-min-price").value;
+  const maxPrice = $("#profile-max-price").value;
+  if (location) chips.push(`Ort: ${location}`);
+  if (minPrice) chips.push(`ab ${minPrice} EUR`);
+  if (maxPrice) chips.push(`bis ${maxPrice} EUR`);
+  lines("#profile-required").forEach((item) => chips.push(`muss: ${item}`));
+  lines("#profile-include").slice(0, 5).forEach((item) => chips.push(`match: ${item}`));
+  lines("#profile-exclude").forEach((item) => chips.push(`ausblenden: ${item}`));
+  lines("#profile-categories").forEach((item) => chips.push(`Kategorie aus: ${item}`));
+  chips.push($("#profile-enabled").checked ? "Polling an" : "Polling aus");
+  chips.push($("#profile-notify").checked ? "Telegram an" : "Telegram aus");
+  $("#profile-filter-preview").innerHTML = chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("");
 }
 
 async function loadListings() {
