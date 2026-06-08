@@ -604,6 +604,35 @@ textarea.chip-source {
   grid-column: auto;
 }
 
+.type-choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px 12px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--muted);
+  padding: 10px 12px;
+}
+
+.type-choice-row.wide {
+  grid-column: 1 / -1;
+}
+
+.type-choice-row > span {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.type-choice-row small {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .automation-grid {
   margin-bottom: 12px;
 }

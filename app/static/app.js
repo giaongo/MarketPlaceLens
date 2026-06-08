@@ -94,6 +94,13 @@ const translations = {
     "wizard.hideWords": "Hide words",
     "wizard.create": "Create job",
     "wizard.manualForm": "Use manual form",
+    "listingTypes.title": "Listing types",
+    "listingTypes.offers": "Offers",
+    "listingTypes.wanted": "Wanted",
+    "listingTypes.help": "Both selected means all listing types.",
+    "listingTypes.all": "All listing types",
+    "listingTypes.offersOnly": "Offers only",
+    "listingTypes.wantedOnly": "Wanted only",
     "form.backgroundPolling": "Background polling",
     "form.telegram": "Telegram",
     "form.webhook": "Webhook",
@@ -181,6 +188,7 @@ const translations = {
     "toast.runComplete": "Run complete: {new} new, {hidden} hidden, {duplicates} duplicate",
     "toast.profileDeleted": "Profile deleted",
     "toast.searchRequired": "Search term is required",
+    "toast.listingTypeRequired": "Select at least one Kleinanzeigen listing type",
     "toast.settingsSaved": "Settings saved",
     "toast.telegramSent": "Telegram test sent",
     "toast.webhookSent": "Webhook test sent",
@@ -269,6 +277,13 @@ const translations = {
     "wizard.hideWords": "Wörter ausblenden",
     "wizard.create": "Job erstellen",
     "wizard.manualForm": "Manuelles Formular",
+    "listingTypes.title": "Anzeigenarten",
+    "listingTypes.offers": "Angebote",
+    "listingTypes.wanted": "Gesuche",
+    "listingTypes.help": "Beide ausgewählt bedeutet alle Anzeigenarten.",
+    "listingTypes.all": "Alle Anzeigenarten",
+    "listingTypes.offersOnly": "Nur Angebote",
+    "listingTypes.wantedOnly": "Nur Gesuche",
     "form.backgroundPolling": "Automatisch abrufen",
     "form.telegram": "Telegram",
     "form.webhook": "Webhook",
@@ -356,6 +371,7 @@ const translations = {
     "toast.runComplete": "Run fertig: {new} neu, {hidden} ausgeblendet, {duplicates} Duplikate",
     "toast.profileDeleted": "Profil gelöscht",
     "toast.searchRequired": "Suchbegriff ist erforderlich",
+    "toast.listingTypeRequired": "Wähle mindestens eine Kleinanzeigen-Anzeigenart aus",
     "toast.settingsSaved": "Einstellungen gespeichert",
     "toast.telegramSent": "Telegram-Test gesendet",
     "toast.webhookSent": "Webhook-Test gesendet",
@@ -431,9 +447,19 @@ function bindNavigation() {
   $("#wizard-source").addEventListener("change", updateWizardCategories);
   $("#new-profile-button").addEventListener("click", () => editProfile(null));
   $("#profile-source").addEventListener("change", updateSourcePlaceholder);
+  $("#profile-url").addEventListener("change", syncProfileKleinanzeigenTypesFromUrl);
   $("#open-source-button").addEventListener("click", openSelectedSource);
   $$("[data-source-option]").forEach((button) => {
     button.addEventListener("click", () => selectSource(button.dataset.sourceOption));
+  });
+  $$("input[name='wizard-kleinanzeigen-type']").forEach((input) => {
+    input.addEventListener("change", updateKleinanzeigenTypeVisibility);
+  });
+  $$("input[name='profile-kleinanzeigen-type']").forEach((input) => {
+    input.addEventListener("change", () => {
+      syncProfileKleinanzeigenTypeUrl();
+      updateFilterPreview();
+    });
   });
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
   $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
@@ -628,6 +654,73 @@ function sourceBaseUrl(source) {
   }[source] || "";
 }
 
+function selectedKleinanzeigenTypes(scope) {
+  return $$(`input[name='${scope}-kleinanzeigen-type']:checked`)
+    .map((input) => input.value)
+    .filter((value) => ["angebote", "gesuche"].includes(value));
+}
+
+function setKleinanzeigenTypes(scope, types) {
+  const selected = types?.length ? types : ["angebote", "gesuche"];
+  $$(`input[name='${scope}-kleinanzeigen-type']`).forEach((input) => {
+    input.checked = selected.includes(input.value);
+  });
+}
+
+function kleinanzeigenTypesFromUrl(url) {
+  const value = String(url || "");
+  if (value.includes("anzeige:angebote")) return ["angebote"];
+  if (value.includes("anzeige:gesuche")) return ["gesuche"];
+  return ["angebote", "gesuche"];
+}
+
+function kleinanzeigenTypeLabel(types = selectedKleinanzeigenTypes("profile")) {
+  const selected = types.length ? types : ["angebote", "gesuche"];
+  if (selected.length === 1 && selected[0] === "angebote") return t("listingTypes.offersOnly");
+  if (selected.length === 1 && selected[0] === "gesuche") return t("listingTypes.wantedOnly");
+  return t("listingTypes.all");
+}
+
+function kleinanzeigenTypeSegment(types) {
+  return types.length === 1 ? `/anzeige:${types[0]}` : "";
+}
+
+function keywordUrlPath(query) {
+  return encodeURIComponent(query.trim()).replace(/%20/g, "-");
+}
+
+function setKleinanzeigenTypeInUrl(url, types) {
+  const raw = String(url || "").trim();
+  if (!raw || !raw.includes("kleinanzeigen.de")) return raw;
+  const selected = types.length ? types : ["angebote", "gesuche"];
+  let next = raw
+    .replace(/\/anzeige:(angebote|gesuche)(?=\/|$)/, "")
+    .replace(/\/s-anzeige:(angebote|gesuche)(?=\/|$)/, "/s");
+  if (next.includes("/s-suchanfrage.html") || selected.length !== 1) return next;
+  const type = selected[0];
+  if (/\/s-[^/?#]+/.test(next)) return next.replace(/(\/s-[^/?#]+)/, `$1/anzeige:${type}`);
+  if (/\/s(?=\/|$)/.test(next)) return next.replace(/\/s(?=\/|$)/, `/s-anzeige:${type}`);
+  return next;
+}
+
+function updateKleinanzeigenTypeVisibility() {
+  const wizardTypes = $("#wizard-kleinanzeigen-types");
+  if (wizardTypes) wizardTypes.classList.toggle("hidden", $("#wizard-source").value !== "kleinanzeigen");
+  const profileTypes = $("#profile-kleinanzeigen-types");
+  if (profileTypes) profileTypes.classList.toggle("hidden", $("#profile-source").value !== "kleinanzeigen");
+}
+
+function syncProfileKleinanzeigenTypeUrl() {
+  if ($("#profile-source").value !== "kleinanzeigen") return;
+  $("#profile-url").value = setKleinanzeigenTypeInUrl($("#profile-url").value, selectedKleinanzeigenTypes("profile"));
+}
+
+function syncProfileKleinanzeigenTypesFromUrl() {
+  if ($("#profile-source").value !== "kleinanzeigen") return;
+  setKleinanzeigenTypes("profile", kleinanzeigenTypesFromUrl($("#profile-url").value));
+  updateFilterPreview();
+}
+
 async function changePassword() {
   const current = $("#current-password").value;
   const next = $("#new-password").value;
@@ -652,6 +745,7 @@ function editProfile(profile) {
   $("#profile-name").value = profile?.name || "";
   $("#profile-source").value = profile?.source_type || "kleinanzeigen";
   $("#profile-url").value = profile?.search_url || "";
+  setKleinanzeigenTypes("profile", kleinanzeigenTypesFromUrl(profile?.search_url || ""));
   updateSourcePlaceholder();
   updateSourceOptions();
   $("#profile-interval").value = profile?.poll_interval_minutes || 60;
@@ -667,6 +761,7 @@ function editProfile(profile) {
   $("#profile-enabled").checked = profile?.enabled ?? true;
   $("#profile-notify").checked = profile?.notify_telegram ?? true;
   $("#profile-notify-webhook").checked = profile?.notify_webhook ?? false;
+  updateKleinanzeigenTypeVisibility();
   updateFilterPreview();
   updateJobSetupSummary();
   loadProfiles();
@@ -683,10 +778,13 @@ async function createProfileFromWizard() {
   if (!query) return toast(t("toast.searchRequired"));
   const source = $("#wizard-source").value;
   const category = selectedWizardCategory();
+  const selectedTypes = selectedKleinanzeigenTypes("wizard");
+  if (source === "kleinanzeigen" && !selectedTypes.length) return toast(t("toast.listingTypeRequired"));
   $("#profile-id").value = "";
   $("#profile-name").value = category ? `${query} · ${category.label}` : `${query} · ${sourceLabel(source)}`;
   $("#profile-source").value = source;
-  $("#profile-url").value = buildWizardSearchUrl(source, query, category);
+  $("#profile-url").value = buildWizardSearchUrl(source, query, category, selectedTypes);
+  setKleinanzeigenTypes("profile", selectedTypes);
   $("#profile-interval").value = 120;
   $("#profile-location").value = $("#wizard-location").value.trim();
   $("#profile-min-price").value = "";
@@ -701,6 +799,7 @@ async function createProfileFromWizard() {
   $("#profile-notify").checked = $("#wizard-notify").checked;
   $("#profile-notify-webhook").checked = $("#wizard-notify-webhook").checked;
   updateSourcePlaceholder();
+  updateKleinanzeigenTypeVisibility();
   updateFilterPreview();
   await saveProfile();
   clearWizard();
@@ -711,6 +810,7 @@ async function createProfileFromWizard() {
 function clearWizard() {
   $("#wizard-source").value = "kleinanzeigen";
   updateWizardCategories();
+  setKleinanzeigenTypes("wizard", ["angebote", "gesuche"]);
   $("#wizard-query").value = "";
   $("#wizard-max-price").value = "";
   $("#wizard-location").value = "";
@@ -731,6 +831,7 @@ function updateWizardCategories() {
     ${categories.map((category) => `<option value="${escapeAttribute(category.id || category.slug)}">${escapeHtml(category.label)}</option>`).join("")}
   `;
   $("#wizard-category").value = categories.some((category) => (category.id || category.slug) === current) ? current : "";
+  updateKleinanzeigenTypeVisibility();
 }
 
 function selectedWizardCategory() {
@@ -740,7 +841,7 @@ function selectedWizardCategory() {
   return (providerCategories[source] || []).find((category) => (category.id || category.slug) === value) || null;
 }
 
-function buildWizardSearchUrl(source, query, category) {
+function buildWizardSearchUrl(source, query, category, kleinanzeigenTypes = selectedKleinanzeigenTypes("wizard")) {
   if (source === "facebook") {
     const base = category?.slug
       ? `https://www.facebook.com/marketplace/category/${category.slug}/`
@@ -748,8 +849,10 @@ function buildWizardSearchUrl(source, query, category) {
     return `${base}?query=${encodeURIComponent(query)}`;
   }
   if (source === "kleinanzeigen" && category?.id && category?.path) {
-    const keywordPath = encodeURIComponent(query.trim()).replace(/%20/g, "-");
-    return `https://www.kleinanzeigen.de/s-${category.path}/${keywordPath}/k0c${category.id}`;
+    return `https://www.kleinanzeigen.de/s-${category.path}${kleinanzeigenTypeSegment(kleinanzeigenTypes)}/${keywordUrlPath(query)}/k0c${category.id}`;
+  }
+  if (source === "kleinanzeigen" && kleinanzeigenTypes.length === 1) {
+    return `https://www.kleinanzeigen.de/s-anzeige:${kleinanzeigenTypes[0]}/${keywordUrlPath(query)}/k0`;
   }
   return `https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=${encodeURIComponent(query)}`;
 }
@@ -811,6 +914,9 @@ function updateFilterPreview() {
   if (location) chips.push(`${t("profile.locationHint")}: ${location}`);
   if (minPrice) chips.push(`${t("profile.minPriceShort")} ${minPrice} EUR`);
   if (maxPrice) chips.push(`${t("profile.maxPriceShort")} ${maxPrice} EUR`);
+  if ($("#profile-source").value === "kleinanzeigen") {
+    chips.push(`${t("listingTypes.title")}: ${kleinanzeigenTypeLabel()}`);
+  }
   lines("#profile-required").forEach((item) => chips.push(`${t("profile.required")}: ${item}`));
   lines("#profile-include").slice(0, 5).forEach((item) => chips.push(`match: ${item}`));
   lines("#profile-exclude").forEach((item) => chips.push(`${t("profile.exclude")}: ${item}`));
@@ -830,6 +936,7 @@ function updateSourcePlaceholder() {
     html: "https://example.com/search-results",
   }[source] || "https://example.com/search-results";
   updateSourceOptions();
+  updateKleinanzeigenTypeVisibility();
   updateJobSetupSummary();
 }
 
@@ -858,13 +965,14 @@ function updateJobSetupSummary() {
   const chips = [
     `${t("profile.name")}: ${name}`,
     `${t("jobSummary.provider")}: ${sourceLabel($("#profile-source").value)}`,
+    $("#profile-source").value === "kleinanzeigen" ? `${t("listingTypes.title")}: ${kleinanzeigenTypeLabel()}` : "",
     url,
     t("jobSummary.interval", { minutes: interval }),
     $("#profile-enabled").checked ? t("jobSummary.pollingOn") : t("jobSummary.pollingOff"),
     $("#profile-notify").checked ? t("jobSummary.telegramOn") : t("jobSummary.telegramOff"),
     $("#profile-notify-webhook").checked ? t("jobSummary.webhookOn") : t("jobSummary.webhookOff"),
   ];
-  $("#job-setup-summary").innerHTML = chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("");
+  $("#job-setup-summary").innerHTML = chips.filter(Boolean).map((chip) => `<span>${escapeHtml(chip)}</span>`).join("");
 }
 
 async function loadListings() {
