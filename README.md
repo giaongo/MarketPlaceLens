@@ -18,6 +18,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Facebook Marketplace validation that rejects non-specific `/marketplace` start pages before a job is saved
 - Filter engine with explainable hidden reasons
 - Manual run per profile, including directly from the listing browser for the selected job
+- One throttled extra check of enabled jobs when the web app is opened
 - Background polling with conservative minimum interval
 - Paginated listing history with 5/10/20 items per page, adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails
 - Dedicated watchlist view for saved listings you want to compare or revisit
@@ -43,6 +44,8 @@ Facebook Marketplace and similar platforms can require login, change their marku
 Facebook jobs should use a concrete Marketplace search or category URL, for example `https://www.facebook.com/marketplace/search/?query=defekt` or `https://www.facebook.com/marketplace/category/electronics/?query=defekt`. The generic `https://www.facebook.com/marketplace/` start page is rejected because it does not describe a stable result set and often returns no public listing HTML to the server.
 
 The quick-job category and Kleinanzeigen listing-type lists are local URL-building seeds for convenience. Marketplace category names, listing type parameters, and URL formats can change over time; adjust the generated URL manually when a platform changes its public routing.
+
+The location map uses Leaflet 1.9.4 from a CDN (BSD-2-Clause) and OpenStreetMap raster tiles. OpenStreetMap data is © OpenStreetMap contributors and available under ODbL. If the browser cannot load the map library or tiles, the app keeps a local fallback picker.
 
 ## Quick Start
 

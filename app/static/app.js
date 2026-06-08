@@ -7,6 +7,10 @@ const state = {
   listingPage: 0,
   watchlistPage: 0,
   pageSize: Number(localStorage.getItem("marketplacelens.pageSize") || 10),
+  locationMap: null,
+  locationMarker: null,
+  locationCircle: null,
+  appOpenCheckStarted: false,
 };
 
 const translations = {
@@ -210,6 +214,7 @@ const translations = {
     "toast.settingsSaved": "Settings saved",
     "toast.telegramSent": "Telegram test sent",
     "toast.webhookSent": "Webhook test sent",
+    "toast.openCheckStarted": "Checking active jobs now",
   },
   de: {
     "brand.subtitle": "selbst gehosteter Anzeigen-Watcher",
@@ -411,6 +416,7 @@ const translations = {
     "toast.settingsSaved": "Einstellungen gespeichert",
     "toast.telegramSent": "Telegram-Test gesendet",
     "toast.webhookSent": "Webhook-Test gesendet",
+    "toast.openCheckStarted": "Aktive Jobs werden jetzt geprüft",
   },
 };
 
@@ -467,7 +473,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupChipInputs();
   updateWizardCategories();
   $("#view-title").textContent = t("nav.dashboard");
-  refreshAll();
+  refreshAll().then(triggerAppOpenCheck).catch((error) => toast(errorMessage(error)));
 });
 
 function bindNavigation() {
@@ -502,7 +508,10 @@ function bindNavigation() {
     button.addEventListener("click", () => setLocationMode(button.dataset.locationMode));
   });
   ["#profile-location-query", "#profile-location-radius", "#profile-map-radius"].forEach((selector) => {
-    $(selector).addEventListener("input", syncLocationCriteria);
+    $(selector).addEventListener("input", () => {
+      syncLocationCriteria();
+      updateMapRadiusVisualization();
+    });
   });
   $("#profile-location-map").addEventListener("click", setMapLocation);
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
@@ -614,6 +623,20 @@ async function refreshAll() {
       return;
     }
     throw error;
+  }
+}
+
+async function triggerAppOpenCheck() {
+  if (state.appOpenCheckStarted) return;
+  state.appOpenCheckStarted = true;
+  try {
+    const result = await api("/api/profiles/open-check", { method: "POST" });
+    if (result.started) {
+      toast(t("toast.openCheckStarted"));
+      setTimeout(refreshAll, 3500);
+    }
+  } catch {
+    state.appOpenCheckStarted = false;
   }
 }
 
@@ -904,6 +927,10 @@ function setLocationMode(mode) {
   $$("[data-location-panel]").forEach((panel) => {
     panel.classList.toggle("hidden", panel.dataset.locationPanel !== selected);
   });
+  if (selected === "map") {
+    initializeLocationMap();
+    setTimeout(() => state.locationMap?.invalidateSize(), 80);
+  }
   syncLocationCriteria();
 }
 
@@ -933,17 +960,94 @@ function syncLocationCriteria() {
 }
 
 function setMapLocation(event) {
+  if (state.locationMap) return;
   const rect = event.currentTarget.getBoundingClientRect();
   const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
   const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
   const lat = (55.1 - y * 8.0).toFixed(4);
   const lng = (5.9 + x * 9.4).toFixed(4);
-  $("#profile-location-coordinates").value = `${lat}, ${lng}`;
+  setMapCoordinates(Number(lat), Number(lng));
+}
+
+function initializeLocationMap() {
+  const node = $("#profile-location-map");
+  if (!node || state.locationMap || !window.L) return;
+  node.classList.add("leaflet-backed");
+  state.locationMap = L.map(node, {
+    zoomControl: true,
+    scrollWheelZoom: false,
+  }).setView([51.1657, 10.4515], 6);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(state.locationMap);
+  state.locationMap.on("click", (event) => setMapCoordinates(event.latlng.lat, event.latlng.lng));
+  const coordinates = $("#profile-location-coordinates").value.trim();
+  const match = coordinates.match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+  if (match) updateLeafletMarker(Number(match[1]), Number(match[2]));
+}
+
+function setMapCoordinates(lat, lng) {
+  const formattedLat = Number(lat).toFixed(4);
+  const formattedLng = Number(lng).toFixed(4);
+  $("#profile-location-coordinates").value = `${formattedLat}, ${formattedLng}`;
+  if (state.locationMap) {
+    updateLeafletMarker(Number(formattedLat), Number(formattedLng));
+  } else {
+    updateFallbackMapPin(Number(formattedLat), Number(formattedLng));
+  }
+  syncLocationCriteria();
+}
+
+function updateFallbackMapPin(lat, lng) {
+  const x = Math.max(0, Math.min(1, (lng - 5.9) / 9.4));
+  const y = Math.max(0, Math.min(1, (55.1 - lat) / 8.0));
   const pin = $("#profile-location-pin");
   pin.style.left = `${x * 100}%`;
   pin.style.top = `${y * 100}%`;
   pin.classList.add("visible");
-  syncLocationCriteria();
+}
+
+function updateLeafletMarker(lat, lng) {
+  if (!state.locationMap || !window.L) return;
+  const latLng = [lat, lng];
+  if (!state.locationMarker) {
+    state.locationMarker = L.marker(latLng).addTo(state.locationMap);
+  } else {
+    state.locationMarker.setLatLng(latLng);
+  }
+  state.locationMap.setView(latLng, Math.max(state.locationMap.getZoom(), 9));
+  updateMapRadiusVisualization();
+}
+
+function updateMapRadiusVisualization() {
+  if (!state.locationMap || !state.locationMarker || !window.L) return;
+  const radiusKm = Number($("#profile-map-radius").value || 0);
+  if (!radiusKm) {
+    if (state.locationCircle) {
+      state.locationMap.removeLayer(state.locationCircle);
+      state.locationCircle = null;
+    }
+    return;
+  }
+  const options = { color: "#14a085", fillColor: "#14a085", fillOpacity: 0.14, weight: 2 };
+  if (!state.locationCircle) {
+    state.locationCircle = L.circle(state.locationMarker.getLatLng(), { ...options, radius: radiusKm * 1000 }).addTo(state.locationMap);
+  } else {
+    state.locationCircle.setLatLng(state.locationMarker.getLatLng());
+    state.locationCircle.setRadius(radiusKm * 1000);
+  }
+}
+
+function clearLeafletMapSelection() {
+  if (state.locationCircle && state.locationMap) {
+    state.locationMap.removeLayer(state.locationCircle);
+    state.locationCircle = null;
+  }
+  if (state.locationMarker && state.locationMap) {
+    state.locationMap.removeLayer(state.locationMarker);
+    state.locationMarker = null;
+  }
 }
 
 function applyLocationCriteria(value) {
@@ -954,6 +1058,7 @@ function applyLocationCriteria(value) {
   $("#profile-location-coordinates").value = "";
   $("#profile-map-radius").value = "";
   $("#profile-location-pin").classList.remove("visible");
+  clearLeafletMapSelection();
 
   if (!raw) {
     setLocationMode("text");
@@ -965,16 +1070,11 @@ function applyLocationCriteria(value) {
     if (coordinateMatch) {
       const lat = Number(coordinateMatch[1]);
       const lng = Number(coordinateMatch[2]);
-      $("#profile-location-coordinates").value = `${coordinateMatch[1]}, ${coordinateMatch[2]}`;
-      const pin = $("#profile-location-pin");
-      const x = Math.max(0, Math.min(1, (lng - 5.9) / 9.4));
-      const y = Math.max(0, Math.min(1, (55.1 - lat) / 8.0));
-      pin.style.left = `${x * 100}%`;
-      pin.style.top = `${y * 100}%`;
-      pin.classList.add("visible");
+      setMapCoordinates(lat, lng);
     }
     const radiusMatch = raw.match(/\+(\d+)\s*km/i);
     $("#profile-map-radius").value = radiusMatch?.[1] || "";
+    updateMapRadiusVisualization();
     syncLocationCriteria();
     return;
   }

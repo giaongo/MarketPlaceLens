@@ -8,6 +8,7 @@
     <link rel="icon" href="/static/assets/marketplacelens-logo.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/static/assets/marketplacelens-icon-180.png">
     <link rel="manifest" href="/static/site.webmanifest">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQPNgh9qld+YzKufXbAEL0DIUtnKVh+g=" crossorigin="">
     <link rel="stylesheet" href="/static/styles.css">
   </head>
   <body>
@@ -236,11 +237,11 @@
                     </label>
                   </div>
                   <div class="location-map-panel hidden" data-location-panel="map">
-                    <button class="location-map" type="button" id="profile-location-map" aria-label="Set map point">
+                    <div class="location-map" id="profile-location-map" role="application" tabindex="0" aria-label="Set map point">
                       <span class="map-grid"></span>
                       <span class="map-pin" id="profile-location-pin"></span>
                       <span class="map-label" data-i18n="location.mapHint">Click on the map to set an approximate center point</span>
-                    </button>
+                    </div>
                     <div class="location-fields">
                       <label><span data-i18n="location.coordinates">Coordinates</span><input id="profile-location-coordinates" readonly placeholder="53.5500, 10.0000"></label>
                       <label><span data-i18n="location.radius">Radius</span>
@@ -453,6 +454,7 @@
     </main>
 
     <div id="toast" role="status"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
     <script src="/static/app.js" defer></script>
   </body>
 </html>

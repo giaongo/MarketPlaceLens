@@ -4,6 +4,7 @@ import asyncio
 import ipaddress
 import random
 import sqlite3
+import time
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -24,6 +25,8 @@ from .schemas import ListingStatusPayload, LoginPayload, PasswordPayload, Profil
 app = FastAPI(title="MarketPlaceLens", version="0.1.0")
 static_dir = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+open_check_state = {"running": False, "last_started": 0.0}
+open_check_lock = asyncio.Lock()
 
 
 @app.middleware("http")
@@ -184,6 +187,20 @@ async def delete_profile(profile_id: int) -> dict[str, bool]:
 @app.post("/api/profiles/{profile_id}/run")
 async def run_profile_endpoint(profile_id: int) -> dict[str, Any]:
     return await run_profile(profile_id)
+
+
+@app.post("/api/profiles/open-check")
+async def trigger_open_check() -> dict[str, Any]:
+    async with open_check_lock:
+        now = time.monotonic()
+        if open_check_state["running"]:
+            return {"started": False, "reason": "already_running"}
+        if now - float(open_check_state["last_started"]) < 300:
+            return {"started": False, "reason": "recently_started"}
+        open_check_state["running"] = True
+        open_check_state["last_started"] = now
+    asyncio.create_task(run_open_check())
+    return {"started": True}
 
 
 @app.get("/api/listings")
@@ -468,6 +485,25 @@ def get_due_profiles() -> list[dict[str, Any]]:
             """
         ).fetchall()
     return [row_to_profile(row) for row in rows]
+
+
+def get_enabled_profiles() -> list[dict[str, Any]]:
+    with connect() as db:
+        rows = db.execute("SELECT * FROM watch_profiles WHERE enabled = 1 ORDER BY updated_at DESC").fetchall()
+    return [row_to_profile(row) for row in rows]
+
+
+async def run_open_check() -> None:
+    try:
+        for profile in get_enabled_profiles():
+            try:
+                await run_profile(profile["id"])
+            except Exception:
+                pass
+            await asyncio.sleep(min(max(get_global_rate_limit(), 2), 5))
+    finally:
+        async with open_check_lock:
+            open_check_state["running"] = False
 
 
 def get_global_rate_limit() -> int:

@@ -722,6 +722,7 @@ textarea.chip-source {
 .location-map {
   position: relative;
   min-height: 190px;
+  height: 260px;
   width: 100%;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -732,6 +733,25 @@ textarea.chip-source {
     linear-gradient(135deg, var(--brand-soft), var(--input-bg));
   color: var(--text);
   cursor: crosshair;
+}
+
+.location-map.leaflet-backed {
+  background: var(--input-bg);
+  cursor: grab;
+}
+
+.location-map.leaflet-backed .map-grid,
+.location-map.leaflet-backed .map-pin {
+  display: none;
+}
+
+.location-map.leaflet-backed .map-label {
+  z-index: 500;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.location-map .leaflet-control-attribution {
+  font-size: 0.68rem;
 }
 
 .map-grid {
