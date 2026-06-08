@@ -13,6 +13,8 @@ const state = {
   watchlists: [],
   defaultWatchlistId: null,
   aiEnabled: false,
+  currentUser: null,
+  users: [],
   locationMap: null,
   locationMarker: null,
   locationCircle: null,
@@ -177,6 +179,8 @@ const translations = {
     "pagination.next": "Next",
     "pagination.range": "{start}-{end} / {total}",
     "settings.notifications": "Notifications",
+    "settings.adminCategory": "Admin settings",
+    "settings.accountCategory": "Account",
     "settings.telegram": "Telegram",
     "settings.botToken": "Bot token",
     "settings.chatId": "Chat ID",
@@ -202,11 +206,25 @@ const translations = {
     "settings.sendTest": "Send test",
     "settings.sendWebhookTest": "Send webhook test",
     "settings.password": "Password",
-    "settings.passwordSubtitle": "Change the local admin password for this app.",
+    "settings.passwordSubtitle": "Change your local password for this app.",
     "settings.currentPassword": "Current password",
     "settings.newPassword": "New password",
     "settings.repeatPassword": "Repeat new password",
     "settings.changePassword": "Change password",
+    "settings.users": "Users & roles",
+    "settings.usersSubtitle": "Admins can create accounts and decide who may change global settings.",
+    "settings.newUser": "New user",
+    "settings.username": "Username",
+    "settings.role": "Role",
+    "settings.roleAdmin": "Admin",
+    "settings.roleUser": "User",
+    "settings.enabled": "Enabled",
+    "settings.disabled": "Disabled",
+    "settings.userPassword": "Initial password",
+    "settings.createUser": "Create user",
+    "settings.saveUser": "Save user",
+    "settings.deleteUser": "Delete user",
+    "settings.editUser": "Edit user",
     "empty.noRuns": "No runs yet",
     "empty.noRunsHint": "Create a profile and run it manually.",
     "empty.noProfiles": "No profiles",
@@ -244,6 +262,8 @@ const translations = {
     "inquiry.close": "Close",
     "toast.passwordMismatch": "New passwords do not match",
     "toast.passwordChanged": "Password changed",
+    "toast.userSaved": "User saved",
+    "toast.userDeleted": "User deleted",
     "toast.profileSaved": "Profile saved",
     "toast.saveProfileFirst": "Save a profile first",
     "toast.selectJobFirst": "Select a job first",
@@ -416,6 +436,8 @@ const translations = {
     "pagination.next": "Weiter",
     "pagination.range": "{start}-{end} / {total}",
     "settings.notifications": "Benachrichtigungen",
+    "settings.adminCategory": "Admin-Einstellungen",
+    "settings.accountCategory": "Konto",
     "settings.telegram": "Telegram",
     "settings.botToken": "Bot-Token",
     "settings.chatId": "Chat-ID",
@@ -441,11 +463,25 @@ const translations = {
     "settings.sendTest": "Test senden",
     "settings.sendWebhookTest": "Webhook-Test senden",
     "settings.password": "Passwort",
-    "settings.passwordSubtitle": "Lokales Admin-Passwort für diese App ändern.",
+    "settings.passwordSubtitle": "Dein lokales Passwort für diese App ändern.",
     "settings.currentPassword": "Aktuelles Passwort",
     "settings.newPassword": "Neues Passwort",
     "settings.repeatPassword": "Neues Passwort wiederholen",
     "settings.changePassword": "Passwort ändern",
+    "settings.users": "User & Rollen",
+    "settings.usersSubtitle": "Admins können Konten anlegen und festlegen, wer globale Einstellungen ändern darf.",
+    "settings.newUser": "Neuer User",
+    "settings.username": "Benutzername",
+    "settings.role": "Rolle",
+    "settings.roleAdmin": "Admin",
+    "settings.roleUser": "User",
+    "settings.enabled": "Aktiv",
+    "settings.disabled": "Deaktiviert",
+    "settings.userPassword": "Initiales Passwort",
+    "settings.createUser": "User anlegen",
+    "settings.saveUser": "User speichern",
+    "settings.deleteUser": "User löschen",
+    "settings.editUser": "User bearbeiten",
     "empty.noRuns": "Noch keine Runs",
     "empty.noRunsHint": "Erstelle ein Profil und starte es manuell.",
     "empty.noProfiles": "Keine Profile",
@@ -483,6 +519,8 @@ const translations = {
     "inquiry.close": "Schließen",
     "toast.passwordMismatch": "Neue Passwörter stimmen nicht überein",
     "toast.passwordChanged": "Passwort geändert",
+    "toast.userSaved": "User gespeichert",
+    "toast.userDeleted": "User gelöscht",
     "toast.profileSaved": "Profil gespeichert",
     "toast.saveProfileFirst": "Speichere zuerst ein Profil",
     "toast.selectJobFirst": "Wähle zuerst einen Job aus",
@@ -662,6 +700,12 @@ function bindForms() {
     event.preventDefault();
     await saveSettings();
   });
+  $("#user-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveUser();
+  });
+  $("#new-user-button").addEventListener("click", () => editUser(null));
+  $("#delete-user-button").addEventListener("click", deleteSelectedUser);
   $("#watchlist-settings-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await createWatchlistFromSettings();
@@ -713,7 +757,8 @@ function showWizard(visible) {
 
 async function refreshAll() {
   try {
-    await Promise.all([loadSummary(), loadProfiles(), loadListings(), loadWatchlist(), loadReviewQueue(), loadSettings()]);
+    await loadAuthStatus();
+    await Promise.all([loadSummary(), loadProfiles(), loadListings(), loadWatchlist(), loadReviewQueue(), loadSettings(), loadUsers()]);
   } catch (error) {
     if (String(error.message).includes("Not authenticated") || String(error.message).includes("401")) {
       window.location.href = "/login";
@@ -721,6 +766,17 @@ async function refreshAll() {
     }
     throw error;
   }
+}
+
+async function loadAuthStatus() {
+  const status = await api("/api/auth/status");
+  state.currentUser = status.user || null;
+  const admin = isAdmin();
+  $$(".admin-only").forEach((node) => node.classList.toggle("hidden", !admin));
+}
+
+function isAdmin() {
+  return state.currentUser?.role === "admin";
 }
 
 async function triggerAppOpenCheck() {
@@ -2044,6 +2100,83 @@ async function createWatchlistFromSettings() {
   toast(t("toast.watchlistCreated"));
 }
 
+async function loadUsers() {
+  if (!isAdmin()) {
+    state.users = [];
+    $("#users-list").innerHTML = "";
+    return;
+  }
+  state.users = await api("/api/users");
+  $("#users-list").innerHTML = state.users.map((user) => `
+    <article class="user-card" data-user-id="${user.id}">
+      <div>
+        <strong>${escapeHtml(user.username)}</strong>
+        <p class="meta">${escapeHtml(roleLabel(user.role))} · ${escapeHtml(user.enabled ? t("settings.enabled") : t("settings.disabled"))}</p>
+      </div>
+      <button class="mini-button" type="button" data-user-edit="${user.id}">${escapeHtml(t("settings.editUser"))}</button>
+    </article>
+  `).join("");
+  $("#users-list").querySelectorAll("[data-user-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const user = state.users.find((item) => item.id === Number(button.dataset.userEdit));
+      editUser(user);
+    });
+  });
+}
+
+function editUser(user) {
+  $("#user-id").value = user?.id || "";
+  $("#user-username").value = user?.username || "";
+  $("#user-username").disabled = Boolean(user);
+  $("#user-role").value = user?.role || "user";
+  $("#user-enabled").checked = user ? Boolean(user.enabled) : true;
+  $("#user-password").value = "";
+  $("#user-password").required = !user;
+  $("#save-user-button").textContent = t(user ? "settings.saveUser" : "settings.createUser");
+  $("#delete-user-button").classList.toggle("hidden", !user);
+}
+
+async function saveUser() {
+  const id = $("#user-id").value;
+  const payload = {
+    role: $("#user-role").value,
+    enabled: $("#user-enabled").checked,
+    password: $("#user-password").value,
+  };
+  if (id) {
+    await api(`/api/users/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  } else {
+    await api("/api/users", {
+      method: "POST",
+      body: JSON.stringify({
+        username: $("#user-username").value,
+        password: $("#user-password").value,
+        role: payload.role,
+        enabled: payload.enabled,
+      }),
+    });
+  }
+  toast(t("toast.userSaved"));
+  editUser(null);
+  await loadUsers();
+}
+
+async function deleteSelectedUser() {
+  const id = $("#user-id").value;
+  if (!id) return;
+  await api(`/api/users/${id}`, { method: "DELETE" });
+  toast(t("toast.userDeleted"));
+  editUser(null);
+  await loadUsers();
+}
+
+function roleLabel(role) {
+  return role === "admin" ? t("settings.roleAdmin") : t("settings.roleUser");
+}
+
 function updateAiProviderHints() {
   const provider = $("#ai-provider").value;
   const baseUrl = $("#ai-base-url");
@@ -2278,6 +2411,7 @@ function setLanguage(language) {
   loadListings();
   loadWatchlist();
   loadReviewQueue();
+  loadUsers();
 }
 
 function setTheme(theme) {

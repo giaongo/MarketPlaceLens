@@ -7,7 +7,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Docker Compose deployment
 - Local SQLite database
 - LanLens-inspired web UI
-- Single-user login for the local web UI
+- Role-based multi-user login for the local web UI
 - Fredy-inspired job builder with provider selection, source URL, criteria, keyword rules, automation, and Telegram toggle
 - Quick-job wizard with Kleinanzeigen category/listing-type seeds and Facebook Marketplace category seeds for URL creation
 - Search profiles/jobs with enable/disable, polling interval, source URL, Kleinanzeigen-style location criteria with radius, price limits, guided keyword filter rules, category filters, and Telegram toggle
@@ -25,6 +25,7 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Multiple user-created watchlists, including a settings-controlled default watchlist for the normal Watch action and a per-listing dropdown to choose or create a list
 - Optional AI-generated inquiry texts per listing with OpenAI API, Ollama, or LM Studio compatible chat-completions providers and configurable tone (`very polite`, `normal`, `cheeky`)
 - Dedicated watchlist view for saved listings you want to compare or revisit
+- Categorized Settings with Admin-only areas for jobs, notifications, AI, watchlists, and user/role management; normal users can use listings and change their own password but cannot change global configuration
 - English/German UI language switcher and light/dark theme toggle
 - Telegram and webhook settings with test messages
 
@@ -73,7 +74,9 @@ admin / admin
 
 Set `MARKETPLACELENS_ADMIN_USERNAME`, `MARKETPLACELENS_ADMIN_PASSWORD`, and `MARKETPLACELENS_SESSION_SECRET` in `.env` for real use.
 
-The password can also be changed from the Settings page. A changed password is stored as a PBKDF2-SHA256 hash in SQLite and overrides the environment default.
+On first start, MarketPlaceLens bootstraps an admin user from `MARKETPLACELENS_ADMIN_USERNAME` and `MARKETPLACELENS_ADMIN_PASSWORD`. Admins can create more users and choose between `admin` and `user` roles from Settings. Normal users can use the listing and watchlist workflow, but cannot edit global app configuration, jobs, provider settings, or other users.
+
+Passwords can be changed from the Settings page. Passwords are stored as PBKDF2-SHA256 hashes in SQLite.
 
 AI inquiry generation is configured from Settings and is disabled by default. When enabled, listing cards and the review view show an AI text button that drafts a buyer message for the current listing. The app only generates text for review/copying; it does not send messages to sellers. OpenAI uses `https://api.openai.com/v1` by default. Docker deployments can reach local Ollama and LM Studio via `http://host.docker.internal:11434/v1` and `http://host.docker.internal:1234/v1`.
 
@@ -117,6 +120,10 @@ app/
 - `POST /api/listings/{id}/inquiry`
 - `GET /api/watchlists`
 - `POST /api/watchlists`
+- `GET /api/users`
+- `POST /api/users`
+- `PATCH /api/users/{id}`
+- `DELETE /api/users/{id}`
 - `GET /api/settings`
 - `PUT /api/settings`
 - `POST /api/settings/password`

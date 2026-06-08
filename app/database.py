@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import base64
+import hashlib
 import sqlite3
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -99,6 +101,17 @@ def init_db() -> None:
               value TEXT NOT NULL DEFAULT ''
             );
 
+            CREATE TABLE IF NOT EXISTS users (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              username TEXT NOT NULL UNIQUE,
+              password_hash TEXT NOT NULL,
+              role TEXT NOT NULL DEFAULT 'user',
+              enabled INTEGER NOT NULL DEFAULT 1,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL,
+              last_login_at TEXT
+            );
+
             CREATE TABLE IF NOT EXISTS watchlists (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               name TEXT NOT NULL UNIQUE,
@@ -132,6 +145,7 @@ def init_db() -> None:
         ensure_column(db, "listings", "watchlisted", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "listings", "user_hidden", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "watch_profiles", "notify_webhook", "INTEGER NOT NULL DEFAULT 0")
+        ensure_admin_user(db)
         default_watchlist_id = ensure_default_watchlist(db)
         db.execute(
             """
@@ -196,3 +210,33 @@ def ensure_default_watchlist(db: sqlite3.Connection) -> int:
         ("Watchlist", now, now),
     )
     return int(cursor.lastrowid)
+
+
+def ensure_admin_user(db: sqlite3.Connection) -> None:
+    now = utc_now()
+    row = db.execute("SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+    if row:
+        return
+    stored_hash = db.execute("SELECT value FROM app_settings WHERE key = 'admin_password_hash'").fetchone()
+    password_hash = stored_hash["value"] if stored_hash and stored_hash["value"] else hash_password_for_bootstrap(settings.admin_password)
+    db.execute(
+        """
+        INSERT OR IGNORE INTO users(username, password_hash, role, enabled, created_at, updated_at)
+        VALUES (?, ?, 'admin', 1, ?, ?)
+        """,
+        (settings.admin_username, password_hash, now, now),
+    )
+
+
+def hash_password_for_bootstrap(password: str) -> str:
+    salt = os.urandom(16)
+    iterations = 260000
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations)
+    return ".".join(
+        [
+            "pbkdf2_sha256",
+            str(iterations),
+            base64.urlsafe_b64encode(salt).decode("ascii"),
+            base64.urlsafe_b64encode(digest).decode("ascii"),
+        ]
+    )

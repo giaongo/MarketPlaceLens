@@ -87,14 +87,14 @@
                 <h2 data-i18n="profiles.title">Jobs</h2>
                 <p class="panel-subtitle" data-i18n="profiles.subtitle">Saved marketplace jobs grouped by source.</p>
               </div>
-              <div class="actions">
+              <div class="actions admin-only">
                 <button id="wizard-button" class="button primary" data-i18n="profiles.quickJob">Quick job</button>
                 <button id="new-profile-button" class="button" data-i18n="profiles.newJob">New job</button>
               </div>
             </div>
             <div id="profiles-list" class="profile-list"></div>
           </section>
-          <section class="panel profile-editor">
+          <section class="panel profile-editor admin-only">
             <div class="panel-heading">
               <div>
                 <h2 id="profile-form-title">New job</h2>
@@ -345,7 +345,7 @@
                 <select id="listing-profile-filter">
                   <option value="" data-i18n="profiles.all">All profiles</option>
                 </select>
-                <button class="button ghost filter-action" type="button" id="run-listing-profile-button" data-i18n="listings.runSelectedJob">Run selected job</button>
+                <button class="button ghost filter-action admin-only" type="button" id="run-listing-profile-button" data-i18n="listings.runSelectedJob">Run selected job</button>
                 <select id="listing-status-filter">
                   <option value="" data-i18n="listings.allStatuses">All statuses</option>
                   <option value="new" data-i18n="status.new">New</option>
@@ -440,7 +440,8 @@
       </section>
 
       <section id="settings-view" class="view">
-        <section class="panel narrow">
+        <h2 class="settings-category-title admin-only" data-i18n="settings.adminCategory">Admin settings</h2>
+        <section class="panel narrow admin-only">
           <div class="panel-heading">
             <h2 data-i18n="settings.notifications">Notifications</h2>
           </div>
@@ -456,7 +457,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section">
+        <section class="panel narrow settings-section admin-only">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.ai">AI inquiry texts</h2>
@@ -487,7 +488,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section">
+        <section class="panel narrow settings-section admin-only">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.watchlists">Watchlists</h2>
@@ -502,11 +503,38 @@
             </div>
           </form>
         </section>
+        <section class="panel narrow settings-section admin-only">
+          <div class="panel-heading">
+            <div>
+              <h2 data-i18n="settings.users">Users & roles</h2>
+              <p class="panel-subtitle" data-i18n="settings.usersSubtitle">Admins can create accounts and decide who may change global settings.</p>
+            </div>
+          </div>
+          <form id="user-form" class="form-grid">
+            <input id="user-id" type="hidden">
+            <label><span data-i18n="settings.username">Username</span><input id="user-username" autocomplete="off"></label>
+            <label><span data-i18n="settings.role">Role</span>
+              <select id="user-role">
+                <option value="admin" data-i18n="settings.roleAdmin">Admin</option>
+                <option value="user" data-i18n="settings.roleUser">User</option>
+              </select>
+            </label>
+            <label class="switch"><input id="user-enabled" type="checkbox" checked> <span data-i18n="settings.enabled">Enabled</span></label>
+            <label><span data-i18n="settings.userPassword">Initial password</span><input id="user-password" type="password" autocomplete="new-password" minlength="8"></label>
+            <div class="actions wide">
+              <button class="button primary" type="submit" id="save-user-button" data-i18n="settings.createUser">Create user</button>
+              <button class="button ghost" type="button" id="new-user-button" data-i18n="settings.newUser">New user</button>
+              <button class="button danger hidden" type="button" id="delete-user-button" data-i18n="settings.deleteUser">Delete user</button>
+            </div>
+          </form>
+          <div id="users-list" class="simple-list settings-users-list"></div>
+        </section>
+        <h2 class="settings-category-title" data-i18n="settings.accountCategory">Account</h2>
         <section class="panel narrow settings-section">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.password">Password</h2>
-              <p class="panel-subtitle" data-i18n="settings.passwordSubtitle">Change the local admin password for this app.</p>
+              <p class="panel-subtitle" data-i18n="settings.passwordSubtitle">Change your local password for this app.</p>
             </div>
           </div>
           <form id="password-form" class="form-grid">
@@ -518,7 +546,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section">
+        <section class="panel narrow settings-section admin-only">
           <div class="panel-heading">
             <h2 data-i18n="dashboard.recentRuns">Recent runs</h2>
           </div>

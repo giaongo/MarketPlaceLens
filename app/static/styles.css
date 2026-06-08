@@ -1593,6 +1593,29 @@ textarea.chip-source {
   margin-top: 16px;
 }
 
+.settings-category-title {
+  max-width: 820px;
+  margin: 0 0 10px;
+  color: var(--brand-dark);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.settings-category-title:not(:first-child) {
+  margin-top: 20px;
+}
+
+.settings-users-list {
+  margin-top: 14px;
+}
+
+.user-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
 .modal-dialog {
   width: min(620px, calc(100vw - 28px));
   border: 1px solid var(--line);

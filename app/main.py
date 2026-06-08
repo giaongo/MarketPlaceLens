@@ -14,13 +14,13 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from .auth import COOKIE_NAME, create_session, hash_password, valid_credentials, valid_session
+from .auth import COOKIE_NAME, create_session, current_user_from_session, hash_password, valid_credentials
 from .config import settings
 from .connectors import ListingCandidate, get_connector
 from .database import connect, encode_list, ensure_default_watchlist, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
-from .schemas import InquiryPayload, ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, WatchlistPayload
+from .schemas import InquiryPayload, ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, UserPayload, UserUpdatePayload, WatchlistPayload
 
 app = FastAPI(title="MarketPlaceLens", version="0.1.0")
 static_dir = Path(__file__).parent / "static"
@@ -33,7 +33,9 @@ open_check_lock = asyncio.Lock()
 async def require_session(request: Request, call_next):
     path = request.url.path
     public = path.startswith("/static/") or path in {"/login", "/api/auth/login", "/api/auth/status"}
-    if public or valid_session(request.cookies.get(COOKIE_NAME)):
+    user = current_user_from_session(request.cookies.get(COOKIE_NAME))
+    request.state.user = user
+    if public or user:
         return await call_next(request)
     if path.startswith("/api/"):
         return JSONResponse({"detail": "Not authenticated"}, status_code=401)
@@ -61,6 +63,8 @@ async def login_page() -> FileResponse:
 async def login(payload: LoginPayload, response: Response) -> dict[str, bool]:
     if not valid_credentials(payload.username, payload.password):
         raise HTTPException(401, "Invalid login")
+    with connect() as db:
+        db.execute("UPDATE users SET last_login_at = ? WHERE username = ?", (utc_now(), payload.username))
     response.set_cookie(
         COOKIE_NAME,
         create_session(payload.username),
@@ -78,8 +82,109 @@ async def logout(response: Response) -> dict[str, bool]:
 
 
 @app.get("/api/auth/status")
-async def auth_status(request: Request) -> dict[str, bool]:
-    return {"authenticated": valid_session(request.cookies.get(COOKIE_NAME))}
+async def auth_status(request: Request) -> dict[str, Any]:
+    user = current_user_from_session(request.cookies.get(COOKIE_NAME))
+    return {"authenticated": bool(user), "user": safe_user(user) if user else None}
+
+
+def request_user(request: Request) -> dict[str, Any]:
+    user = getattr(request.state, "user", None)
+    if not user:
+        raise HTTPException(401, "Not authenticated")
+    return user
+
+
+def require_admin(request: Request) -> dict[str, Any]:
+    user = request_user(request)
+    if user.get("role") != "admin":
+        raise HTTPException(403, "Admin role required")
+    return user
+
+
+def safe_user(user: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not user:
+        return None
+    return {"id": user["id"], "username": user["username"], "role": user["role"], "enabled": bool(user["enabled"])}
+
+
+@app.get("/api/users")
+async def list_users(request: Request) -> list[dict[str, Any]]:
+    require_admin(request)
+    with connect() as db:
+        rows = db.execute(
+            """
+            SELECT id, username, role, enabled, created_at, updated_at, last_login_at
+            FROM users
+            ORDER BY role ASC, username COLLATE NOCASE
+            """
+        ).fetchall()
+    return [{**dict(row), "enabled": bool(row["enabled"])} for row in rows]
+
+
+@app.post("/api/users")
+async def create_user(payload: UserPayload, request: Request) -> dict[str, Any]:
+    require_admin(request)
+    now = utc_now()
+    username = payload.username.strip()
+    if not username:
+        raise HTTPException(400, "Username is required")
+    with connect() as db:
+        try:
+            cursor = db.execute(
+                """
+                INSERT INTO users(username, password_hash, role, enabled, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (username, hash_password(payload.password), payload.role, int(payload.enabled), now, now),
+            )
+        except sqlite3.IntegrityError as exc:
+            raise HTTPException(409, "User already exists") from exc
+        row = db.execute(
+            "SELECT id, username, role, enabled, created_at, updated_at, last_login_at FROM users WHERE id = ?",
+            (cursor.lastrowid,),
+        ).fetchone()
+    return {**dict(row), "enabled": bool(row["enabled"])}
+
+
+@app.patch("/api/users/{user_id}")
+async def update_user(user_id: int, payload: UserUpdatePayload, request: Request) -> dict[str, Any]:
+    require_admin(request)
+    now = utc_now()
+    with connect() as db:
+        row = db.execute("SELECT id, role FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "User not found")
+        if row["role"] == "admin" and payload.role != "admin" and count_enabled_admins(db) <= 1:
+            raise HTTPException(400, "At least one admin must remain")
+        if row["role"] == "admin" and not payload.enabled and count_enabled_admins(db) <= 1:
+            raise HTTPException(400, "At least one admin must remain")
+        updates = ["role = ?", "enabled = ?", "updated_at = ?"]
+        values: list[Any] = [payload.role, int(payload.enabled), now]
+        if payload.password:
+            if len(payload.password) < 8:
+                raise HTTPException(400, "Password must be at least 8 characters")
+            updates.append("password_hash = ?")
+            values.append(hash_password(payload.password))
+        values.append(user_id)
+        db.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = ?", values)
+        updated = db.execute(
+            "SELECT id, username, role, enabled, created_at, updated_at, last_login_at FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+    return {**dict(updated), "enabled": bool(updated["enabled"])}
+
+
+@app.delete("/api/users/{user_id}")
+async def delete_user(user_id: int, request: Request) -> dict[str, bool]:
+    require_admin(request)
+    with connect() as db:
+        row = db.execute("SELECT id, role FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "User not found")
+        if row["role"] == "admin" and count_enabled_admins(db) <= 1:
+            raise HTTPException(400, "At least one admin must remain")
+        db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    return {"ok": True}
 
 
 @app.get("/api/summary")
@@ -128,7 +233,8 @@ async def list_profiles() -> list[dict[str, Any]]:
 
 
 @app.post("/api/profiles")
-async def create_profile(payload: ProfilePayload) -> dict[str, Any]:
+async def create_profile(payload: ProfilePayload, request: Request) -> dict[str, Any]:
+    require_admin(request)
     now = utc_now()
     profile = payload.model_dump()
     profile["search_url"] = str(profile["search_url"])
@@ -150,7 +256,8 @@ async def create_profile(payload: ProfilePayload) -> dict[str, Any]:
 
 
 @app.put("/api/profiles/{profile_id}")
-async def update_profile(profile_id: int, payload: ProfilePayload) -> dict[str, Any]:
+async def update_profile(profile_id: int, payload: ProfilePayload, request: Request) -> dict[str, Any]:
+    require_admin(request)
     now = utc_now()
     profile = payload.model_dump()
     profile["search_url"] = str(profile["search_url"])
@@ -176,7 +283,8 @@ async def update_profile(profile_id: int, payload: ProfilePayload) -> dict[str, 
 
 
 @app.delete("/api/profiles/{profile_id}")
-async def delete_profile(profile_id: int) -> dict[str, bool]:
+async def delete_profile(profile_id: int, request: Request) -> dict[str, bool]:
+    require_admin(request)
     with connect() as db:
         cursor = db.execute("DELETE FROM watch_profiles WHERE id = ?", (profile_id,))
     if cursor.rowcount == 0:
@@ -185,12 +293,15 @@ async def delete_profile(profile_id: int) -> dict[str, bool]:
 
 
 @app.post("/api/profiles/{profile_id}/run")
-async def run_profile_endpoint(profile_id: int) -> dict[str, Any]:
+async def run_profile_endpoint(profile_id: int, request: Request) -> dict[str, Any]:
+    require_admin(request)
     return await run_profile(profile_id)
 
 
 @app.post("/api/profiles/open-check")
-async def trigger_open_check() -> dict[str, Any]:
+async def trigger_open_check(request: Request) -> dict[str, Any]:
+    if getattr(request.state, "user", None) and request.state.user.get("role") != "admin":
+        return {"started": False, "reason": "admin_only"}
     async with open_check_lock:
         now = time.monotonic()
         if open_check_state["running"]:
@@ -422,7 +533,8 @@ async def get_settings() -> dict[str, Any]:
 
 
 @app.put("/api/settings")
-async def update_settings(payload: SettingsPayload) -> dict[str, Any]:
+async def update_settings(payload: SettingsPayload, request: Request) -> dict[str, Any]:
+    require_admin(request)
     with connect() as db:
         current_token = get_setting(db, "telegram_bot_token")
         current_ai_key = get_setting(db, "ai_api_key")
@@ -448,19 +560,21 @@ async def update_settings(payload: SettingsPayload) -> dict[str, Any]:
 
 
 @app.post("/api/settings/password")
-async def update_password(payload: PasswordPayload) -> dict[str, bool]:
-    if not valid_credentials(settings.admin_username, payload.current_password):
+async def update_password(payload: PasswordPayload, request: Request) -> dict[str, bool]:
+    user = request_user(request)
+    if not valid_credentials(user["username"], payload.current_password):
         raise HTTPException(401, "Current password is incorrect")
     with connect() as db:
         db.execute(
-            "INSERT INTO app_settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-            ("admin_password_hash", hash_password(payload.new_password)),
+            "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?",
+            (hash_password(payload.new_password), utc_now(), user["id"]),
         )
     return {"ok": True}
 
 
 @app.post("/api/settings/telegram/test")
-async def test_telegram() -> dict[str, bool]:
+async def test_telegram(request: Request) -> dict[str, bool]:
+    require_admin(request)
     with connect() as db:
         notifier = TelegramNotifier(get_setting(db, "telegram_bot_token"), get_setting(db, "telegram_chat_id"))
     await notifier.send_text("MarketPlaceLens Telegram test successful.")
@@ -468,7 +582,8 @@ async def test_telegram() -> dict[str, bool]:
 
 
 @app.post("/api/settings/webhook/test")
-async def test_webhook() -> dict[str, bool]:
+async def test_webhook(request: Request) -> dict[str, bool]:
+    require_admin(request)
     with connect() as db:
         notifier = WebhookNotifier(get_setting(db, "webhook_url"))
     await notifier.send_test()
@@ -633,6 +748,11 @@ def validate_profile_search_url(profile: dict[str, Any]) -> None:
 def get_setting(db, key: str) -> str:
     row = db.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
     return row["value"] if row else ""
+
+
+def count_enabled_admins(db: sqlite3.Connection) -> int:
+    row = db.execute("SELECT COUNT(*) count FROM users WHERE role = 'admin' AND enabled = 1").fetchone()
+    return int(row["count"] if row else 0)
 
 
 def valid_watchlist_id(db: sqlite3.Connection, watchlist_id: int | None) -> int:

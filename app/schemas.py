@@ -56,3 +56,16 @@ class LoginPayload(BaseModel):
 class PasswordPayload(BaseModel):
     current_password: str
     new_password: str = Field(min_length=8, max_length=200)
+
+
+class UserPayload(BaseModel):
+    username: str = Field(min_length=1, max_length=80)
+    password: str = Field(min_length=8, max_length=200)
+    role: str = Field(default="user", pattern="^(admin|user)$")
+    enabled: bool = True
+
+
+class UserUpdatePayload(BaseModel):
+    role: str = Field(default="user", pattern="^(admin|user)$")
+    enabled: bool = True
+    password: str = Field(default="", max_length=200)

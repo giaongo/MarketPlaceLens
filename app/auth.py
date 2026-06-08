@@ -21,26 +21,50 @@ def create_session(username: str) -> str:
 
 
 def valid_session(value: str | None) -> bool:
+    return current_user_from_session(value) is not None
+
+
+def current_user_from_session(value: str | None) -> dict | None:
     if not value or "." not in value:
-        return False
+        return None
     payload, signature = value.split(".", 1)
     expected = hmac.new(settings.session_secret.encode("utf-8"), payload.encode("ascii"), sha256).hexdigest()
     if not hmac.compare_digest(signature, expected):
-        return False
+        return None
     try:
         username = base64.urlsafe_b64decode(payload.encode("ascii")).decode("utf-8")
     except Exception:
-        return False
-    return username == settings.admin_username
+        return None
+    try:
+        with connect() as db:
+            row = db.execute(
+                "SELECT id, username, role, enabled FROM users WHERE username = ?",
+                (username,),
+            ).fetchone()
+    except Exception:
+        return None
+    if not row or not row["enabled"]:
+        return None
+    return dict(row)
 
 
 def valid_credentials(username: str, password: str) -> bool:
-    if not hmac.compare_digest(username, settings.admin_username):
-        return False
-    stored_hash = get_stored_password_hash()
-    if stored_hash:
-        return verify_password(password, stored_hash)
-    return hmac.compare_digest(password, settings.admin_password)
+    try:
+        with connect() as db:
+            row = db.execute(
+                "SELECT password_hash, enabled FROM users WHERE username = ?",
+                (username,),
+            ).fetchone()
+    except Exception:
+        row = None
+    if row:
+        return bool(row["enabled"]) and verify_password(password, row["password_hash"])
+    if hmac.compare_digest(username, settings.admin_username):
+        stored_hash = get_stored_password_hash()
+        if stored_hash:
+            return verify_password(password, stored_hash)
+        return hmac.compare_digest(password, settings.admin_password)
+    return False
 
 
 def get_stored_password_hash() -> str:
