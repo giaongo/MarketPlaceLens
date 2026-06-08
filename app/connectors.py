@@ -67,6 +67,11 @@ class HtmlListingConnector(MarketplaceConnector):
         ) as client:
             response = await client.get(profile["search_url"])
             response.raise_for_status()
+        if self.source_type == "facebook" and "/marketplace/item/" not in response.text:
+            raise ValueError(
+                "Facebook returned Marketplace HTML without public listing links. "
+                "This usually means the page is login-, location-, consent-, or JavaScript-rendered for anonymous server requests."
+            )
         return self.parse_listings(response.text, profile)
 
     def parse_listings(self, html: str, profile: dict) -> list[ListingCandidate]:
