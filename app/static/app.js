@@ -21,6 +21,7 @@ function bindNavigation() {
   $("#wizard-button").addEventListener("click", () => showWizard(true));
   $("#wizard-cancel-button").addEventListener("click", () => showWizard(false));
   $("#new-profile-button").addEventListener("click", () => editProfile(null));
+  $("#profile-source").addEventListener("change", updateSourcePlaceholder);
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
   $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
   $("#listing-status-filter").addEventListener("change", loadListings);
@@ -161,6 +162,7 @@ function editProfile(profile) {
   $("#profile-name").value = profile?.name || "";
   $("#profile-source").value = profile?.source_type || "kleinanzeigen";
   $("#profile-url").value = profile?.search_url || "";
+  updateSourcePlaceholder();
   $("#profile-interval").value = profile?.poll_interval_minutes || 60;
   $("#profile-location").value = profile?.location_hint || "";
   $("#profile-min-price").value = profile?.min_price ?? "";
@@ -274,6 +276,15 @@ function updateFilterPreview() {
   $("#profile-filter-preview").innerHTML = chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("");
 }
 
+function updateSourcePlaceholder() {
+  const source = $("#profile-source").value;
+  $("#profile-url").placeholder = {
+    kleinanzeigen: "https://www.kleinanzeigen.de/...",
+    facebook: "https://www.facebook.com/marketplace/...",
+    html: "https://example.com/search-results",
+  }[source] || "https://example.com/search-results";
+}
+
 async function loadListings() {
   const status = $("#listing-status-filter").value;
   const profileId = $("#listing-profile-filter").value;
@@ -294,7 +305,7 @@ async function loadListings() {
       <article class="listing-card">
         <div class="listing-media">
           ${listing.thumbnail_url ? `
-            <button class="image-load" data-listing-id="${listing.id}" data-image-alt="${escapeAttribute(listing.title)}">Load image</button>
+            <img class="listing-image" src="/api/listings/${listing.id}/image" alt="${escapeAttribute(listing.title)}" loading="lazy">
           ` : `<span class="no-image">No image</span>`}
         </div>
         <div class="listing-main">
@@ -329,19 +340,12 @@ async function loadListings() {
       await Promise.all([loadListings(), loadSummary()]);
     });
   });
-  $$(".image-load").forEach((button) => {
-    button.addEventListener("click", () => {
-      const img = document.createElement("img");
-      img.src = `/api/listings/${button.dataset.listingId}/image`;
-      img.alt = button.dataset.imageAlt;
-      img.loading = "lazy";
-      img.addEventListener("error", () => {
-        const fallback = document.createElement("span");
-        fallback.className = "no-image";
-        fallback.textContent = "Image unavailable";
-        img.replaceWith(fallback);
-      });
-      button.replaceWith(img);
+  $$(".listing-image").forEach((img) => {
+    img.addEventListener("error", () => {
+      const fallback = document.createElement("span");
+      fallback.className = "no-image";
+      fallback.textContent = "Image unavailable";
+      img.replaceWith(fallback);
     });
   });
 }

@@ -42,6 +42,9 @@ class MarketplaceConnector:
 class HtmlListingConnector(MarketplaceConnector):
     source_type = "html"
 
+    def __init__(self, source_type: str = "html") -> None:
+        self.source_type = source_type
+
     async def fetch_listings(self, profile: dict) -> list[ListingCandidate]:
         self.validate_search_url(profile["search_url"])
         async with httpx.AsyncClient(
@@ -164,7 +167,6 @@ def parse_price(value: str) -> float | None:
 
 
 def get_connector(source_type: str) -> MarketplaceConnector:
-    if source_type in {"html", "kleinanzeigen"}:
-        return HtmlListingConnector()
+    if source_type in {"html", "kleinanzeigen", "facebook"}:
+        return HtmlListingConnector(source_type)
     raise ValueError(f"Unsupported source type: {source_type}")
-

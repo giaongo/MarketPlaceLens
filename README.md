@@ -10,15 +10,16 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - Single-user login for the local web UI
 - Search profiles with enable/disable, polling interval, source URL, price limits, keyword filters, category filters, and Telegram toggle
 - Generic HTML listing connector for user-supplied search result URLs
+- Source profiles for Kleinanzeigen and Facebook Marketplace URLs
 - Filter engine with explainable hidden reasons
 - Manual run per profile
 - Background polling with conservative minimum interval
-- Scrollable listing history with adjustable filters, hidden/new/notified/seen states, and click-to-load thumbnails
+- Scrollable listing history with adjustable filters, hidden/new/notified/seen states, and lazy-loaded thumbnails
 - Telegram settings and test message
 
 ## Compliance Boundaries
 
-MarketPlaceLens is designed for conservative, user-supplied search result monitoring.
+MarketPlaceLens is designed for conservative, user-supplied search result monitoring. Use it at your own risk and only where you are allowed to access and process the listing data.
 
 - No login automation
 - No messages, favorites, or private user data extraction
@@ -26,9 +27,11 @@ MarketPlaceLens is designed for conservative, user-supplied search result monito
 - No proxy rotation
 - No aggressive polling intervals; profiles enforce a 30 minute minimum
 - No full archival of third-party content
-- No local image mirroring; only source thumbnail URLs are referenced
+- No local image mirroring; thumbnails are fetched on demand through the local app
 - Search results pages are checked by default; detail pages are not polled
 - Use only for sources where you have access and permission to process the listing data
+
+Facebook Marketplace and similar platforms can require login, change their markup, rate-limit access, or disallow automated collection in their terms. MarketPlaceLens does not bypass those controls. If a page is not publicly reachable or returns a consent/login/bot-detection page, the run should be treated as blocked.
 
 ## Quick Start
 
@@ -100,6 +103,6 @@ Runtime dependencies are commonly used permissive packages:
 - HTTPX: BSD-3-Clause
 - Beautiful Soup 4: MIT
 
-No scraping, browser automation, proxy, CAPTCHA, or paid third-party SDK dependency is included in this MVP.
+No browser automation, proxy, CAPTCHA, or paid third-party SDK dependency is included in this MVP.
 
-Listing images are not mirrored locally. If a connector finds a thumbnail URL, the UI shows a "Load image" button and only requests the remote image after the user clicks it.
+Listing images are not mirrored locally. If a connector finds a thumbnail URL, the UI requests it through the local image endpoint with browser lazy-loading.
