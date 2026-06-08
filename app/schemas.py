@@ -23,6 +23,11 @@ class ProfilePayload(BaseModel):
 class ListingStatusPayload(BaseModel):
     status: str | None = Field(default=None, pattern="^(new|seen|hidden|notified)$")
     watchlisted: bool | None = None
+    watchlist_id: int | None = None
+
+
+class WatchlistPayload(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
 
 
 class SettingsPayload(BaseModel):
@@ -30,6 +35,7 @@ class SettingsPayload(BaseModel):
     telegram_chat_id: str = ""
     webhook_url: str = ""
     global_rate_limit_seconds: int = Field(default=20, ge=5, le=3600)
+    default_watchlist_id: int | None = None
 
 
 class LoginPayload(BaseModel):

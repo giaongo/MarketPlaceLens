@@ -10,6 +10,8 @@ const state = {
   reviewQueue: [],
   reviewIndex: 0,
   reviewPointer: null,
+  watchlists: [],
+  defaultWatchlistId: null,
   locationMap: null,
   locationMarker: null,
   locationCircle: null,
@@ -179,6 +181,11 @@ const translations = {
     "settings.chatId": "Chat ID",
     "settings.webhookUrl": "Webhook URL",
     "settings.rateLimit": "Global rate limit seconds",
+    "settings.watchlists": "Watchlists",
+    "settings.watchlistsSubtitle": "Choose the default list used by the normal Watch click.",
+    "settings.defaultWatchlist": "Default watchlist",
+    "settings.newWatchlist": "New watchlist",
+    "settings.createWatchlist": "Create list",
     "settings.save": "Save settings",
     "settings.sendTest": "Send test",
     "settings.sendWebhookTest": "Send webhook test",
@@ -203,6 +210,9 @@ const translations = {
     "listing.score": "score {score}",
     "listing.addWatchlist": "Watch",
     "listing.removeWatchlist": "Remove",
+    "listing.watchMenu": "Choose watchlist",
+    "listing.newWatchlistPrompt": "New watchlist name",
+    "listing.addToWatchlist": "Add to {name}",
     "listing.seen": "Seen",
     "listing.hide": "Hide",
     "listing.new": "New",
@@ -211,6 +221,8 @@ const translations = {
     "toast.listingSeen": "Listing marked as seen",
     "toast.listingNew": "Listing moved back to new",
     "toast.watchlistAdded": "Added to watchlist",
+    "toast.watchlistAddedTo": "Added to {name}",
+    "toast.watchlistCreated": "Watchlist created",
     "toast.watchlistRemoved": "Removed from watchlist",
     "toast.passwordMismatch": "New passwords do not match",
     "toast.passwordChanged": "Password changed",
@@ -391,6 +403,11 @@ const translations = {
     "settings.chatId": "Chat-ID",
     "settings.webhookUrl": "Webhook-URL",
     "settings.rateLimit": "Globales Rate-Limit in Sekunden",
+    "settings.watchlists": "Watchlists",
+    "settings.watchlistsSubtitle": "Wähle die Standardliste, die der normale Merken-Klick nutzt.",
+    "settings.defaultWatchlist": "Standard-Watchlist",
+    "settings.newWatchlist": "Neue Watchlist",
+    "settings.createWatchlist": "Liste anlegen",
     "settings.save": "Einstellungen speichern",
     "settings.sendTest": "Test senden",
     "settings.sendWebhookTest": "Webhook-Test senden",
@@ -415,6 +432,9 @@ const translations = {
     "listing.score": "Score {score}",
     "listing.addWatchlist": "Merken",
     "listing.removeWatchlist": "Entfernen",
+    "listing.watchMenu": "Watchlist auswählen",
+    "listing.newWatchlistPrompt": "Name der neuen Watchlist",
+    "listing.addToWatchlist": "Zu {name} hinzufügen",
     "listing.seen": "Gesehen",
     "listing.hide": "Ausblenden",
     "listing.new": "Neu",
@@ -423,6 +443,8 @@ const translations = {
     "toast.listingSeen": "Listing als gesehen markiert",
     "toast.listingNew": "Listing wieder auf neu gesetzt",
     "toast.watchlistAdded": "Zur Watchlist hinzugefügt",
+    "toast.watchlistAddedTo": "Zu {name} hinzugefügt",
+    "toast.watchlistCreated": "Watchlist angelegt",
     "toast.watchlistRemoved": "Aus Watchlist entfernt",
     "toast.passwordMismatch": "Neue Passwörter stimmen nicht überein",
     "toast.passwordChanged": "Passwort geändert",
@@ -540,6 +562,7 @@ function bindNavigation() {
   $("#run-profile-button").addEventListener("click", runSelectedProfile);
   $("#delete-profile-button").addEventListener("click", deleteSelectedProfile);
   $("#review-watch-button").addEventListener("click", reviewWatchCurrent);
+  $("#review-watch-menu-button").addEventListener("click", toggleReviewWatchMenu);
   $("#review-seen-button").addEventListener("click", reviewSeenCurrent);
   $("#review-open-button").addEventListener("click", reviewOpenCurrent);
   $("#listing-status-filter").addEventListener("change", resetListingsPage);
@@ -599,6 +622,11 @@ function bindForms() {
     event.preventDefault();
     await saveSettings();
   });
+  $("#watchlist-settings-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await createWatchlistFromSettings();
+  });
+  $("#default-watchlist").addEventListener("change", saveSettings);
   $("#password-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await changePassword();
@@ -1450,11 +1478,13 @@ function renderReviewCard() {
   if (!target) return;
   const listing = currentReviewListing();
   const watchButton = $("#review-watch-button");
+  const watchMenuButton = $("#review-watch-menu-button");
   const seenButton = $("#review-seen-button");
   const openButton = $("#review-open-button");
-  [watchButton, seenButton, openButton].forEach((button) => {
+  [watchButton, watchMenuButton, seenButton, openButton].forEach((button) => {
     if (button) button.disabled = !listing;
   });
+  renderReviewWatchMenu(listing);
   if (!listing) {
     target.innerHTML = `
       <article class="review-card empty-review">
@@ -1470,6 +1500,9 @@ function renderReviewCard() {
 }
 
 function reviewListingMarkup(listing) {
+  const watchlistBadges = listing.watchlists?.length
+    ? listing.watchlists.map((watchlist) => `<span class="pill watchlist-pill">${escapeHtml(watchlist.name)}</span>`).join("")
+    : (listing.watchlisted ? `<span class="pill watchlist-pill">${escapeHtml(t("summary.watchlist"))}</span>` : "");
   return `
     <article class="review-card" data-review-card data-id="${listing.id}">
       <div class="review-image-wrap">
@@ -1482,7 +1515,7 @@ function reviewListingMarkup(listing) {
       <div class="review-details">
         <div>
           <span class="source-badge ${escapeAttribute(listing.source_type)}">${escapeHtml(sourceLabel(listing.source_type))}</span>
-          ${listing.watchlisted ? `<span class="pill watchlist-pill">${escapeHtml(t("summary.watchlist"))}</span>` : ""}
+          ${watchlistBadges}
         </div>
         <h3>${escapeHtml(listing.title)}</h3>
         <strong class="review-price">${escapeHtml(listing.price_text || t("listing.noPrice"))}</strong>
@@ -1520,14 +1553,15 @@ function bindReviewGestures(card) {
 async function reviewWatchCurrent() {
   const listing = currentReviewListing();
   if (!listing) return;
-  await api(`/api/listings/${listing.id}`, {
-    method: "PATCH",
-    body: JSON.stringify({ watchlisted: true }),
-  });
+  const watchlist = defaultWatchlist();
+  await addListingToWatchlist(listing.id, watchlist?.id);
   listing.watchlisted = true;
-  toast(t("toast.watchlistAdded"));
+  if (watchlist && !listing.watchlists?.some((item) => item.id === watchlist.id)) {
+    listing.watchlists = [...(listing.watchlists || []), { id: watchlist.id, name: watchlist.name }];
+  }
+  toast(watchlist ? t("toast.watchlistAddedTo", { name: watchlist.name }) : t("toast.watchlistAdded"));
   renderReviewCard();
-  await Promise.all([loadWatchlist(), loadSummary()]);
+  await Promise.all([loadWatchlist(), loadWatchlistsMeta(), loadSummary()]);
 }
 
 async function reviewSeenCurrent() {
@@ -1549,9 +1583,86 @@ function reviewOpenCurrent() {
   if (listing?.listing_url) window.open(listing.listing_url, "_blank", "noopener");
 }
 
+function renderReviewWatchMenu(listing) {
+  const menu = $("#review-watch-menu");
+  if (!menu) return;
+  menu.classList.add("hidden");
+  menu.innerHTML = listing ? watchlistMenuMarkup(listing.id) : "";
+}
+
+function toggleReviewWatchMenu(event) {
+  event.stopPropagation();
+  const menu = $("#review-watch-menu");
+  if (!menu) return;
+  menu.classList.toggle("hidden");
+  bindWatchlistMenu(menu);
+}
+
+function defaultWatchlist() {
+  return state.watchlists.find((watchlist) => watchlist.id === Number(state.defaultWatchlistId)) || state.watchlists[0] || null;
+}
+
+async function addListingToWatchlist(listingId, watchlistId) {
+  await api(`/api/listings/${listingId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ watchlisted: true, watchlist_id: watchlistId || null }),
+  });
+}
+
+async function removeListingFromWatchlists(listingId) {
+  await api(`/api/listings/${listingId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ watchlisted: false }),
+  });
+}
+
+function watchlistMenuMarkup(listingId) {
+  const listItems = state.watchlists.map((watchlist) => `
+    <button type="button" data-watchlist-select="${watchlist.id}" data-id="${listingId}">
+      ${escapeHtml(t("listing.addToWatchlist", { name: watchlist.name }))}
+    </button>
+  `).join("");
+  return `
+    ${listItems}
+    <button type="button" data-watchlist-create data-id="${listingId}">${escapeHtml(t("settings.createWatchlist"))}</button>
+  `;
+}
+
+function bindWatchlistMenu(root) {
+  if (root.dataset.bound === "true") return;
+  root.dataset.bound = "true";
+  root.addEventListener("click", async (event) => {
+    event.stopPropagation();
+    const button = event.target.closest("button");
+    if (!button) return;
+    if (button.dataset.watchlistSelect) {
+      button.disabled = true;
+      const watchlist = state.watchlists.find((item) => item.id === Number(button.dataset.watchlistSelect));
+      await addListingToWatchlist(button.dataset.id, watchlist?.id);
+      toast(watchlist ? t("toast.watchlistAddedTo", { name: watchlist.name }) : t("toast.watchlistAdded"));
+      await Promise.all([loadListings(), loadWatchlist(), loadReviewQueue(), loadWatchlistsMeta(), loadSummary()]);
+      return;
+    }
+    if (button.hasAttribute("data-watchlist-create")) {
+      const name = window.prompt(t("listing.newWatchlistPrompt"));
+      if (!name?.trim()) return;
+      button.disabled = true;
+      const watchlist = await api("/api/watchlists", {
+        method: "POST",
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      await addListingToWatchlist(button.dataset.id, watchlist.id);
+      state.defaultWatchlistId = watchlist.id;
+      await Promise.all([loadWatchlistsMeta(), saveSettings(), loadListings(), loadWatchlist(), loadReviewQueue(), loadSummary()]);
+      toast(t("toast.watchlistAddedTo", { name: watchlist.name }));
+    }
+  });
+}
+
 async function loadListingBrowser(containerSelector, watchlistedOnly) {
   const browser = $(containerSelector);
   if (!browser) return;
+  if (!state.watchlists.length) await loadWatchlistsMeta();
   const page = watchlistedOnly ? state.watchlistPage : state.listingPage;
   const pageSize = state.pageSize;
   const status = $("#listing-status-filter").value;
@@ -1605,12 +1716,27 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
     button.addEventListener("click", async () => {
       button.disabled = true;
       const added = button.dataset.watchlistAction === "add";
-      await api(`/api/listings/${button.dataset.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ watchlisted: added }),
+      if (added) {
+        const watchlist = defaultWatchlist();
+        await addListingToWatchlist(button.dataset.id, watchlist?.id);
+        toast(watchlist ? t("toast.watchlistAddedTo", { name: watchlist.name }) : t("toast.watchlistAdded"));
+      } else {
+        await removeListingFromWatchlists(button.dataset.id);
+        toast(t("toast.watchlistRemoved"));
+      }
+      await Promise.all([loadListings(), loadWatchlist(), loadReviewQueue(), loadWatchlistsMeta(), loadSummary()]);
+    });
+  });
+  browser.querySelectorAll("[data-watchlist-menu-toggle]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const menu = button.closest(".watch-split")?.querySelector(".watch-menu");
+      if (!menu) return;
+      $$(".watch-menu").forEach((item) => {
+        if (item !== menu) item.classList.add("hidden");
       });
-      toast(t(added ? "toast.watchlistAdded" : "toast.watchlistRemoved"));
-      await Promise.all([loadListings(), loadWatchlist(), loadReviewQueue(), loadSummary()]);
+      menu.classList.toggle("hidden");
+      bindWatchlistMenu(menu);
     });
   });
   browser.querySelectorAll(".listing-image").forEach((img) => {
@@ -1703,6 +1829,9 @@ function sortListings(listings) {
 function listingMarkup(listing) {
   const watchlistAction = listing.watchlisted ? "remove" : "add";
   const watchlistLabel = listing.watchlisted ? t("listing.removeWatchlist") : t("listing.addWatchlist");
+  const watchlistBadges = listing.watchlists?.length
+    ? listing.watchlists.map((watchlist) => `<span class="pill watchlist-pill">★ ${escapeHtml(watchlist.name)}</span>`).join("")
+    : (listing.watchlisted ? `<span class="pill watchlist-pill">★ ${escapeHtml(t("nav.watchlist"))}</span>` : "");
   return `
     <article class="listing-card ${listing.watchlisted ? "watchlisted" : ""}">
       <div class="listing-media">
@@ -1714,7 +1843,7 @@ function listingMarkup(listing) {
         <div class="listing-title-row">
           <a href="${escapeAttribute(listing.listing_url)}" target="_blank" rel="noopener">${escapeHtml(listing.title)}</a>
           <div class="listing-badges">
-            ${listing.watchlisted ? `<span class="pill watchlist-pill">★ ${escapeHtml(t("nav.watchlist"))}</span>` : ""}
+            ${watchlistBadges}
             <span class="pill ${escapeAttribute(listing.status)}">${escapeHtml(statusLabel(listing.status))}</span>
           </div>
         </div>
@@ -1729,7 +1858,11 @@ function listingMarkup(listing) {
         ${listing.filter_reason ? `<p class="filter-reason">${escapeHtml(listing.filter_reason)}</p>` : ""}
       </div>
       <div class="row-actions">
-        <button class="mini-button watch-button ${listing.watchlisted ? "active" : ""}" data-watchlist-action="${watchlistAction}" data-id="${listing.id}">${listing.watchlisted ? "★" : "☆"} ${escapeHtml(watchlistLabel)}</button>
+        <div class="watch-split">
+          <button class="mini-button watch-button ${listing.watchlisted ? "active" : ""}" data-watchlist-action="${watchlistAction}" data-id="${listing.id}">${listing.watchlisted ? "★" : "☆"} ${escapeHtml(watchlistLabel)}</button>
+          <button class="mini-button watch-menu-toggle" type="button" data-watchlist-menu-toggle data-id="${listing.id}" aria-label="${escapeAttribute(t("listing.watchMenu"))}">v</button>
+          <div class="watch-menu hidden">${watchlistMenuMarkup(listing.id)}</div>
+        </div>
         <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">${escapeHtml(t("listing.seen"))}</button>
         <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">${escapeHtml(t("listing.hide"))}</button>
         <button class="mini-button" data-listing-action="new" data-id="${listing.id}">${escapeHtml(t("listing.new"))}</button>
@@ -1750,25 +1883,63 @@ function listingActionToast(action) {
 }
 
 async function loadSettings() {
+  await loadWatchlistsMeta();
   const settings = await api("/api/settings");
+  state.defaultWatchlistId = settings.default_watchlist_id;
   $("#telegram-token").value = settings.telegram_bot_token;
   $("#telegram-chat").value = settings.telegram_chat_id;
   $("#webhook-url").value = settings.webhook_url;
   $("#global-rate").value = settings.global_rate_limit_seconds;
+  renderDefaultWatchlistSelect();
 }
 
 async function saveSettings() {
-  await api("/api/settings", {
+  const settings = await api("/api/settings", {
     method: "PUT",
     body: JSON.stringify({
       telegram_bot_token: $("#telegram-token").value,
       telegram_chat_id: $("#telegram-chat").value,
       webhook_url: $("#webhook-url").value,
       global_rate_limit_seconds: Number($("#global-rate").value || 20),
+      default_watchlist_id: Number($("#default-watchlist").value || state.defaultWatchlistId || 0),
     }),
   });
+  state.defaultWatchlistId = settings.default_watchlist_id;
+  renderDefaultWatchlistSelect();
   toast(t("toast.settingsSaved"));
-  await loadSettings();
+}
+
+async function loadWatchlistsMeta() {
+  state.watchlists = await api("/api/watchlists");
+  if (!state.defaultWatchlistId && state.watchlists.length) state.defaultWatchlistId = state.watchlists[0].id;
+  renderDefaultWatchlistSelect();
+}
+
+function renderDefaultWatchlistSelect() {
+  const select = $("#default-watchlist");
+  if (!select) return;
+  select.innerHTML = state.watchlists.map((watchlist) => `
+    <option value="${watchlist.id}">${escapeHtml(watchlist.name)} (${watchlist.listing_count || 0})</option>
+  `).join("");
+  if (state.defaultWatchlistId) select.value = String(state.defaultWatchlistId);
+}
+
+async function createWatchlistFromSettings() {
+  const input = $("#new-watchlist-name");
+  const name = input.value.trim();
+  if (!name) {
+    input.focus();
+    return;
+  }
+  const watchlist = await api("/api/watchlists", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+  input.value = "";
+  state.defaultWatchlistId = watchlist.id;
+  await loadWatchlistsMeta();
+  await saveSettings();
+  toast(t("toast.watchlistCreated"));
 }
 
 async function testTelegram() {
@@ -1977,6 +2148,7 @@ function setLanguage(language) {
     dashboard: "nav.dashboard",
     profiles: "nav.profiles",
     listings: "nav.listings",
+    review: "nav.review",
     watchlist: "nav.watchlist",
     settings: "nav.settings",
   }[activeView]);
@@ -1987,6 +2159,7 @@ function setLanguage(language) {
   loadProfiles();
   loadListings();
   loadWatchlist();
+  loadReviewQueue();
 }
 
 function setTheme(theme) {

@@ -21,7 +21,8 @@ Self-hosted marketplace/listing watcher for saved search URLs. MarketPlaceLens p
 - One throttled extra check of enabled jobs when the web app is opened
 - Background polling with conservative minimum interval
 - Paginated listing history with a collapsed-by-default browser, 5/10/20 items per page, adjustable filters, list/tile display modes, hidden/new/notified/seen states, watchlist markers, and lazy-loaded thumbnails; seen and hidden listings drop out of the default active list unless explicitly filtered
-- Tinder-style listing review view with a large image, key facts, double-click watchlisting, and swipe-to-seen queue progression
+- Tinder-style listing review view with a large image, key facts, double-click watchlisting, selectable watchlist saving, and swipe-to-seen queue progression
+- Multiple user-created watchlists, including a settings-controlled default watchlist for the normal Watch action and a per-listing dropdown to choose or create a list
 - Dedicated watchlist view for saved listings you want to compare or revisit
 - English/German UI language switcher and light/dark theme toggle
 - Telegram and webhook settings with test messages
@@ -108,6 +109,8 @@ app/
 - `GET /api/listings`
 - `PATCH /api/listings/{id}`
 - `GET /api/listings?watchlisted=true`
+- `GET /api/watchlists`
+- `POST /api/watchlists`
 - `GET /api/settings`
 - `PUT /api/settings`
 - `POST /api/settings/password`

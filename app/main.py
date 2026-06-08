@@ -17,10 +17,10 @@ from fastapi.staticfiles import StaticFiles
 from .auth import COOKIE_NAME, create_session, hash_password, valid_credentials, valid_session
 from .config import settings
 from .connectors import ListingCandidate, get_connector
-from .database import connect, encode_list, init_db, row_to_listing, row_to_profile, utc_now
+from .database import connect, encode_list, ensure_default_watchlist, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
-from .schemas import ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload
+from .schemas import ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, WatchlistPayload
 
 app = FastAPI(title="MarketPlaceLens", version="0.1.0")
 static_dir = Path(__file__).parent / "static"
@@ -203,6 +203,44 @@ async def trigger_open_check() -> dict[str, Any]:
     return {"started": True}
 
 
+@app.get("/api/watchlists")
+async def list_watchlists() -> list[dict[str, Any]]:
+    with connect() as db:
+        rows = db.execute(
+            """
+            SELECT watchlists.*, COUNT(listing_watchlists.listing_id) listing_count
+            FROM watchlists
+            LEFT JOIN listing_watchlists ON listing_watchlists.watchlist_id = watchlists.id
+            GROUP BY watchlists.id
+            ORDER BY watchlists.updated_at DESC, watchlists.id ASC
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+@app.post("/api/watchlists")
+async def create_watchlist(payload: WatchlistPayload) -> dict[str, Any]:
+    now = utc_now()
+    name = payload.name.strip()
+    with connect() as db:
+        try:
+            cursor = db.execute(
+                "INSERT INTO watchlists(name, created_at, updated_at) VALUES (?, ?, ?)",
+                (name, now, now),
+            )
+        except sqlite3.IntegrityError as exc:
+            raise HTTPException(409, "Watchlist already exists") from exc
+        row = db.execute(
+            """
+            SELECT watchlists.*, 0 listing_count
+            FROM watchlists
+            WHERE id = ?
+            """,
+            (cursor.lastrowid,),
+        ).fetchone()
+    return dict(row)
+
+
 @app.get("/api/listings")
 async def list_listings(
     profile_id: int | None = None,
@@ -270,7 +308,7 @@ async def list_listings(
             """,
             values + [limit, offset],
         ).fetchall()
-    items = [row_to_listing(row) for row in rows]
+    items = attach_watchlists(db_listing_rows_to_items(rows))
     if paged:
         return {"items": items, "total": total, "limit": limit, "offset": offset}
     return items
@@ -279,6 +317,8 @@ async def list_listings(
 @app.patch("/api/listings/{listing_id}")
 async def update_listing_status(listing_id: int, payload: ListingStatusPayload) -> dict[str, Any]:
     with connect() as db:
+        if not db.execute("SELECT id FROM listings WHERE id = ?", (listing_id,)).fetchone():
+            raise HTTPException(404, "Listing not found")
         updates: list[str] = []
         values: list[Any] = []
         if payload.status is not None:
@@ -290,8 +330,9 @@ async def update_listing_status(listing_id: int, payload: ListingStatusPayload) 
                 updates.append("filter_reason = ?")
                 values.append("")
         if payload.watchlisted is not None:
+            set_listing_watchlisted(db, listing_id, payload.watchlisted, payload.watchlist_id)
             updates.append("watchlisted = ?")
-            values.append(int(payload.watchlisted))
+            values.append(int(payload.watchlisted) if payload.watchlisted else listing_has_watchlists(db, listing_id))
         if not updates:
             raise HTTPException(400, "No listing changes supplied")
         values.append(listing_id)
@@ -299,7 +340,7 @@ async def update_listing_status(listing_id: int, payload: ListingStatusPayload) 
         row = db.execute("SELECT * FROM listings WHERE id = ?", (listing_id,)).fetchone()
     if not row:
         raise HTTPException(404, "Listing not found")
-    return row_to_listing(row)
+    return attach_watchlists([row_to_listing(row)])[0]
 
 
 @app.get("/api/listings/{listing_id}/image")
@@ -336,6 +377,7 @@ async def listing_image(listing_id: int) -> Response:
 async def get_settings() -> dict[str, Any]:
     with connect() as db:
         rows = db.execute("SELECT key, value FROM app_settings").fetchall()
+        default_watchlist_id = normalized_default_watchlist_id(db)
     values = {row["key"]: row["value"] for row in rows}
     return {
         "telegram_bot_token": mask_secret(values.get("telegram_bot_token", "")),
@@ -344,6 +386,7 @@ async def get_settings() -> dict[str, Any]:
         "webhook_url": values.get("webhook_url", ""),
         "webhook_url_set": bool(values.get("webhook_url")),
         "global_rate_limit_seconds": int(values.get("global_rate_limit_seconds", "20") or 20),
+        "default_watchlist_id": default_watchlist_id,
     }
 
 
@@ -356,6 +399,7 @@ async def update_settings(payload: SettingsPayload) -> dict[str, Any]:
             "telegram_chat_id": payload.telegram_chat_id,
             "webhook_url": payload.webhook_url,
             "global_rate_limit_seconds": str(payload.global_rate_limit_seconds),
+            "default_watchlist_id": str(valid_watchlist_id(db, payload.default_watchlist_id)),
         }
         for key, value in values.items():
             db.execute(
@@ -551,6 +595,90 @@ def validate_profile_search_url(profile: dict[str, Any]) -> None:
 def get_setting(db, key: str) -> str:
     row = db.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
     return row["value"] if row else ""
+
+
+def valid_watchlist_id(db: sqlite3.Connection, watchlist_id: int | None) -> int:
+    if watchlist_id:
+        row = db.execute("SELECT id FROM watchlists WHERE id = ?", (watchlist_id,)).fetchone()
+        if row:
+            return int(row["id"])
+    return ensure_default_watchlist(db)
+
+
+def normalized_default_watchlist_id(db: sqlite3.Connection) -> int:
+    try:
+        configured = int(get_setting(db, "default_watchlist_id") or "0")
+    except ValueError:
+        configured = 0
+    default_id = valid_watchlist_id(db, configured)
+    db.execute(
+        "INSERT INTO app_settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        ("default_watchlist_id", str(default_id)),
+    )
+    return default_id
+
+
+def set_listing_watchlisted(
+    db: sqlite3.Connection,
+    listing_id: int,
+    watchlisted: bool,
+    watchlist_id: int | None,
+) -> None:
+    if watchlisted:
+        target_id = valid_watchlist_id(db, watchlist_id or normalized_default_watchlist_id(db))
+        db.execute(
+            """
+            INSERT OR IGNORE INTO listing_watchlists(listing_id, watchlist_id, created_at)
+            VALUES (?, ?, ?)
+            """,
+            (listing_id, target_id, utc_now()),
+        )
+        db.execute("UPDATE watchlists SET updated_at = ? WHERE id = ?", (utc_now(), target_id))
+        return
+    if watchlist_id:
+        db.execute(
+            "DELETE FROM listing_watchlists WHERE listing_id = ? AND watchlist_id = ?",
+            (listing_id, watchlist_id),
+        )
+    else:
+        db.execute("DELETE FROM listing_watchlists WHERE listing_id = ?", (listing_id,))
+
+
+def listing_has_watchlists(db: sqlite3.Connection, listing_id: int) -> int:
+    row = db.execute(
+        "SELECT COUNT(*) count FROM listing_watchlists WHERE listing_id = ?",
+        (listing_id,),
+    ).fetchone()
+    return 1 if row and row["count"] else 0
+
+
+def db_listing_rows_to_items(rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
+    return [row_to_listing(row) for row in rows]
+
+
+def attach_watchlists(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not items:
+        return items
+    listing_ids = [item["id"] for item in items]
+    placeholders = ",".join("?" for _ in listing_ids)
+    with connect() as db:
+        rows = db.execute(
+            f"""
+            SELECT listing_watchlists.listing_id, watchlists.id, watchlists.name
+            FROM listing_watchlists
+            JOIN watchlists ON watchlists.id = listing_watchlists.watchlist_id
+            WHERE listing_watchlists.listing_id IN ({placeholders})
+            ORDER BY watchlists.name COLLATE NOCASE
+            """,
+            listing_ids,
+        ).fetchall()
+    grouped: dict[int, list[dict[str, Any]]] = {item["id"]: [] for item in items}
+    for row in rows:
+        grouped[int(row["listing_id"])].append({"id": row["id"], "name": row["name"]})
+    for item in items:
+        item["watchlists"] = grouped.get(item["id"], [])
+        item["watchlisted"] = bool(item["watchlists"] or item.get("watchlisted"))
+    return items
 
 
 def mask_secret(value: str) -> str:

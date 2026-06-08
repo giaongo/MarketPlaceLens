@@ -99,6 +99,20 @@ def init_db() -> None:
               value TEXT NOT NULL DEFAULT ''
             );
 
+            CREATE TABLE IF NOT EXISTS watchlists (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              name TEXT NOT NULL UNIQUE,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS listing_watchlists (
+              listing_id INTEGER NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+              watchlist_id INTEGER NOT NULL REFERENCES watchlists(id) ON DELETE CASCADE,
+              created_at TEXT NOT NULL,
+              PRIMARY KEY (listing_id, watchlist_id)
+            );
+
             CREATE TABLE IF NOT EXISTS run_logs (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               profile_id INTEGER REFERENCES watch_profiles(id) ON DELETE SET NULL,
@@ -118,11 +132,22 @@ def init_db() -> None:
         ensure_column(db, "listings", "watchlisted", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "listings", "user_hidden", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "watch_profiles", "notify_webhook", "INTEGER NOT NULL DEFAULT 0")
+        default_watchlist_id = ensure_default_watchlist(db)
+        db.execute(
+            """
+            INSERT OR IGNORE INTO listing_watchlists(listing_id, watchlist_id, created_at)
+            SELECT id, ?, ?
+            FROM listings
+            WHERE watchlisted = 1
+            """,
+            (default_watchlist_id, utc_now()),
+        )
         defaults = {
             "telegram_bot_token": settings.telegram_bot_token,
             "telegram_chat_id": settings.telegram_chat_id,
             "webhook_url": settings.webhook_url,
             "global_rate_limit_seconds": "20",
+            "default_watchlist_id": str(default_watchlist_id),
         }
         for key, value in defaults.items():
             db.execute(
@@ -145,6 +170,7 @@ def row_to_listing(row: sqlite3.Row) -> dict[str, Any]:
     data = dict(row)
     data["watchlisted"] = bool(data.get("watchlisted", False))
     data["user_hidden"] = bool(data.get("user_hidden", False))
+    data["watchlists"] = []
     return data
 
 
@@ -152,3 +178,15 @@ def ensure_column(db: sqlite3.Connection, table: str, column: str, definition: s
     columns = {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
     if column not in columns:
         db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
+def ensure_default_watchlist(db: sqlite3.Connection) -> int:
+    now = utc_now()
+    row = db.execute("SELECT id FROM watchlists ORDER BY id LIMIT 1").fetchone()
+    if row:
+        return int(row["id"])
+    cursor = db.execute(
+        "INSERT INTO watchlists(name, created_at, updated_at) VALUES (?, ?, ?)",
+        ("Watchlist", now, now),
+    )
+    return int(cursor.lastrowid)

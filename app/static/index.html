@@ -397,7 +397,11 @@
           </div>
           <div id="review-card" class="review-stage"></div>
           <div class="review-actions">
-            <button class="button ghost" type="button" id="review-watch-button" data-i18n="review.watch">Watchlist</button>
+            <div class="watch-split review-watch-split">
+              <button class="button ghost" type="button" id="review-watch-button" data-i18n="review.watch">Watchlist</button>
+              <button class="button ghost watch-menu-toggle" type="button" id="review-watch-menu-button" aria-label="Choose watchlist">v</button>
+              <div class="watch-menu hidden" id="review-watch-menu"></div>
+            </div>
             <button class="button primary" type="button" id="review-seen-button" data-i18n="review.seen">Seen, next</button>
             <button class="button ghost" type="button" id="review-open-button" data-i18n="review.open">Open original</button>
           </div>
@@ -448,6 +452,21 @@
               <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
               <button class="button ghost" id="telegram-test-button" type="button" data-i18n="settings.sendTest">Send test</button>
               <button class="button ghost" id="webhook-test-button" type="button" data-i18n="settings.sendWebhookTest">Send webhook test</button>
+            </div>
+          </form>
+        </section>
+        <section class="panel narrow settings-section">
+          <div class="panel-heading">
+            <div>
+              <h2 data-i18n="settings.watchlists">Watchlists</h2>
+              <p class="panel-subtitle" data-i18n="settings.watchlistsSubtitle">Choose the default list used by the normal Watch click.</p>
+            </div>
+          </div>
+          <form id="watchlist-settings-form" class="form-grid">
+            <label class="wide"><span data-i18n="settings.defaultWatchlist">Default watchlist</span><select id="default-watchlist"></select></label>
+            <label class="wide"><span data-i18n="settings.newWatchlist">New watchlist</span><input id="new-watchlist-name" maxlength="80" placeholder="Favorites"></label>
+            <div class="actions wide">
+              <button class="button primary" type="submit" data-i18n="settings.createWatchlist">Create list</button>
             </div>
           </form>
         </section>

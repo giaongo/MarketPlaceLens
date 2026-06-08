@@ -1300,6 +1300,7 @@ textarea.chip-source {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  align-items: flex-start;
 }
 
 .grid-view .row-actions {
@@ -1322,6 +1323,59 @@ textarea.chip-source {
 .mini-button:disabled {
   cursor: wait;
   opacity: 0.62;
+}
+
+.watch-split {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.watch-split .watch-button {
+  border-radius: 8px 0 0 8px;
+}
+
+.watch-menu-toggle {
+  min-width: 30px;
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.watch-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  min-width: 220px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.watch-menu.hidden {
+  display: none;
+}
+
+.watch-menu button {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.watch-menu button:last-child {
+  border-bottom: 0;
+}
+
+.watch-menu button:hover {
+  background: var(--input-bg);
 }
 
 .watch-button.active {
@@ -1430,6 +1484,14 @@ textarea.chip-source {
   margin-top: 14px;
 }
 
+.review-watch-split .button {
+  margin: 0;
+}
+
+.review-watch-split .watch-menu-toggle {
+  min-width: 44px;
+}
+
 .grid-view .mini-button {
   border-width: 0 1px 0 0;
   border-radius: 0;
@@ -1440,6 +1502,20 @@ textarea.chip-source {
 }
 
 .grid-view .mini-button:last-child {
+  border-right: 0;
+}
+
+.grid-view .watch-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+}
+
+.grid-view .watch-split .watch-button {
+  border-radius: 0;
+}
+
+.grid-view .watch-split .watch-menu-toggle {
+  border-radius: 0;
   border-right: 0;
 }
 
