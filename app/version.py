@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.2.1"
 BUILD_CODE = os.getenv("MARKETPLACELENS_BUILD_CODE", APP_VERSION)
 BUILD_COMMIT = os.getenv("MARKETPLACELENS_BUILD_COMMIT", "dev")
 BUILD_BRANCH = os.getenv("MARKETPLACELENS_BUILD_BRANCH", "main")

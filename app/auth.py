@@ -38,7 +38,11 @@ def current_user_from_session(value: str | None) -> dict | None:
     try:
         with connect() as db:
             row = db.execute(
-                "SELECT id, username, role, enabled FROM users WHERE username = ?",
+                """
+                SELECT id, username, role, enabled, display_name, buyer_location, contact_hint, inquiry_signature
+                FROM users
+                WHERE username = ?
+                """,
                 (username,),
             ).fetchone()
     except Exception:

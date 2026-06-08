@@ -67,6 +67,8 @@ Supported providers:
 
 The configured tone controls how the buyer message is written: very polite, normal, or cheeky. Generated text is displayed for copying only. MarketPlaceLens does not send seller messages.
 
+Each user can store personal buyer details in Settings, including display name, location, contact note, and preferred signature. When AI inquiry texts are generated, those details are included in the prompt so the draft can sound like the user and include the right context.
+
 ## Users and Roles
 
 Admin:

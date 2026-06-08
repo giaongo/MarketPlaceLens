@@ -20,7 +20,7 @@ from .connectors import ListingCandidate, get_connector
 from .database import connect, encode_list, ensure_default_watchlist, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
-from .schemas import InquiryPayload, ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, UserPayload, UserUpdatePayload, WatchlistPayload
+from .schemas import AccountProfilePayload, InquiryPayload, ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, UserPayload, UserUpdatePayload, WatchlistPayload
 from .version import APP_VERSION, version_payload
 
 app = FastAPI(title="MarketPlaceLens", version=APP_VERSION)
@@ -110,7 +110,16 @@ def require_admin(request: Request) -> dict[str, Any]:
 def safe_user(user: dict[str, Any] | None) -> dict[str, Any] | None:
     if not user:
         return None
-    return {"id": user["id"], "username": user["username"], "role": user["role"], "enabled": bool(user["enabled"])}
+    return {
+        "id": user["id"],
+        "username": user["username"],
+        "role": user["role"],
+        "enabled": bool(user["enabled"]),
+        "display_name": user.get("display_name", ""),
+        "buyer_location": user.get("buyer_location", ""),
+        "contact_hint": user.get("contact_hint", ""),
+        "inquiry_signature": user.get("inquiry_signature", ""),
+    }
 
 
 @app.get("/api/users")
@@ -552,13 +561,18 @@ async def generate_listing_inquiry(listing_id: int, payload: InquiryPayload, req
             (listing_id,),
         ).fetchone()
         settings_rows = db.execute("SELECT key, value FROM app_settings").fetchall()
+        account_row = db.execute(
+            "SELECT display_name, buyer_location, contact_hint, inquiry_signature FROM users WHERE id = ?",
+            (user["id"],),
+        ).fetchone()
     if not listing_row:
         raise HTTPException(404, "Listing not found")
     app_settings = {item["key"]: item["value"] for item in settings_rows}
     if app_settings.get("ai_enabled") != "1":
         raise HTTPException(400, "AI inquiry generation is not enabled")
     listing = row_to_listing(listing_row)
-    prompt = inquiry_prompt(listing, app_settings.get("ai_tone", "normal"), payload.language)
+    account_profile = dict(account_row) if account_row else {}
+    prompt = inquiry_prompt(listing, app_settings.get("ai_tone", "normal"), payload.language, account_profile)
     text = await generate_ai_text(app_settings, prompt)
     return {"text": text.strip()}
 
@@ -625,6 +639,47 @@ async def update_password(payload: PasswordPayload, request: Request) -> dict[st
             (hash_password(payload.new_password), utc_now(), user["id"]),
         )
     return {"ok": True}
+
+
+@app.get("/api/account")
+async def get_account_profile(request: Request) -> dict[str, str]:
+    user = request_user(request)
+    with connect() as db:
+        row = db.execute(
+            "SELECT display_name, buyer_location, contact_hint, inquiry_signature FROM users WHERE id = ?",
+            (user["id"],),
+        ).fetchone()
+    if not row:
+        raise HTTPException(404, "User not found")
+    return dict(row)
+
+
+@app.put("/api/account")
+async def update_account_profile(payload: AccountProfilePayload, request: Request) -> dict[str, str]:
+    user = request_user(request)
+    values = {
+        "display_name": payload.display_name.strip(),
+        "buyer_location": payload.buyer_location.strip(),
+        "contact_hint": payload.contact_hint.strip(),
+        "inquiry_signature": payload.inquiry_signature.strip(),
+    }
+    with connect() as db:
+        db.execute(
+            """
+            UPDATE users
+            SET display_name = ?, buyer_location = ?, contact_hint = ?, inquiry_signature = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                values["display_name"],
+                values["buyer_location"],
+                values["contact_hint"],
+                values["inquiry_signature"],
+                utc_now(),
+                user["id"],
+            ),
+        )
+    return values
 
 
 @app.post("/api/settings/telegram/test")
@@ -934,7 +989,12 @@ def mask_secret(value: str) -> str:
     return "********" if value else ""
 
 
-def inquiry_prompt(listing: dict[str, Any], tone: str, language: str) -> list[dict[str, str]]:
+def inquiry_prompt(
+    listing: dict[str, Any],
+    tone: str,
+    language: str,
+    account_profile: dict[str, Any] | None = None,
+) -> list[dict[str, str]]:
     tone_instruction = {
         "polite": "sehr höflich, respektvoll und warm",
         "normal": "freundlich, direkt und natürlich",
@@ -955,6 +1015,15 @@ def inquiry_prompt(listing: dict[str, Any], tone: str, language: str) -> list[di
             f"Beschreibung: {listing.get('description_snippet') or ''}",
         ]
     )
+    account_profile = account_profile or {}
+    buyer_facts = "\n".join(
+        [
+            f"Name: {account_profile.get('display_name') or ''}",
+            f"Eigener Ort: {account_profile.get('buyer_location') or ''}",
+            f"Kontakt-/Hinweis: {account_profile.get('contact_hint') or ''}",
+            f"Signatur: {account_profile.get('inquiry_signature') or ''}",
+        ]
+    )
     output_language = "German" if language == "de" else "English"
     return [
         {
@@ -962,7 +1031,8 @@ def inquiry_prompt(listing: dict[str, Any], tone: str, language: str) -> list[di
             "content": (
                 "You write short buyer inquiry messages for marketplace listings. "
                 "Return only the message text. Do not invent private facts, do not mention AI, "
-                "and do not include placeholders, subject lines, or explanations."
+                "and do not include placeholders, subject lines, or explanations. "
+                "Use the buyer profile only when it is provided and useful."
             ),
         },
         {
@@ -970,8 +1040,8 @@ def inquiry_prompt(listing: dict[str, Any], tone: str, language: str) -> list[di
             "content": (
                 f"Write one {output_language} inquiry message. Style: {tone_instruction}. "
                 "Ask whether the item is still available and, if fitting, mention pickup or a quick viewing. "
-                "Keep it concise.\n\nListing facts:\n"
-                f"{facts}"
+                "Keep it concise. If a signature is provided, end with it.\n\nListing facts:\n"
+                f"{facts}\n\nBuyer profile:\n{buyer_facts}"
             ),
         },
     ]

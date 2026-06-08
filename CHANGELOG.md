@@ -2,6 +2,14 @@
 
 All notable changes to MarketPlaceLens are documented here.
 
+## [0.2.1] - 2026-06-08
+
+### Added
+
+- Per-user buyer profile fields for AI inquiry generation.
+- Account settings for display name, location, contact note, and preferred message signature.
+- AI inquiry prompts now include the current user's profile data when configured.
+
 ## [0.2.0] - 2026-06-08
 
 ### Added

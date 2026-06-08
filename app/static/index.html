@@ -573,6 +573,23 @@
         <section class="panel narrow settings-section">
           <div class="panel-heading">
             <div>
+              <h2 data-i18n="settings.profile">Personal details</h2>
+              <p class="panel-subtitle" data-i18n="settings.profileSubtitle">Used when AI inquiry texts are generated for your listings.</p>
+            </div>
+          </div>
+          <form id="account-profile-form" class="form-grid">
+            <label class="wide"><span data-i18n="settings.displayName">Name</span><input id="account-display-name" maxlength="120" autocomplete="name" placeholder="Alex"></label>
+            <label class="wide"><span data-i18n="settings.buyerLocation">Your location</span><input id="account-buyer-location" maxlength="120" placeholder="Berlin"></label>
+            <label class="wide"><span data-i18n="settings.contactHint">Contact note</span><textarea id="account-contact-hint" maxlength="240" rows="3" placeholder="I can pick up in the evening."></textarea></label>
+            <label class="wide"><span data-i18n="settings.inquirySignature">Message signature</span><input id="account-inquiry-signature" maxlength="120" placeholder="Viele Grüße, Alex"></label>
+            <div class="actions wide">
+              <button class="button primary" type="submit" data-i18n="settings.saveProfile">Save details</button>
+            </div>
+          </form>
+        </section>
+        <section class="panel narrow settings-section">
+          <div class="panel-heading">
+            <div>
               <h2 data-i18n="settings.password">Password</h2>
               <p class="panel-subtitle" data-i18n="settings.passwordSubtitle">Change your local password for this app.</p>
             </div>

@@ -108,6 +108,10 @@ def init_db() -> None:
               password_hash TEXT NOT NULL,
               role TEXT NOT NULL DEFAULT 'user',
               enabled INTEGER NOT NULL DEFAULT 1,
+              display_name TEXT NOT NULL DEFAULT '',
+              buyer_location TEXT NOT NULL DEFAULT '',
+              contact_hint TEXT NOT NULL DEFAULT '',
+              inquiry_signature TEXT NOT NULL DEFAULT '',
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL,
               last_login_at TEXT
@@ -147,6 +151,10 @@ def init_db() -> None:
         ensure_column(db, "listings", "user_hidden", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "watch_profiles", "notify_webhook", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "watch_profiles", "user_id", "INTEGER REFERENCES users(id)")
+        ensure_column(db, "users", "display_name", "TEXT NOT NULL DEFAULT ''")
+        ensure_column(db, "users", "buyer_location", "TEXT NOT NULL DEFAULT ''")
+        ensure_column(db, "users", "contact_hint", "TEXT NOT NULL DEFAULT ''")
+        ensure_column(db, "users", "inquiry_signature", "TEXT NOT NULL DEFAULT ''")
         ensure_admin_user(db)
         assign_unowned_profiles_to_admin(db)
         default_watchlist_id = ensure_default_watchlist(db)

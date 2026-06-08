@@ -15,6 +15,7 @@ const state = {
   aiEnabled: false,
   wizardStep: 0,
   currentUser: null,
+  accountProfile: null,
   users: [],
   version: null,
   locationMap: null,
@@ -226,6 +227,13 @@ const translations = {
     "settings.sendWebhookTest": "Send webhook test",
     "settings.password": "Password",
     "settings.passwordSubtitle": "Change your local password for this app.",
+    "settings.profile": "Personal details",
+    "settings.profileSubtitle": "Used when AI inquiry texts are generated for your listings.",
+    "settings.displayName": "Name",
+    "settings.buyerLocation": "Your location",
+    "settings.contactHint": "Contact note",
+    "settings.inquirySignature": "Message signature",
+    "settings.saveProfile": "Save details",
     "settings.currentPassword": "Current password",
     "settings.newPassword": "New password",
     "settings.repeatPassword": "Repeat new password",
@@ -294,6 +302,7 @@ const translations = {
     "toast.facebookSearchQueryRequired": "Facebook Marketplace search URLs need a search term.",
     "toast.listingTypeRequired": "Select at least one Kleinanzeigen listing type",
     "toast.settingsSaved": "Settings saved",
+    "toast.profileSaved": "Personal details saved",
     "toast.telegramSent": "Telegram test sent",
     "toast.webhookSent": "Webhook test sent",
     "toast.openCheckStarted": "Checking active jobs now",
@@ -500,6 +509,13 @@ const translations = {
     "settings.sendWebhookTest": "Webhook-Test senden",
     "settings.password": "Passwort",
     "settings.passwordSubtitle": "Dein lokales Passwort für diese App ändern.",
+    "settings.profile": "Persönliche Daten",
+    "settings.profileSubtitle": "Wird für KI-Anfragetexte zu deinen Listings verwendet.",
+    "settings.displayName": "Name",
+    "settings.buyerLocation": "Dein Ort",
+    "settings.contactHint": "Kontakt-/Texthinweis",
+    "settings.inquirySignature": "Nachrichten-Signatur",
+    "settings.saveProfile": "Daten speichern",
     "settings.currentPassword": "Aktuelles Passwort",
     "settings.newPassword": "Neues Passwort",
     "settings.repeatPassword": "Neues Passwort wiederholen",
@@ -568,6 +584,7 @@ const translations = {
     "toast.facebookSearchQueryRequired": "Facebook-Marketplace-Such-URLs brauchen einen Suchbegriff.",
     "toast.listingTypeRequired": "Wähle mindestens eine Kleinanzeigen-Anzeigenart aus",
     "toast.settingsSaved": "Einstellungen gespeichert",
+    "toast.profileSaved": "Persönliche Daten gespeichert",
     "toast.telegramSent": "Telegram-Test gesendet",
     "toast.webhookSent": "Webhook-Test gesendet",
     "toast.openCheckStarted": "Aktive Jobs werden jetzt geprüft",
@@ -780,6 +797,10 @@ function bindForms() {
     event.preventDefault();
     await changePassword();
   });
+  $("#account-profile-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveAccountProfile();
+  });
   $("#add-filter-rule-button").addEventListener("click", addGuidedFilterRule);
   $("#filter-rule-term").addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
@@ -880,7 +901,7 @@ function validateWizardStep(step) {
 async function refreshAll() {
   try {
     await loadAuthStatus();
-    await Promise.all([loadVersion(), loadSummary(), loadProfiles(), loadListings(), loadWatchlist(), loadReviewQueue(), loadSettings(), loadUsers()]);
+    await Promise.all([loadVersion(), loadSummary(), loadProfiles(), loadListings(), loadWatchlist(), loadReviewQueue(), loadSettings(), loadAccountProfile(), loadUsers()]);
   } catch (error) {
     if (String(error.message).includes("Not authenticated") || String(error.message).includes("401")) {
       window.location.href = "/login";
@@ -2230,6 +2251,29 @@ async function loadSettings() {
   $("#ai-tone").value = settings.ai_tone || "normal";
   updateAiProviderHints();
   renderDefaultWatchlistSelect();
+}
+
+async function loadAccountProfile() {
+  const profile = await api("/api/account");
+  state.accountProfile = profile;
+  $("#account-display-name").value = profile.display_name || "";
+  $("#account-buyer-location").value = profile.buyer_location || "";
+  $("#account-contact-hint").value = profile.contact_hint || "";
+  $("#account-inquiry-signature").value = profile.inquiry_signature || "";
+}
+
+async function saveAccountProfile() {
+  const profile = await api("/api/account", {
+    method: "PUT",
+    body: JSON.stringify({
+      display_name: $("#account-display-name").value,
+      buyer_location: $("#account-buyer-location").value,
+      contact_hint: $("#account-contact-hint").value,
+      inquiry_signature: $("#account-inquiry-signature").value,
+    }),
+  });
+  state.accountProfile = profile;
+  toast(t("toast.profileSaved"));
 }
 
 async function saveSettings() {

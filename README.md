@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.2.0-24745a">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.2.1-24745a">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-24745a">
   <img alt="Docker Compose" src="https://img.shields.io/badge/deploy-Docker%20Compose-24745a">
   <img alt="Python" src="https://img.shields.io/badge/python-3.12-24745a">
@@ -45,6 +45,7 @@ Screenshots below use demo data.
 - Tinder-style review mode with large images, double-click watchlisting, swipe-to-seen, and desktop button fallbacks
 - Multiple watchlists, default watchlist selection, and per-listing watchlist dropdowns
 - Optional AI inquiry text generation through OpenAI API, Ollama, or LM Studio compatible chat completions
+- Per-user buyer details for AI inquiry text personalization
 - Multi-user roles: admins manage global settings and users; normal users manage their own jobs and listings
 - Telegram and webhook notification settings
 - English/German UI, light/dark theme, and mobile-friendly layouts
@@ -96,6 +97,8 @@ Supported compatible providers:
 
 Available tones are very polite, normal, and cheeky.
 
+Each user can save personal buyer details in Settings: name, location, contact note, and preferred signature. These details are included when that user generates an AI inquiry text.
+
 ## Sources
 
 MarketPlaceLens works best with concrete search result URLs that are publicly reachable by the server.
@@ -123,7 +126,7 @@ MARKETPLACELENS_POLL_ENABLED=true
 MARKETPLACELENS_ADMIN_USERNAME=admin
 MARKETPLACELENS_ADMIN_PASSWORD=admin
 MARKETPLACELENS_SESSION_SECRET=change-this-long-random-value
-MARKETPLACELENS_BUILD_CODE=0.2.0
+MARKETPLACELENS_BUILD_CODE=0.2.1
 MARKETPLACELENS_BUILD_COMMIT=dev
 MARKETPLACELENS_BUILD_BRANCH=main
 MARKETPLACELENS_BUILD_CREATED=

@@ -58,6 +58,13 @@ class PasswordPayload(BaseModel):
     new_password: str = Field(min_length=8, max_length=200)
 
 
+class AccountProfilePayload(BaseModel):
+    display_name: str = Field(default="", max_length=120)
+    buyer_location: str = Field(default="", max_length=120)
+    contact_hint: str = Field(default="", max_length=240)
+    inquiry_signature: str = Field(default="", max_length=120)
+
+
 class UserPayload(BaseModel):
     username: str = Field(min_length=1, max_length=80)
     password: str = Field(min_length=8, max_length=200)
