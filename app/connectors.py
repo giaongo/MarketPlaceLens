@@ -98,7 +98,59 @@ class HtmlListingConnector(MarketplaceConnector):
                     "Use a concrete mobile.de search result URL copied from the browser."
                 )
             return listings
+        if self.source_type == "kleinanzeigen":
+            return await self.fetch_paginated_kleinanzeigen(client, profile, response.text, str(response.url))
         return self.parse_listings(response.text, profile)
+
+    async def fetch_paginated_kleinanzeigen(
+        self,
+        client: httpx.AsyncClient,
+        profile: dict,
+        first_html: str,
+        first_url: str,
+    ) -> list[ListingCandidate]:
+        candidates: list[ListingCandidate] = []
+        seen: set[str] = set()
+        visited = {first_url}
+        html = first_html
+        current_url = first_url
+        for _ in range(12):
+            for candidate in self.parse_listings(html, profile):
+                if candidate.content_hash in seen:
+                    continue
+                seen.add(candidate.content_hash)
+                candidates.append(candidate)
+            next_url = self.next_page_url(html, current_url)
+            if not next_url or next_url in visited or len(candidates) >= 500:
+                break
+            visited.add(next_url)
+            response = await client.get(next_url)
+            response.raise_for_status()
+            html = response.text
+            current_url = str(response.url)
+        return candidates[:500]
+
+    def next_page_url(self, html: str, base_url: str) -> str:
+        soup = BeautifulSoup(html, "html.parser")
+        selectors = [
+            "a[rel=next]",
+            "a.pagination-next",
+            ".pagination-next a",
+            "a[aria-label*=Weiter]",
+            "a[aria-label*=Next]",
+        ]
+        for selector in selectors:
+            link = soup.select_one(selector)
+            if isinstance(link, Tag) and link.get("href"):
+                return urljoin(base_url, str(link["href"]))
+        for link in soup.find_all("a", href=True):
+            if not isinstance(link, Tag):
+                continue
+            label = clean_text(link.get_text(" ", strip=True)).lower()
+            href = str(link.get("href") or "")
+            if label in {"weiter", "next", ">"} or "seite:" in href or "pageNum=" in href:
+                return urljoin(base_url, href)
+        return ""
 
     def parse_mobilede_listings(self, html: str, profile: dict) -> list[ListingCandidate]:
         state = extract_mobilede_initial_state(html)
@@ -111,7 +163,7 @@ class HtmlListingConnector(MarketplaceConnector):
         )
         candidates: list[ListingCandidate] = []
         seen: set[str] = set()
-        for item in items[:80]:
+        for item in items[:200]:
             if not isinstance(item, dict):
                 continue
             candidate = self.normalize_mobilede_listing(item, profile["search_url"])
@@ -188,7 +240,7 @@ class HtmlListingConnector(MarketplaceConnector):
 
         candidates: list[ListingCandidate] = []
         seen: set[str] = set()
-        for card in cards[:80]:
+        for card in cards[:200]:
             candidate = self.normalize_listing(card, profile["search_url"])
             if not candidate or candidate.content_hash in seen:
                 continue

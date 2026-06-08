@@ -4,18 +4,22 @@ MarketPlaceLens is a self-hosted marketplace watcher. It helps users turn search
 
 ## Setup
 
-1. Copy the environment template.
+1. Install with Docker Compose.
+
+   ```bash
+   mkdir -p marketplacelens && cd marketplacelens && curl -fsSL https://raw.githubusercontent.com/AlexRosbach/MarketPlaceLens/main/docker-compose.install.yml -o docker-compose.yml && docker compose up -d
+   ```
+
+   For local development from a checkout, copy the environment template first.
 
    ```bash
    cp .env.example .env
    ```
 
-2. Set at least these values in `.env`.
+2. Optionally adjust `.env` or compose environment values.
 
    ```env
    MARKETPLACELENS_ADMIN_USERNAME=admin
-   MARKETPLACELENS_ADMIN_PASSWORD=change-me
-   MARKETPLACELENS_SESSION_SECRET=change-this-long-random-value
    ```
 
 3. Start the app.
@@ -24,7 +28,7 @@ MarketPlaceLens is a self-hosted marketplace watcher. It helps users turn search
    docker compose up -d --build
    ```
 
-4. Open `http://localhost:8091`.
+4. Open `http://localhost:8091` and complete the setup screen. The first admin password is created there. MarketPlaceLens creates a persistent session secret automatically at startup.
 
 ## Search Jobs
 
@@ -32,7 +36,9 @@ Jobs are saved searches. A job stores the source, search URL, local filters, pol
 
 Use the quick-job wizard when creating a new search from a simple idea. It guides through source, search terms, optional price/location limits, keyword rules, and final review.
 
-Use the manual job editor when you already have a precise search URL or need more control over filters.
+Use the manual job editor when you already have a precise search URL or need more control over filters. If a search URL already contains query parameters, MarketPlaceLens shows them as editable rows so they can be adjusted without hand-editing the full URL.
+
+Every job has an oldest-listing limit. The default is 365 days.
 
 Normal users can create and manage their own jobs. Admins can see and manage all jobs.
 
@@ -93,6 +99,8 @@ MarketPlaceLens expects user-supplied search result URLs. It does not automate p
 Facebook Marketplace and mobile.de may return login, consent, protection, or JavaScript-only pages to anonymous server requests. When that happens, MarketPlaceLens records a connector error with a direct explanation.
 
 The official mobile.de Search API requires Basic Auth access. The built-in mobile.de connector therefore reads public search pages when mobile.de makes embedded vehicle data available to the server.
+
+The marketplace connectors are intended only for private, self-hosted use with URLs you are allowed to access. Depending on source, frequency, and local law, automated checks may violate platform terms of service. The maintainer accepts no responsibility for misuse, blocked accounts, denied access, data processing, or third-party policy violations.
 
 ## Updating
 

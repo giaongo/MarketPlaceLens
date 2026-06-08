@@ -9,9 +9,10 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.2.1-24745a">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.3.0-24745a">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-24745a">
   <img alt="Docker Compose" src="https://img.shields.io/badge/deploy-Docker%20Compose-24745a">
+  <img alt="Docker pulls" src="https://img.shields.io/docker/pulls/alexrosbach/marketplacelens?color=24745a&label=docker%20pulls">
   <img alt="Python" src="https://img.shields.io/badge/python-3.12-24745a">
 </p>
 
@@ -40,6 +41,8 @@ Screenshots below use demo data.
 
 - Guided search-job wizard for Kleinanzeigen, Facebook Marketplace, mobile.de, and generic HTML result pages
 - Manual job editor with provider URL detection, keyword rules, price limits, location criteria, and map-assisted radius selection
+- Editable search-URL parameters for already parameterized marketplace URLs
+- Listing age limit per job, defaulting to one year
 - Background polling with conservative interval limits and manual run controls
 - Listing inbox with list/tile views, filters, pagination, lazy thumbnails, and clear seen/hidden/watchlist states
 - Tinder-style review mode with large images, double-click watchlisting, swipe-to-seen, and desktop button fallbacks
@@ -52,6 +55,19 @@ Screenshots below use demo data.
 
 ## Quick Start
 
+Requirements:
+
+- Docker 20.10+
+- Docker Compose v2
+
+One-line install with the published Docker image:
+
+```bash
+mkdir -p marketplacelens && cd marketplacelens && curl -fsSL https://raw.githubusercontent.com/AlexRosbach/MarketPlaceLens/main/docker-compose.install.yml -o docker-compose.yml && docker compose up -d
+```
+
+For local development from a checkout:
+
 ```bash
 cp .env.example .env
 docker compose up -d --build
@@ -63,21 +79,22 @@ Open:
 http://localhost:8091
 ```
 
-Default local login:
+On first start, MarketPlaceLens opens a setup screen and asks for the first admin password. There is no built-in default password for normal deployments.
 
-```text
-admin / admin
+Docker Hub image:
+
+```bash
+docker pull alexrosbach/marketplacelens:0.3.0
+docker pull alexrosbach/marketplacelens:dev
 ```
 
-Set a real admin password and session secret before using the app beyond a local preview:
+Docker image tags follow the same shape as LanLens:
 
-```env
-MARKETPLACELENS_ADMIN_USERNAME=admin
-MARKETPLACELENS_ADMIN_PASSWORD=change-me
-MARKETPLACELENS_SESSION_SECRET=change-this-long-random-value
-```
+- `dev` for the current development image
+- semantic version tags such as `0.3.0` for releases
+- no implicit commit/build-number tags
 
-On first start, MarketPlaceLens bootstraps the first admin account from the environment. After that, admins manage users from Settings.
+MarketPlaceLens creates and stores its own session secret at startup when none is provided. You do not need to configure a session secret in `.env`.
 
 ## Roles
 
@@ -112,6 +129,8 @@ Some platforms return login, consent, protection, or JavaScript shell pages to a
 
 The official mobile.de Search API requires Basic Auth access, so the built-in connector uses public search pages rather than a private API.
 
+Important: connectors for Kleinanzeigen, Facebook Marketplace, mobile.de, and similar platforms are intended only for private, self-hosted use with URLs you are allowed to access. Depending on source, frequency, and local law, automated checks may violate platform terms of service. The maintainer accepts no responsibility for misuse, blocked accounts, denied access, data processing, or third-party policy violations.
+
 ## Configuration
 
 Environment variables can seed first-run defaults:
@@ -124,15 +143,13 @@ MARKETPLACELENS_MIN_POLL_MINUTES=30
 MARKETPLACELENS_DEFAULT_POLL_MINUTES=60
 MARKETPLACELENS_POLL_ENABLED=true
 MARKETPLACELENS_ADMIN_USERNAME=admin
-MARKETPLACELENS_ADMIN_PASSWORD=admin
-MARKETPLACELENS_SESSION_SECRET=change-this-long-random-value
-MARKETPLACELENS_BUILD_CODE=0.2.1
+MARKETPLACELENS_BUILD_CODE=0.3.0
 MARKETPLACELENS_BUILD_COMMIT=dev
 MARKETPLACELENS_BUILD_BRANCH=main
 MARKETPLACELENS_BUILD_CREATED=
 ```
 
-Runtime settings are stored in SQLite and can be managed from the Settings screen.
+Runtime settings are stored in SQLite and can be managed from the Settings screen. The first admin password is collected in the setup screen on first launch.
 
 ## Versioning
 
@@ -193,6 +210,8 @@ MarketPlaceLens is a conservative monitoring tool for user-supplied search resul
 - No local thumbnail mirroring; images are proxied on demand
 
 Use it only where you are allowed to access and process the listing data.
+
+This project is intended for private self-hosted use. The maintainer does not guarantee compatibility with third-party platforms and does not take responsibility for usage that violates their terms, rate limits, or access policies.
 
 ## License
 

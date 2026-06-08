@@ -22,6 +22,7 @@ const state = {
   locationMarker: null,
   locationCircle: null,
   appOpenCheckStarted: false,
+  settingsTab: "admin",
 };
 
 const translations = {
@@ -46,6 +47,9 @@ const translations = {
     "summary.notified": "Notified",
     "summary.runErrors": "Run errors",
     "dashboard.recentRuns": "Recent runs",
+    "dashboard.recentRunsSubtitle": "Last source checks and connector status.",
+    "dashboard.sources": "Sources",
+    "dashboard.sourcesSubtitle": "Jobs and collected listings by marketplace.",
     "profiles.title": "Jobs",
     "profiles.subtitle": "Saved marketplace jobs grouped by source.",
     "profiles.editorSubtitle": "Create a job from a provider URL, then add filters and notifications.",
@@ -67,6 +71,11 @@ const translations = {
     "profile.urlQuery": "Search",
     "profile.urlCategory": "Category",
     "profile.urlLocation": "Location",
+    "urlParams.key": "Parameter",
+    "urlParams.value": "Value",
+    "urlParams.apply": "Apply",
+    "urlParams.add": "Add parameter",
+    "urlParams.remove": "Remove parameter",
     "profile.openSource": "Open source",
     "profile.filtersTitle": "Criteria",
     "profile.filtersSubtitle": "Local filters applied after the search page is fetched",
@@ -75,6 +84,9 @@ const translations = {
     "profile.maxPrice": "Max price",
     "profile.minPriceShort": "Min",
     "profile.maxPriceShort": "Max",
+    "profile.maxAge": "Oldest listing",
+    "profile.maxAgeShort": "Max age",
+    "profile.maxAgeDays": "{days} days",
     "profile.pollInterval": "Poll interval",
     "profile.keywordTitle": "Keyword rules",
     "profile.keywordSubtitle": "Match, require, or hide terms from listings",
@@ -125,6 +137,7 @@ const translations = {
     "wizard.category": "Category",
     "wizard.allCategories": "All categories",
     "wizard.maxPrice": "Maximum price",
+    "wizard.maxAge": "Oldest listing",
     "wizard.location": "Location",
     "location.textMode": "ZIP / place",
     "location.mapMode": "Map",
@@ -168,6 +181,7 @@ const translations = {
     "jobSummary.webhookOff": "Webhook off",
     "listings.title": "Browse listings",
     "listings.subtitle": "Scroll, filter, switch between list and tiles, or open the original listing.",
+    "listings.settings": "Filters and display",
     "listings.searchPlaceholder": "Search title, location, category",
     "listings.allStatuses": "All statuses",
     "listings.includeHidden": "Show hidden/seen",
@@ -328,6 +342,9 @@ const translations = {
     "summary.notified": "Benachrichtigt",
     "summary.runErrors": "Run-Fehler",
     "dashboard.recentRuns": "Letzte Runs",
+    "dashboard.recentRunsSubtitle": "Letzte Quellenprüfungen und Connector-Status.",
+    "dashboard.sources": "Quellen",
+    "dashboard.sourcesSubtitle": "Jobs und gefundene Listings je Marktplatz.",
     "profiles.title": "Jobs",
     "profiles.subtitle": "Gespeicherte Marketplace-Jobs nach Quelle gruppiert.",
     "profiles.editorSubtitle": "Job aus Provider-URL erstellen, dann Filter und Benachrichtigungen ergänzen.",
@@ -349,6 +366,11 @@ const translations = {
     "profile.urlQuery": "Suche",
     "profile.urlCategory": "Kategorie",
     "profile.urlLocation": "Ort",
+    "urlParams.key": "Parameter",
+    "urlParams.value": "Wert",
+    "urlParams.apply": "Übernehmen",
+    "urlParams.add": "Parameter hinzufügen",
+    "urlParams.remove": "Parameter entfernen",
     "profile.openSource": "Quelle öffnen",
     "profile.filtersTitle": "Kriterien",
     "profile.filtersSubtitle": "Lokale Filter nach dem Abruf der Suchseite",
@@ -382,6 +404,9 @@ const translations = {
     "profile.enabled": "aktiv",
     "profile.paused": "pausiert",
     "profile.everyMinutes": "alle {minutes} Min.",
+    "profile.maxAge": "Älteste Anzeige",
+    "profile.maxAgeShort": "Max. Alter",
+    "profile.maxAgeDays": "{days} Tage",
     "profile.save": "Job speichern",
     "profile.runNow": "Jetzt ausführen",
     "wizard.title": "Schnelljob",
@@ -407,6 +432,7 @@ const translations = {
     "wizard.category": "Kategorie",
     "wizard.allCategories": "Alle Kategorien",
     "wizard.maxPrice": "Maximalpreis",
+    "wizard.maxAge": "Älteste Anzeige",
     "wizard.location": "Ort",
     "location.textMode": "PLZ / Ort",
     "location.mapMode": "Karte",
@@ -450,6 +476,7 @@ const translations = {
     "jobSummary.webhookOff": "Webhook aus",
     "listings.title": "Listings durchsuchen",
     "listings.subtitle": "Scrollen, filtern, zwischen Liste und Kacheln wechseln oder Original öffnen.",
+    "listings.settings": "Filter und Anzeige",
     "listings.searchPlaceholder": "Titel, Ort, Kategorie suchen",
     "listings.allStatuses": "Alle Status",
     "listings.includeHidden": "Ausgeblendete/Gesehene anzeigen",
@@ -657,6 +684,9 @@ function bindNavigation() {
   });
   $("#refresh-button").addEventListener("click", refreshAll);
   $("#logout-button").addEventListener("click", logout);
+  $$("[data-settings-tab]").forEach((button) => {
+    button.addEventListener("click", () => setSettingsTab(button.dataset.settingsTab));
+  });
   $("#language-select").addEventListener("change", () => setLanguage($("#language-select").value));
   $("#theme-select").addEventListener("change", () => setTheme($("#theme-select").value));
   $("#wizard-button").addEventListener("click", () => showWizard(true));
@@ -688,6 +718,7 @@ function bindNavigation() {
   [
     "#wizard-query",
     "#wizard-max-price",
+    "#wizard-max-age",
     "#wizard-location",
     "#wizard-location-radius",
     "#wizard-required",
@@ -745,6 +776,7 @@ function bindNavigation() {
     "#profile-interval",
     "#profile-min-price",
     "#profile-max-price",
+    "#profile-max-age",
     "#profile-include",
     "#profile-required",
     "#profile-exclude",
@@ -923,10 +955,27 @@ async function loadAuthStatus() {
   state.currentUser = status.user || null;
   const admin = isAdmin();
   $$(".admin-only").forEach((node) => node.classList.toggle("hidden", !admin));
+  if (!admin && state.settingsTab === "admin") state.settingsTab = "account";
+  renderSettingsTabs();
 }
 
 function isAdmin() {
   return state.currentUser?.role === "admin";
+}
+
+function setSettingsTab(tab) {
+  state.settingsTab = tab === "admin" && !isAdmin() ? "account" : tab;
+  renderSettingsTabs();
+}
+
+function renderSettingsTabs() {
+  const active = state.settingsTab === "admin" && isAdmin() ? "admin" : "account";
+  state.settingsTab = active;
+  $$("[data-settings-tab]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.settingsTab === active);
+  });
+  $$(".settings-panel-admin").forEach((node) => node.classList.toggle("hidden", active !== "admin"));
+  $$(".settings-panel-account").forEach((node) => node.classList.toggle("hidden", active !== "account"));
 }
 
 async function triggerAppOpenCheck() {
@@ -978,7 +1027,7 @@ async function loadSummary() {
   $("#summary-hidden").textContent = summary.listings_hidden;
   $("#summary-notified").textContent = summary.listings_notified;
   $("#summary-errors").textContent = summary.run_errors;
-  $("#recent-runs").innerHTML = summary.recent_runs.length
+  const runsHtml = summary.recent_runs.length
     ? summary.recent_runs.map((run) => `
       <article>
         <strong>${escapeHtml(run.profile_name)}</strong>
@@ -987,6 +1036,17 @@ async function loadSummary() {
       </article>
     `).join("")
     : `<article><strong>${escapeHtml(t("empty.noRuns"))}</strong><p class="meta">${escapeHtml(t("empty.noRunsHint"))}</p></article>`;
+  $("#recent-runs").innerHTML = runsHtml;
+  $("#dashboard-recent-runs").innerHTML = runsHtml;
+  $("#dashboard-sources").innerHTML = (summary.source_counts || []).length
+    ? summary.source_counts.map((source) => `
+      <article class="source-summary-card">
+        <span class="source-badge ${escapeAttribute(source.source_type)}">${escapeHtml(sourceLabel(source.source_type))}</span>
+        <strong>${source.profile_count || 0}</strong>
+        <p class="meta">${escapeHtml(t("profiles.title"))} · ${source.listing_count || 0} ${escapeHtml(t("nav.listings"))}</p>
+      </article>
+    `).join("")
+    : `<article><strong>${escapeHtml(t("empty.noProfiles"))}</strong><p class="meta">${escapeHtml(t("empty.noProfilesHint"))}</p></article>`;
 }
 
 async function loadProfiles() {
@@ -1040,12 +1100,16 @@ function sourceLabel(source) {
 }
 
 function sourceBaseUrl(source) {
+  return sourceBaseUrls()[source] || "";
+}
+
+function sourceBaseUrls() {
   return {
-    kleinanzeigen: "https://www.kleinanzeigen.de/",
-    facebook: "https://www.facebook.com/marketplace/",
-    mobilede: "https://suchen.mobile.de/fahrzeuge/auto/search.html",
+    kleinanzeigen: "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=",
+    facebook: "https://www.facebook.com/marketplace/search/?query=",
+    mobilede: "https://suchen.mobile.de/fahrzeuge/auto/search.html?ft=",
     html: "",
-  }[source] || "";
+  };
 }
 
 function selectedKleinanzeigenTypes(scope) {
@@ -1220,18 +1284,70 @@ function applyUrlParametersToForm(params) {
 function renderUrlParameterPreview(params = parseSearchUrlParameters($("#profile-url").value)) {
   const target = $("#url-parameter-preview");
   if (!target) return;
-  const chips = [];
-  if (params.source) chips.push(`${t("jobSummary.provider")}: ${sourceLabel(params.source)}`);
-  if (params.query) chips.push(`${t("profile.urlQuery")}: ${params.query}`);
-  if (params.category) chips.push(`${t("profile.urlCategory")}: ${params.category}`);
-  if (params.location) chips.push(`${t("profile.urlLocation")}: ${params.location}`);
-  if (params.source === "kleinanzeigen" && params.types?.length) {
-    chips.push(`${t("listingTypes.title")}: ${kleinanzeigenTypeLabel(params.types)}`);
+  const url = currentProfileUrl();
+  const entries = url ? Array.from(url.searchParams.entries()) : [];
+  const hints = [];
+  if (params.source) hints.push(`${t("jobSummary.provider")}: ${sourceLabel(params.source)}`);
+  if (params.category) hints.push(`${t("profile.urlCategory")}: ${params.category}`);
+  if (params.location) hints.push(`${t("profile.urlLocation")}: ${params.location}`);
+  target.classList.toggle("hidden", !url && hints.length === 0);
+  target.innerHTML = `
+    <div class="url-param-header">
+      <strong>${escapeHtml(t("profile.urlParameters"))}</strong>
+      ${hints.map((hint) => `<span>${escapeHtml(hint)}</span>`).join("")}
+    </div>
+    <div class="url-param-grid">
+      ${entries.map(([key, value]) => urlParameterRow(key, value)).join("")}
+      ${entries.length ? "" : urlParameterRow("", "")}
+    </div>
+    <div class="url-param-actions">
+      <button class="mini-button" type="button" data-url-param-add>${escapeHtml(t("urlParams.add"))}</button>
+      <button class="mini-button primary" type="button" data-url-param-apply>${escapeHtml(t("urlParams.apply"))}</button>
+    </div>
+  `;
+  target.querySelector("[data-url-param-add]")?.addEventListener("click", () => {
+    target.querySelector(".url-param-grid")?.insertAdjacentHTML("beforeend", urlParameterRow("", ""));
+    bindUrlParameterRows(target);
+  });
+  target.querySelector("[data-url-param-apply]")?.addEventListener("click", applyUrlParameterRows);
+  bindUrlParameterRows(target);
+}
+
+function currentProfileUrl() {
+  try {
+    return new URL($("#profile-url").value.trim());
+  } catch {
+    return null;
   }
-  target.classList.toggle("hidden", chips.length === 0);
-  target.innerHTML = chips.length
-    ? [`${t("profile.urlParameters")}:`, ...chips].map((chip) => `<span>${escapeHtml(chip)}</span>`).join("")
-    : "";
+}
+
+function urlParameterRow(key, value) {
+  return `
+    <div class="url-param-row">
+      <input data-url-param-key aria-label="${escapeAttribute(t("urlParams.key"))}" value="${escapeAttribute(key)}" placeholder="${escapeAttribute(t("urlParams.key"))}">
+      <input data-url-param-value aria-label="${escapeAttribute(t("urlParams.value"))}" value="${escapeAttribute(value)}" placeholder="${escapeAttribute(t("urlParams.value"))}">
+      <button class="icon-button danger" type="button" data-url-param-remove aria-label="${escapeAttribute(t("urlParams.remove"))}">×</button>
+    </div>
+  `;
+}
+
+function bindUrlParameterRows(target = $("#url-parameter-preview")) {
+  target.querySelectorAll("[data-url-param-remove]").forEach((button) => {
+    button.onclick = () => button.closest(".url-param-row")?.remove();
+  });
+}
+
+function applyUrlParameterRows() {
+  const url = currentProfileUrl();
+  if (!url) return;
+  url.search = "";
+  $$("#url-parameter-preview .url-param-row").forEach((row) => {
+    const key = row.querySelector("[data-url-param-key]")?.value.trim();
+    const value = row.querySelector("[data-url-param-value]")?.value.trim();
+    if (key) url.searchParams.append(key, value || "");
+  });
+  $("#profile-url").value = url.toString();
+  syncProfileParametersFromUrl(true);
 }
 
 function setLocationMode(mode) {
@@ -1424,7 +1540,7 @@ function editProfile(profile) {
   $("#profile-id").value = profile?.id || "";
   $("#profile-name").value = profile?.name || "";
   $("#profile-source").value = profile?.source_type || "kleinanzeigen";
-  $("#profile-url").value = profile?.search_url || "";
+  $("#profile-url").value = profile?.search_url || sourceBaseUrl($("#profile-source").value);
   setKleinanzeigenTypes("profile", kleinanzeigenTypesFromUrl(profile?.search_url || ""));
   updateSourcePlaceholder();
   updateSourceOptions();
@@ -1433,6 +1549,7 @@ function editProfile(profile) {
   applyLocationCriteria(profile?.location_hint || "");
   $("#profile-min-price").value = profile?.min_price ?? "";
   $("#profile-max-price").value = profile?.max_price ?? "";
+  $("#profile-max-age").value = profile?.max_listing_age_days || 365;
   $("#profile-include").value = (profile?.include_keywords || []).join("\n");
   $("#profile-required").value = (profile?.required_keywords || []).join("\n");
   $("#profile-exclude").value = (profile?.exclude_keywords || []).join("\n");
@@ -1480,6 +1597,7 @@ async function createProfileFromWizard() {
   setLocationMode("text");
   $("#profile-min-price").value = "";
   $("#profile-max-price").value = $("#wizard-max-price").value;
+  $("#profile-max-age").value = $("#wizard-max-age").value || 365;
   $("#profile-include").value = query.split(/\s+/).filter(Boolean).join("\n");
   $("#profile-required").value = $("#wizard-required").value;
   $("#profile-exclude").value = $("#wizard-exclude").value;
@@ -1504,6 +1622,7 @@ function clearWizard() {
   setKleinanzeigenTypes("wizard", ["angebote", "gesuche"]);
   $("#wizard-query").value = "";
   $("#wizard-max-price").value = "";
+  $("#wizard-max-age").value = 365;
   $("#wizard-location").value = "";
   $("#wizard-location-radius").value = "";
   $("#wizard-required").value = "";
@@ -1549,6 +1668,7 @@ function updateWizardSummary() {
   const location = $("#wizard-location").value.trim();
   const radius = $("#wizard-location-radius").value;
   const price = $("#wizard-max-price").value;
+  const maxAge = $("#wizard-max-age").value || 365;
   const required = listFromText($("#wizard-required").value);
   const excluded = listFromText($("#wizard-exclude").value);
   const automation = [
@@ -1559,6 +1679,7 @@ function updateWizardSummary() {
   const lines = [
     `${source} · ${category}`,
     price ? `${t("wizard.maxPrice")}: ${price} EUR` : "",
+    maxAge ? `${t("profile.maxAgeShort")}: ${t("profile.maxAgeDays", { days: maxAge })}` : "",
     location ? `${t("wizard.location")}: ${location}${radius ? ` +${radius} km` : ""}` : "",
     required.length ? `${t("wizard.mustInclude")}: ${required.join(", ")}` : "",
     excluded.length ? `${t("wizard.hideWords")}: ${excluded.join(", ")}` : "",
@@ -1679,6 +1800,7 @@ function profilePayload() {
     excluded_categories: lines("#profile-categories"),
     min_price: numberOrNull("#profile-min-price"),
     max_price: numberOrNull("#profile-max-price"),
+    max_listing_age_days: Number($("#profile-max-age").value || 365),
     location_hint: $("#profile-location").value,
     notify_telegram: $("#profile-notify").checked,
     notify_webhook: $("#profile-notify-webhook").checked,
@@ -1693,6 +1815,7 @@ function updateFilterPreview() {
   if (location) chips.push(`${t("profile.locationHint")}: ${location}`);
   if (minPrice) chips.push(`${t("profile.minPriceShort")} ${minPrice} EUR`);
   if (maxPrice) chips.push(`${t("profile.maxPriceShort")} ${maxPrice} EUR`);
+  chips.push(`${t("profile.maxAgeShort")}: ${t("profile.maxAgeDays", { days: $("#profile-max-age").value || 365 })}`);
   if ($("#profile-source").value === "kleinanzeigen") {
     chips.push(`${t("listingTypes.title")}: ${kleinanzeigenTypeLabel()}`);
   }
@@ -1723,7 +1846,12 @@ function updateSourcePlaceholder() {
 
 function selectSource(source) {
   $("#profile-source").value = source;
+  const current = $("#profile-url").value.trim();
+  if (!current || Object.values(sourceBaseUrls()).includes(current)) {
+    $("#profile-url").value = sourceBaseUrl(source);
+  }
   updateSourcePlaceholder();
+  syncProfileParametersFromUrl(false);
 }
 
 function updateSourceOptions() {

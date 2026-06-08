@@ -15,6 +15,7 @@ class ProfilePayload(BaseModel):
     excluded_categories: list[str] = []
     min_price: float | None = None
     max_price: float | None = None
+    max_listing_age_days: int = Field(default=365, ge=1, le=3650)
     location_hint: str = ""
     notify_telegram: bool = True
     notify_webhook: bool = False
@@ -51,6 +52,11 @@ class SettingsPayload(BaseModel):
 class LoginPayload(BaseModel):
     username: str
     password: str
+
+
+class SetupPayload(BaseModel):
+    username: str = Field(default="admin", min_length=1, max_length=80)
+    password: str = Field(min_length=8, max_length=200)
 
 
 class PasswordPayload(BaseModel):

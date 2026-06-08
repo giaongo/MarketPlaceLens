@@ -78,6 +78,26 @@
             <strong id="summary-errors">0</strong>
           </article>
         </div>
+        <div class="two-column dashboard-detail-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2 data-i18n="dashboard.recentRuns">Recent runs</h2>
+                <p class="panel-subtitle" data-i18n="dashboard.recentRunsSubtitle">Last source checks and connector status.</p>
+              </div>
+            </div>
+            <div id="dashboard-recent-runs" class="simple-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <h2 data-i18n="dashboard.sources">Sources</h2>
+                <p class="panel-subtitle" data-i18n="dashboard.sourcesSubtitle">Jobs and collected listings by marketplace.</p>
+              </div>
+            </div>
+            <div id="dashboard-sources" class="source-summary-grid"></div>
+          </section>
+        </div>
       </section>
 
       <section id="profiles-view" class="view">
@@ -144,6 +164,7 @@
                   <div class="wizard-grid">
                     <label class="wide"><span data-i18n="wizard.query">What should be found?</span><input id="wizard-query" required placeholder="defekte elektronik"></label>
                     <label><span data-i18n="wizard.maxPrice">Maximum price</span><input id="wizard-max-price" type="number" step="0.01" placeholder="100"></label>
+                    <label><span data-i18n="wizard.maxAge">Oldest listing</span><input id="wizard-max-age" type="number" min="1" max="3650" value="365"></label>
                     <label><span data-i18n="wizard.location">Location</span><input id="wizard-location" placeholder="Berlin"></label>
                     <label><span data-i18n="location.radius">Radius</span>
                       <select id="wizard-location-radius">
@@ -305,6 +326,7 @@
                 <div class="filter-grid">
                   <label><span data-i18n="profile.minPrice">Min price</span><input id="profile-min-price" type="number" step="0.01" placeholder="0"></label>
                   <label><span data-i18n="profile.maxPrice">Max price</span><input id="profile-max-price" type="number" step="0.01" placeholder="100"></label>
+                  <label><span data-i18n="profile.maxAge">Oldest listing</span><input id="profile-max-age" type="number" min="1" max="3650" value="365"></label>
                 </div>
               </div>
 
@@ -371,12 +393,15 @@
 
       <section id="listings-view" class="view">
         <section class="panel">
-          <details class="collapsible-panel" id="listings-browser-panel">
-            <summary class="panel-heading collapsible-summary">
-              <div>
-                <h2 data-i18n="listings.title">Browse listings</h2>
-                <p class="panel-subtitle" data-i18n="listings.subtitle">Scroll, filter, switch between list and tiles, or open the original listing.</p>
-              </div>
+          <div class="panel-heading">
+            <div>
+              <h2 data-i18n="listings.title">Browse listings</h2>
+              <p class="panel-subtitle" data-i18n="listings.subtitle">Scroll, filter, switch between list and tiles, or open the original listing.</p>
+            </div>
+          </div>
+          <details class="collapsible-panel listing-settings-panel" id="listings-browser-panel">
+            <summary class="collapsible-summary settings-summary">
+              <span data-i18n="listings.settings">Filters and display</span>
               <span class="collapse-indicator" aria-hidden="true"></span>
             </summary>
             <div class="collapsible-content">
@@ -403,27 +428,29 @@
                 <input id="listing-max-price-filter" type="number" step="0.01" placeholder="Max" data-i18n-placeholder="profile.maxPriceShort">
                 <label class="switch compact"><input id="include-hidden" type="checkbox"> <span data-i18n="listings.includeHidden">Show hidden</span></label>
               </div>
-              <div class="listing-toolbar" aria-label="Listing display options">
-                <div class="view-toggle" role="group" aria-label="Listing view">
-                  <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view" data-i18n="view.list">List</button>
-                  <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view" data-i18n="view.tiles">Tiles</button>
-                </div>
-                <div class="pagination-controls" id="listings-pagination">
-                  <label><span data-i18n="pagination.pageSize">Per page</span>
-                    <select data-page-size>
-                      <option value="5">5</option>
-                      <option value="10">10</option>
-                      <option value="20">20</option>
-                    </select>
-                  </label>
-                  <button class="mini-button" type="button" data-page-prev data-i18n="pagination.prev">Prev</button>
-                  <span data-page-info>0-0 / 0</span>
-                  <button class="mini-button" type="button" data-page-next data-i18n="pagination.next">Next</button>
-                </div>
-              </div>
-              <div id="listings-table" class="listing-browser"></div>
             </div>
           </details>
+          <div class="listing-toolbar" aria-label="Listing display options">
+            <div class="view-toggle" role="group" aria-label="Listing view">
+              <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view" data-i18n="view.list">List</button>
+              <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view" data-i18n="view.tiles">Tiles</button>
+            </div>
+            <div class="pagination-controls" id="listings-pagination">
+              <label><span data-i18n="pagination.pageSize">Per page</span>
+                <select data-page-size>
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </label>
+              <button class="mini-button" type="button" data-page-prev data-i18n="pagination.prev">Prev</button>
+              <span data-page-info>0-0 / 0</span>
+              <button class="mini-button" type="button" data-page-next data-i18n="pagination.next">Next</button>
+            </div>
+          </div>
+          <div id="listings-table" class="listing-browser"></div>
         </section>
       </section>
 
@@ -467,6 +494,8 @@
                     <option value="5">5</option>
                     <option value="10">10</option>
                     <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
                   </select>
                 </label>
                 <button class="mini-button" type="button" data-page-prev data-i18n="pagination.prev">Prev</button>
@@ -480,8 +509,12 @@
       </section>
 
       <section id="settings-view" class="view">
-        <h2 class="settings-category-title admin-only" data-i18n="settings.adminCategory">Admin settings</h2>
-        <section class="panel narrow admin-only">
+        <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+          <button class="settings-tab active admin-only" type="button" data-settings-tab="admin" data-i18n="settings.adminCategory">Admin settings</button>
+          <button class="settings-tab" type="button" data-settings-tab="account" data-i18n="settings.accountCategory">Account</button>
+        </div>
+        <h2 class="settings-category-title settings-panel-admin admin-only" data-i18n="settings.adminCategory">Admin settings</h2>
+        <section class="panel narrow admin-only settings-panel-admin">
           <div class="panel-heading">
             <h2 data-i18n="settings.notifications">Notifications</h2>
           </div>
@@ -497,7 +530,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section admin-only">
+        <section class="panel narrow settings-section admin-only settings-panel-admin">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.ai">AI inquiry texts</h2>
@@ -528,7 +561,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section admin-only">
+        <section class="panel narrow settings-section admin-only settings-panel-admin">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.watchlists">Watchlists</h2>
@@ -543,7 +576,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section admin-only">
+        <section class="panel narrow settings-section admin-only settings-panel-admin">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.users">Users & roles</h2>
@@ -569,8 +602,8 @@
           </form>
           <div id="users-list" class="simple-list settings-users-list"></div>
         </section>
-        <h2 class="settings-category-title" data-i18n="settings.accountCategory">Account</h2>
-        <section class="panel narrow settings-section">
+        <h2 class="settings-category-title settings-panel-account" data-i18n="settings.accountCategory">Account</h2>
+        <section class="panel narrow settings-section settings-panel-account">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.profile">Personal details</h2>
@@ -587,7 +620,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section">
+        <section class="panel narrow settings-section settings-panel-account">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.password">Password</h2>
@@ -603,7 +636,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section admin-only">
+        <section class="panel narrow settings-section admin-only settings-panel-admin">
           <div class="panel-heading">
             <h2 data-i18n="dashboard.recentRuns">Recent runs</h2>
           </div>

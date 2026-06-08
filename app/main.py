@@ -5,6 +5,8 @@ import ipaddress
 import random
 import sqlite3
 import time
+import re
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -18,9 +20,9 @@ from .auth import COOKIE_NAME, create_session, current_user_from_session, hash_p
 from .config import settings
 from .connectors import ListingCandidate, get_connector
 from .database import connect, encode_list, ensure_default_watchlist, init_db, row_to_listing, row_to_profile, utc_now
-from .filters import apply_filters
+from .filters import FilterResult, apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
-from .schemas import AccountProfilePayload, InquiryPayload, ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, UserPayload, UserUpdatePayload, WatchlistPayload
+from .schemas import AccountProfilePayload, InquiryPayload, ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, SetupPayload, UserPayload, UserUpdatePayload, WatchlistPayload
 from .version import APP_VERSION, version_payload
 
 app = FastAPI(title="MarketPlaceLens", version=APP_VERSION)
@@ -33,7 +35,11 @@ open_check_lock = asyncio.Lock()
 @app.middleware("http")
 async def require_session(request: Request, call_next):
     path = request.url.path
-    public = path.startswith("/static/") or path in {"/login", "/api/auth/login", "/api/auth/status", "/api/version"}
+    public = path.startswith("/static/") or path in {"/setup", "/api/setup", "/api/setup/status", "/login", "/api/auth/login", "/api/auth/status", "/api/version"}
+    if setup_required() and path not in {"/setup", "/api/setup", "/api/setup/status", "/api/version"} and not path.startswith("/static/"):
+        if path.startswith("/api/"):
+            return JSONResponse({"detail": "Initial setup required"}, status_code=423)
+        return RedirectResponse("/setup", status_code=303)
     user = current_user_from_session(request.cookies.get(COOKIE_NAME))
     request.state.user = user
     if public or user:
@@ -58,6 +64,52 @@ async def index() -> FileResponse:
 @app.get("/login")
 async def login_page() -> FileResponse:
     return FileResponse(static_dir / "login.html")
+
+
+@app.get("/setup")
+async def setup_page() -> FileResponse:
+    return FileResponse(static_dir / "setup.html")
+
+
+@app.get("/api/setup/status")
+async def setup_status() -> dict[str, bool]:
+    return {"required": setup_required()}
+
+
+@app.post("/api/setup")
+async def setup(payload: SetupPayload) -> dict[str, bool]:
+    if not setup_required():
+        raise HTTPException(400, "Initial setup is already complete")
+    now = utc_now()
+    username = payload.username.strip()
+    if not username:
+        raise HTTPException(400, "Username is required")
+    with connect() as db:
+        row = db.execute("SELECT id FROM users WHERE role = 'admin' ORDER BY id LIMIT 1").fetchone()
+        if row:
+            db.execute(
+                """
+                UPDATE users
+                SET username = ?, password_hash = ?, role = 'admin', enabled = 1, updated_at = ?
+                WHERE id = ?
+                """,
+                (username, hash_password(payload.password), now, row["id"]),
+            )
+        else:
+            try:
+                db.execute(
+                    """
+                    INSERT INTO users(username, password_hash, role, enabled, created_at, updated_at)
+                    VALUES (?, ?, 'admin', 1, ?, ?)
+                    """,
+                    (username, hash_password(payload.password), now, now),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise HTTPException(409, "User already exists") from exc
+        db.execute(
+            "INSERT INTO app_settings(key, value) VALUES ('setup_complete', '1') ON CONFLICT(key) DO UPDATE SET value = '1'"
+        )
+    return {"ok": True}
 
 
 @app.post("/api/auth/login")
@@ -120,6 +172,20 @@ def safe_user(user: dict[str, Any] | None) -> dict[str, Any] | None:
         "contact_hint": user.get("contact_hint", ""),
         "inquiry_signature": user.get("inquiry_signature", ""),
     }
+
+
+def setup_required() -> bool:
+    try:
+        with connect() as db:
+            admin = db.execute("SELECT username FROM users WHERE role = 'admin' ORDER BY id LIMIT 1").fetchone()
+            setup_row = db.execute("SELECT value FROM app_settings WHERE key = 'setup_complete'").fetchone()
+    except Exception:
+        return False
+    if not admin:
+        return True
+    if setup_row and setup_row["value"] == "1":
+        return False
+    return valid_credentials(admin["username"], "admin")
 
 
 @app.get("/api/users")
@@ -253,6 +319,19 @@ async def summary(request: Request) -> dict[str, Any]:
             """,
             profile_values_for_user,
         ).fetchone()
+        source_counts = db.execute(
+            f"""
+            SELECT watch_profiles.source_type,
+                   COUNT(DISTINCT watch_profiles.id) profile_count,
+                   COUNT(listings.id) listing_count
+            FROM watch_profiles
+            LEFT JOIN listings ON listings.profile_id = watch_profiles.id
+            {listing_where}
+            GROUP BY watch_profiles.source_type
+            ORDER BY profile_count DESC, listing_count DESC
+            """,
+            listing_values_for_user,
+        ).fetchall()
     return {
         "profiles_total": profiles["total"] or 0,
         "profiles_enabled": profiles["enabled"] or 0,
@@ -263,6 +342,7 @@ async def summary(request: Request) -> dict[str, Any]:
         "listings_watchlisted": listings["watchlisted_count"] or 0,
         "run_errors": errors["count"] or 0,
         "recent_runs": [dict(row) for row in recent_runs],
+        "source_counts": [dict(row) for row in source_counts],
     }
 
 
@@ -290,8 +370,8 @@ async def create_profile(payload: ProfilePayload, request: Request) -> dict[str,
             INSERT INTO watch_profiles(
               name, enabled, source_type, search_url, poll_interval_minutes,
               include_keywords, exclude_keywords, required_keywords, excluded_categories,
-              min_price, max_price, location_hint, notify_telegram, notify_webhook, user_id, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              min_price, max_price, max_listing_age_days, location_hint, notify_telegram, notify_webhook, user_id, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             profile_values(profile, now, user["id"]),
         )
@@ -315,7 +395,7 @@ async def update_profile(profile_id: int, payload: ProfilePayload, request: Requ
             UPDATE watch_profiles SET
               name = ?, enabled = ?, source_type = ?, search_url = ?, poll_interval_minutes = ?,
               include_keywords = ?, exclude_keywords = ?, required_keywords = ?, excluded_categories = ?,
-              min_price = ?, max_price = ?, location_hint = ?, notify_telegram = ?, notify_webhook = ?, updated_at = ?
+              min_price = ?, max_price = ?, max_listing_age_days = ?, location_hint = ?, notify_telegram = ?, notify_webhook = ?, updated_at = ?
             WHERE id = ?
             """,
             profile_values(profile, now, include_created=False) + (profile_id,),
@@ -453,7 +533,7 @@ async def list_listings(
         "score_desc": "score DESC, first_seen_at DESC",
         "date_desc": "first_seen_at DESC",
     }.get(sort, "first_seen_at DESC")
-    limit = min(max(limit, 1), 100)
+    limit = min(max(limit, 1), 500)
     offset = max(offset, 0)
     with connect() as db:
         total = db.execute(
@@ -736,6 +816,7 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
                 stats["duplicates"] += 1
                 continue
             result = apply_filters(candidate, profile)
+            result = apply_listing_age_limit(candidate, profile, result)
             status = result.status
             listing_id = insert_listing(db, profile["id"], candidate, status, result.score, result.reason, now)
             listing = db.execute("SELECT * FROM listings WHERE id = ?", (listing_id,)).fetchone()
@@ -835,6 +916,7 @@ def profile_values(profile: dict[str, Any], now: str, user_id: int | None = None
         encode_list(clean_words(profile["excluded_categories"])),
         profile["min_price"],
         profile["max_price"],
+        max(1, min(3650, int(profile.get("max_listing_age_days") or 365))),
         profile["location_hint"],
         int(profile["notify_telegram"]),
         int(profile["notify_webhook"]),
@@ -846,6 +928,66 @@ def profile_values(profile: dict[str, Any], now: str, user_id: int | None = None
 
 def clean_words(values: list[str]) -> list[str]:
     return [item.strip() for item in values if item.strip()]
+
+
+def apply_listing_age_limit(candidate: ListingCandidate, profile: dict[str, Any], result: FilterResult) -> FilterResult:
+    if result.status == "hidden" or candidate.source_type == "mobilede":
+        return result
+    try:
+        max_days = max(1, min(3650, int(profile.get("max_listing_age_days") or 365)))
+    except (TypeError, ValueError):
+        max_days = 365
+    posted_at = parse_listing_posted_at(candidate.posted_at_text)
+    if not posted_at:
+        return result
+    if posted_at < datetime.now(UTC) - timedelta(days=max_days):
+        return FilterResult("hidden", 0, f"older_than:{max_days}_days", f"older than {max_days} days")
+    return result
+
+
+def parse_listing_posted_at(value: str | None) -> datetime | None:
+    text = (value or "").strip().lower()
+    if not text or text.startswith(("ez ", "erstzulassung")):
+        return None
+    now = datetime.now(UTC)
+    if any(word in text for word in ("heute", "today", "gerade", "just now")):
+        return now
+    if any(word in text for word in ("gestern", "yesterday")):
+        return now - timedelta(days=1)
+    relative = re.search(r"(?:vor\s*)?(\d+)\s*(minute|minuten|std|stunde|stunden|tag|tage|tagen|day|days|week|weeks|woche|wochen|month|months|monat|monate)", text)
+    if relative:
+        amount = int(relative.group(1))
+        unit = relative.group(2)
+        if unit.startswith(("minute", "minuten")):
+            return now - timedelta(minutes=amount)
+        if unit.startswith(("std", "stunde")):
+            return now - timedelta(hours=amount)
+        if unit.startswith(("tag", "day")):
+            return now - timedelta(days=amount)
+        if unit.startswith(("week", "woche")):
+            return now - timedelta(days=amount * 7)
+        if unit.startswith(("month", "monat")):
+            return now - timedelta(days=amount * 30)
+    date_match = re.search(r"\b(\d{1,2})\.(\d{1,2})\.(\d{2,4})\b", text)
+    if date_match:
+        day, month, year = [int(part) for part in date_match.groups()]
+        if year < 100:
+            year += 2000
+        try:
+            return datetime(year, month, day, tzinfo=UTC)
+        except ValueError:
+            return None
+    short_date = re.search(r"\b(\d{1,2})\.(\d{1,2})\.(?!\d)", text)
+    if short_date:
+        day, month = [int(part) for part in short_date.groups()]
+        try:
+            candidate = datetime(now.year, month, day, tzinfo=UTC)
+        except ValueError:
+            return None
+        if candidate > now + timedelta(days=1):
+            candidate = datetime(now.year - 1, month, day, tzinfo=UTC)
+        return candidate
+    return None
 
 
 def validate_profile_search_url(profile: dict[str, Any]) -> None:
@@ -1181,7 +1323,8 @@ def reapply_profile_filters(db: sqlite3.Connection, profile_id: int, profile: di
         stats["checked"] += 1
         if bool(row["user_hidden"]):
             continue
-        result = apply_filters(listing_candidate_from_row(row), profile)
+        candidate = listing_candidate_from_row(row)
+        result = apply_listing_age_limit(candidate, profile, apply_filters(candidate, profile))
         next_status = result.status
         if next_status != "hidden" and row["status"] in {"seen", "notified"}:
             next_status = row["status"]

@@ -2,6 +2,27 @@
 
 All notable changes to MarketPlaceLens are documented here.
 
+## [0.3.0] - 2026-06-08
+
+### Added
+
+- First-run setup screen for creating the initial admin password.
+- Persistent session secret generation at startup when no secret is supplied.
+- Editable URL-parameter rows for existing search URLs.
+- Per-job oldest-listing limit, defaulting to 365 days.
+- Dashboard source summary and recent-run widgets.
+- Docker Hub image documentation for `alexrosbach/marketplacelens`.
+- One-line Docker Compose install file using the published image.
+- Public/private-use source compliance note for marketplace connectors.
+
+### Changed
+
+- Listing controls are collapsed by default while the listing page itself remains visible.
+- Kleinanzeigen fetching follows public pagination links to import more available listings.
+- Settings use a tabbed admin/account layout.
+- UI shadows, cards, and mobile wrapping were tuned to reduce overlap and improve depth.
+- Docker/image version advanced to `0.3.0`.
+
 ## [0.2.1] - 2026-06-08
 
 ### Added

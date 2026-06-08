@@ -3,6 +3,26 @@ from __future__ import annotations
 import os
 import secrets
 from dataclasses import dataclass
+from pathlib import Path
+
+
+def persistent_session_secret(db_path: str) -> str:
+    env_secret = os.getenv("MARKETPLACELENS_SESSION_SECRET", "").strip()
+    if env_secret:
+        return env_secret
+    secret_file = Path(os.getenv("MARKETPLACELENS_SESSION_SECRET_FILE", "") or Path(db_path).with_name("session.secret"))
+    secret_file.parent.mkdir(parents=True, exist_ok=True)
+    if secret_file.exists():
+        value = secret_file.read_text(encoding="utf-8").strip()
+        if value:
+            return value
+    value = secrets.token_urlsafe(48)
+    secret_file.write_text(value, encoding="utf-8")
+    try:
+        secret_file.chmod(0o600)
+    except OSError:
+        pass
+    return value
 
 
 @dataclass(frozen=True)
@@ -19,8 +39,8 @@ class Settings:
     telegram_chat_id: str = os.getenv("TELEGRAM_CHAT_ID", "")
     webhook_url: str = os.getenv("MARKETPLACELENS_WEBHOOK_URL", "")
     admin_username: str = os.getenv("MARKETPLACELENS_ADMIN_USERNAME", "admin")
-    admin_password: str = os.getenv("MARKETPLACELENS_ADMIN_PASSWORD", "admin")
-    session_secret: str = os.getenv("MARKETPLACELENS_SESSION_SECRET", secrets.token_urlsafe(32))
+    admin_password: str = os.getenv("MARKETPLACELENS_ADMIN_PASSWORD", "")
+    session_secret: str = persistent_session_secret(db_path)
 
 
 settings = Settings()

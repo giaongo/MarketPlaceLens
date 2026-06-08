@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MarketPlaceLens Setup</title>
+    <link rel="icon" href="/static/favicon.ico" sizes="any">
+    <link rel="icon" href="/static/assets/marketplacelens-logo.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/static/assets/marketplacelens-icon-180.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body class="login-page">
+    <main class="login-shell">
+      <section class="login-panel">
+        <div class="brand">
+          <img class="brand-logo" src="/static/assets/marketplacelens-logo.svg" alt="" width="42" height="42">
+          <div>
+            <strong>MarketPlaceLens</strong>
+            <small>first setup</small>
+          </div>
+        </div>
+        <form id="setup-form" class="form-grid">
+          <label class="wide"><span>Admin username</span><input id="username" autocomplete="username" value="admin"></label>
+          <label class="wide"><span>New password</span><input id="password" type="password" autocomplete="new-password" minlength="8"></label>
+          <label class="wide"><span>Repeat password</span><input id="repeat-password" type="password" autocomplete="new-password" minlength="8"></label>
+          <button class="button primary wide" type="submit">Save and continue</button>
+          <p id="setup-error" class="danger-text wide"></p>
+        </form>
+      </section>
+    </main>
+    <script>
+      document.querySelector("#setup-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const error = document.querySelector("#setup-error");
+        error.textContent = "";
+        const username = document.querySelector("#username").value.trim();
+        const password = document.querySelector("#password").value;
+        const repeated = document.querySelector("#repeat-password").value;
+        if (password !== repeated) {
+          error.textContent = "Passwords do not match.";
+          return;
+        }
+        const response = await fetch("/api/setup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        if (!response.ok) {
+          error.textContent = await response.text();
+          return;
+        }
+        window.location.href = "/login";
+      });
+    </script>
+  </body>
+</html>

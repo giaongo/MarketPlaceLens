@@ -63,11 +63,6 @@ def valid_credentials(username: str, password: str) -> bool:
         row = None
     if row:
         return bool(row["enabled"]) and verify_password(password, row["password_hash"])
-    if hmac.compare_digest(username, settings.admin_username):
-        stored_hash = get_stored_password_hash()
-        if stored_hash:
-            return verify_password(password, stored_hash)
-        return hmac.compare_digest(password, settings.admin_password)
     return False
 
 

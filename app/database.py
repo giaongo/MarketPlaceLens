@@ -61,6 +61,7 @@ def init_db() -> None:
               excluded_categories TEXT NOT NULL DEFAULT '[]',
               min_price REAL,
               max_price REAL,
+              max_listing_age_days INTEGER NOT NULL DEFAULT 365,
               location_hint TEXT NOT NULL DEFAULT '',
               notify_telegram INTEGER NOT NULL DEFAULT 1,
               notify_webhook INTEGER NOT NULL DEFAULT 0,
@@ -151,6 +152,7 @@ def init_db() -> None:
         ensure_column(db, "listings", "user_hidden", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "watch_profiles", "notify_webhook", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "watch_profiles", "user_id", "INTEGER REFERENCES users(id)")
+        ensure_column(db, "watch_profiles", "max_listing_age_days", "INTEGER NOT NULL DEFAULT 365")
         ensure_column(db, "users", "display_name", "TEXT NOT NULL DEFAULT ''")
         ensure_column(db, "users", "buyer_location", "TEXT NOT NULL DEFAULT ''")
         ensure_column(db, "users", "contact_hint", "TEXT NOT NULL DEFAULT ''")
@@ -168,6 +170,7 @@ def init_db() -> None:
             (default_watchlist_id, utc_now()),
         )
         defaults = {
+            "setup_complete": "0",
             "telegram_bot_token": settings.telegram_bot_token,
             "telegram_chat_id": settings.telegram_chat_id,
             "webhook_url": settings.webhook_url,
@@ -228,6 +231,8 @@ def ensure_admin_user(db: sqlite3.Connection) -> None:
     row = db.execute("SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
     if row:
         return
+    if not settings.admin_password:
+        return
     stored_hash = db.execute("SELECT value FROM app_settings WHERE key = 'admin_password_hash'").fetchone()
     password_hash = stored_hash["value"] if stored_hash and stored_hash["value"] else hash_password_for_bootstrap(settings.admin_password)
     db.execute(
@@ -236,6 +241,9 @@ def ensure_admin_user(db: sqlite3.Connection) -> None:
         VALUES (?, ?, 'admin', 1, ?, ?)
         """,
         (settings.admin_username, password_hash, now, now),
+    )
+    db.execute(
+        "INSERT INTO app_settings(key, value) VALUES ('setup_complete', '1') ON CONFLICT(key) DO UPDATE SET value = '1'"
     )
 
 
