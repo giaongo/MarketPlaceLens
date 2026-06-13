@@ -130,3 +130,4 @@ SQLite schema migrations run during app startup.
 - `created`
 
 The same build code appears as a small badge in the sidebar.
+The app also appends that build code to local CSS and JavaScript URLs, which keeps browser caches from mixing old UI scripts with newly deployed HTML.

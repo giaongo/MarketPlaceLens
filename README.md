@@ -167,6 +167,7 @@ The current app version lives in:
 - the visible app version badge in the sidebar
 
 `GET /api/version` returns version, build code, commit, branch, and build timestamp metadata. Release notes are tracked in [CHANGELOG.md](CHANGELOG.md).
+HTML pages append the current build code to local CSS and JavaScript asset URLs so browsers pick up UI text and style changes after each deployed build.
 
 ## Development
 

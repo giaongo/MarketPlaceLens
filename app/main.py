@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from .auth import COOKIE_NAME, create_session, current_user_from_session, hash_password, valid_credentials
@@ -57,19 +57,25 @@ async def startup() -> None:
         asyncio.create_task(poll_loop())
 
 
+def static_page_response(filename: str) -> HTMLResponse:
+    html = (static_dir / filename).read_text(encoding="utf-8")
+    html = html.replace("__ASSET_VERSION__", version_payload().get("build_code") or APP_VERSION)
+    return HTMLResponse(html, headers={"Cache-Control": "no-store"})
+
+
 @app.get("/")
-async def index() -> FileResponse:
-    return FileResponse(static_dir / "index.html")
+async def index() -> HTMLResponse:
+    return static_page_response("index.html")
 
 
 @app.get("/login")
-async def login_page() -> FileResponse:
-    return FileResponse(static_dir / "login.html")
+async def login_page() -> HTMLResponse:
+    return static_page_response("login.html")
 
 
 @app.get("/setup")
-async def setup_page() -> FileResponse:
-    return FileResponse(static_dir / "setup.html")
+async def setup_page() -> HTMLResponse:
+    return static_page_response("setup.html")
 
 
 @app.get("/api/setup/status")

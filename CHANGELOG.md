@@ -21,9 +21,11 @@ All notable changes to MarketPlaceLens are documented here.
 - Notification settings are split into Telegram, webhook, and delivery-rule cards for clearer channel configuration.
 - The default watchlist is now saved per user, and non-admin users can manage their own Watchlist settings tab.
 - UI cards, buttons, and list items now use stronger shadows, hover motion, and subtle entrance animation with reduced-motion support.
+- Run-error cleanup controls now use clearer copy in the dashboard and settings.
 
 ### Fixed
 
+- HTML pages now load build-versioned CSS and JavaScript assets to prevent stale mobile browser caches from showing raw translation keys after updates.
 - Local Ollama and LM Studio calls now get a longer provider timeout, which avoids failing while local models are still loading.
 - Kleinanzeigen paginated scans now keep the HTTP client open while following result pages.
 - Kleinanzeigen parsing now uses dedicated result-card selectors instead of the generic HTML fallback.

@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="/static/assets/marketplacelens-icon-180.png">
     <link rel="manifest" href="/static/site.webmanifest">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQPNgh9qld+YzKufXbAEL0DIUtnKVh+g=" crossorigin="">
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/styles.css?v=__ASSET_VERSION__">
   </head>
   <body>
     <aside class="sidebar">
@@ -85,7 +85,7 @@
                 <h2 data-i18n="dashboard.recentRuns">Recent runs</h2>
                 <p class="panel-subtitle" data-i18n="dashboard.recentRunsSubtitle">Last source checks and connector status.</p>
               </div>
-              <button class="mini-button admin-only" type="button" id="dashboard-clear-run-errors" data-i18n="dashboard.clearErrors">Clear errors</button>
+              <button class="mini-button admin-only" type="button" id="dashboard-clear-run-errors" data-i18n="dashboard.clearErrors">Clear run errors</button>
             </div>
             <div id="dashboard-recent-runs" class="simple-list"></div>
           </section>
@@ -711,7 +711,7 @@
         <section class="panel narrow settings-section admin-only settings-panel settings-panel-runs">
           <div class="panel-heading">
             <h2 data-i18n="dashboard.recentRuns">Recent runs</h2>
-            <button class="mini-button" type="button" id="settings-clear-run-errors" data-i18n="dashboard.clearErrors">Clear errors</button>
+            <button class="mini-button" type="button" id="settings-clear-run-errors" data-i18n="dashboard.clearErrors">Clear run errors</button>
           </div>
           <div id="recent-runs" class="simple-list"></div>
         </section>
@@ -732,6 +732,6 @@
       </form>
     </dialog>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
-    <script src="/static/app.js" defer></script>
+    <script src="/static/app.js?v=__ASSET_VERSION__" defer></script>
   </body>
 </html>
