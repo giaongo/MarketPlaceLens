@@ -19,6 +19,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 - Language, version, and light/dark theme controls now match Kramlet's bottom-right floating display-options control instead of living in the top header.
 - Review cards are now more Kramlet-like on phones, with the actions inside the product card and compact mobile sizing so a listing fits into one screen more reliably.
+- The Review section is now labeled Swipe/Swipen and its product cards show the same marketplace date, ZIP, and place details as listing cards.
 - Language and light/dark theme controls now use Kramlet-style quick buttons on login and in the main header instead of select menus.
 - Settings now use LanLens-style tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account instead of one long admin stack.
 - Notification settings are split into Telegram, webhook, and delivery-rule cards for clearer channel configuration.
@@ -30,6 +31,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 - Duplicate listing refreshes now backfill missing marketplace fields such as price, location, description, and image; invalid Kleinanzeigen account links are cleaned up; notifications sit above the floating display controls; and watchlist chevrons render as proper icons.
 - Listing and review cards now label the marketplace listing date plus ZIP code and place instead of showing an unlabeled location or internal discovery time.
+- Mobile swipe-card action buttons no longer scroll under the right edge or clip the Seen button.
 - Mobile listing controls now align the collapsed filter chevron and watchlist split-button chevrons cleanly.
 - HTML pages now load build-versioned CSS and JavaScript assets to prevent stale mobile browser caches from showing raw translation keys after updates.
 - Local Ollama and LM Studio calls now get a longer provider timeout, which avoids failing while local models are still loading.

@@ -2554,21 +2554,25 @@ textarea.chip-source {
   }
 
   .review-card-actions {
-    display: flex;
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     margin-top: 2px;
-    overflow-x: auto;
-    padding: 0 136px 2px 0;
-    scrollbar-width: thin;
+    overflow: visible;
+    padding: 0;
   }
 
   .review-card-actions .button {
-    flex: 0 0 auto;
     min-height: 38px;
-    min-width: 136px;
+    min-width: 0;
     padding: 8px 10px;
     font-size: 0.85rem;
+    white-space: normal;
+  }
+
+  .review-card-actions [data-review-inquiry],
+  .review-card-actions [data-review-assessment] {
+    grid-column: span 3;
   }
 
   .listing-browser.grid-view {
@@ -2727,19 +2731,24 @@ textarea.chip-source {
   }
 
   .review-card-actions {
-    display: flex;
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
-    overflow-x: auto;
-    padding: 0 136px 2px 0;
+    overflow: visible;
+    padding: 0;
   }
 
   .review-card-actions .button {
-    flex: 0 0 auto;
     min-height: 38px;
-    min-width: 136px;
+    min-width: 0;
     padding: 8px 10px;
     font-size: 0.85rem;
+    white-space: normal;
+  }
+
+  .review-card-actions [data-review-inquiry],
+  .review-card-actions [data-review-assessment] {
+    grid-column: span 3;
   }
 
   .status-grid {
