@@ -198,6 +198,7 @@ const translations = {
     "review.open": "Open original",
     "review.doubleClick": "Double-click to add to watchlist",
     "review.swipe": "Swipe to mark seen",
+    "review.reason": "Match score {score}",
     "status.new": "New",
     "status.notified": "Notified",
     "status.hidden": "Hidden",
@@ -236,6 +237,10 @@ const translations = {
     "settings.aiTonePolite": "Very polite",
     "settings.aiToneNormal": "Normal",
     "settings.aiToneCheeky": "Cheeky",
+    "settings.facebook": "Facebook Marketplace session",
+    "settings.facebookSubtitle": "Paste a Cookie header from your own browser session. Stored locally and only sent to Facebook.",
+    "settings.facebookCookie": "Cookie header",
+    "settings.facebookCookieHint": "Use only your own account/session. No password is stored. Leave ******** unchanged to keep the saved cookie.",
     "settings.save": "Save settings",
     "settings.sendTest": "Send test",
     "settings.sendWebhookTest": "Send webhook test",
@@ -312,7 +317,7 @@ const translations = {
     "toast.runComplete": "Run complete: {new} new, {hidden} hidden, {duplicates} duplicate",
     "toast.profileDeleted": "Profile deleted",
     "toast.searchRequired": "Search term is required",
-    "toast.facebookUrlRequired": "Facebook Marketplace start pages cannot be watched. Use a search or category URL.",
+    "toast.facebookUrlRequired": "Facebook Marketplace needs a reachable Marketplace URL.",
     "toast.facebookSearchQueryRequired": "Facebook Marketplace search URLs need a search term.",
     "toast.listingTypeRequired": "Select at least one Kleinanzeigen listing type",
     "toast.settingsSaved": "Settings saved",
@@ -493,6 +498,7 @@ const translations = {
     "review.open": "Original öffnen",
     "review.doubleClick": "Doppelklick speichert in die Watchlist",
     "review.swipe": "Wischen markiert als gesehen",
+    "review.reason": "Treffer-Score {score}",
     "status.new": "Neu",
     "status.notified": "Benachrichtigt",
     "status.hidden": "Ausgeblendet",
@@ -531,6 +537,10 @@ const translations = {
     "settings.aiTonePolite": "Sehr höflich",
     "settings.aiToneNormal": "Normal",
     "settings.aiToneCheeky": "Frech",
+    "settings.facebook": "Facebook-Marketplace-Session",
+    "settings.facebookSubtitle": "Füge einen Cookie-Header aus deiner eigenen Browser-Session ein. Wird lokal gespeichert und nur an Facebook gesendet.",
+    "settings.facebookCookie": "Cookie-Header",
+    "settings.facebookCookieHint": "Nur mit deinem eigenen Account/deiner eigenen Session nutzen. Kein Passwort wird gespeichert. ******** unverändert lassen, um den gespeicherten Cookie zu behalten.",
     "settings.save": "Einstellungen speichern",
     "settings.sendTest": "Test senden",
     "settings.sendWebhookTest": "Webhook-Test senden",
@@ -607,7 +617,7 @@ const translations = {
     "toast.runComplete": "Run fertig: {new} neu, {hidden} ausgeblendet, {duplicates} Duplikate",
     "toast.profileDeleted": "Profil gelöscht",
     "toast.searchRequired": "Suchbegriff ist erforderlich",
-    "toast.facebookUrlRequired": "Facebook-Marketplace-Startseiten können nicht überwacht werden. Nutze eine Such- oder Kategorie-URL.",
+    "toast.facebookUrlRequired": "Facebook Marketplace braucht eine erreichbare Marketplace-URL.",
     "toast.facebookSearchQueryRequired": "Facebook-Marketplace-Such-URLs brauchen einen Suchbegriff.",
     "toast.listingTypeRequired": "Wähle mindestens eine Kleinanzeigen-Anzeigenart aus",
     "toast.settingsSaved": "Einstellungen gespeichert",
@@ -809,6 +819,10 @@ function bindForms() {
     await saveSettings();
   });
   $("#ai-settings-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveSettings();
+  });
+  $("#facebook-settings-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveSettings();
   });
@@ -1731,7 +1745,6 @@ function validateProfileUrl(payload) {
   try {
     const url = new URL(payload.search_url);
     const path = url.pathname.replace(/\/+$/, "").toLowerCase();
-    if (path === "/marketplace") return t("toast.facebookUrlRequired");
     if (path === "/marketplace/search" && !url.searchParams.get("query")?.trim()) {
       return t("toast.facebookSearchQueryRequired");
     }
@@ -1937,6 +1950,10 @@ function renderReviewCard() {
   target.innerHTML = reviewListingMarkup(listing);
   const card = target.querySelector("[data-review-card]");
   bindReviewGestures(card);
+  target.querySelector("[data-review-watch]")?.addEventListener("click", reviewWatchCurrent);
+  target.querySelector("[data-review-seen]")?.addEventListener("click", reviewSeenCurrent);
+  target.querySelector("[data-review-open]")?.addEventListener("click", reviewOpenCurrent);
+  target.querySelector("[data-review-inquiry]")?.addEventListener("click", reviewInquiryCurrent);
 }
 
 function reviewListingMarkup(listing) {
@@ -1947,25 +1964,27 @@ function reviewListingMarkup(listing) {
     <article class="review-card" data-review-card data-id="${listing.id}">
       <div class="review-image-wrap">
         ${listing.thumbnail_url ? `<img class="review-image" src="/api/listings/${listing.id}/image" alt="">` : `<div class="review-image placeholder">${escapeHtml(t("listing.noImage"))}</div>`}
-        <div class="review-gesture-hints">
-          <span>${escapeHtml(t("review.doubleClick"))}</span>
-          <span>${escapeHtml(t("review.swipe"))}</span>
-        </div>
       </div>
       <div class="review-details">
-        <div>
+        <div class="review-provider-row">
           <span class="source-badge ${escapeAttribute(listing.source_type)}">${escapeHtml(sourceLabel(listing.source_type))}</span>
           ${watchlistBadges}
         </div>
         <h3>${escapeHtml(listing.title)}</h3>
+        ${listing.description_snippet ? `<p class="review-description">${escapeHtml(listing.description_snippet)}</p>` : ""}
         <strong class="review-price">${escapeHtml(listing.price_text || t("listing.noPrice"))}</strong>
         <div class="listing-facts">
           <span>${escapeHtml(listing.location_text || t("listing.noLocation"))}</span>
           ${listing.category_text ? `<span>${escapeHtml(listing.category_text)}</span>` : ""}
           ${listing.posted_at_text ? `<span>${escapeHtml(listing.posted_at_text)}</span>` : ""}
-          <span>${escapeHtml(t("listing.score", { score: listing.score }))}</span>
         </div>
-        ${listing.description_snippet ? `<p class="review-description">${escapeHtml(listing.description_snippet)}</p>` : ""}
+        <p class="review-reason">${escapeHtml(t("review.reason", { score: listing.score }))}</p>
+        <div class="review-card-actions">
+          <button class="button ghost" type="button" data-review-watch>${escapeHtml(t("review.watch"))}</button>
+          <button class="button primary" type="button" data-review-open>${escapeHtml(t("review.open"))}</button>
+          <button class="button ghost" type="button" data-review-seen>${escapeHtml(t("review.seen"))}</button>
+          ${state.aiEnabled ? `<button class="button ghost" type="button" data-review-inquiry>${escapeHtml(t("listing.aiInquiry"))}</button>` : ""}
+        </div>
       </div>
     </article>
   `;
@@ -2377,6 +2396,7 @@ async function loadSettings() {
   $("#ai-base-url").value = settings.ai_base_url || "";
   $("#ai-model").value = settings.ai_model || "";
   $("#ai-tone").value = settings.ai_tone || "normal";
+  $("#facebook-cookie-header").value = settings.facebook_cookie_header || "";
   updateAiProviderHints();
   renderDefaultWatchlistSelect();
 }
@@ -2419,6 +2439,7 @@ async function saveSettings() {
       ai_base_url: $("#ai-base-url").value,
       ai_model: $("#ai-model").value,
       ai_tone: $("#ai-tone").value,
+      facebook_cookie_header: $("#facebook-cookie-header").value,
     }),
   });
   state.defaultWatchlistId = settings.default_watchlist_id;

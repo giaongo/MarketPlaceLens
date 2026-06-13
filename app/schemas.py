@@ -47,6 +47,7 @@ class SettingsPayload(BaseModel):
     ai_base_url: str = ""
     ai_model: str = ""
     ai_tone: str = Field(default="normal", pattern="^(polite|normal|cheeky)$")
+    facebook_cookie_header: str = Field(default="", max_length=12000)
 
 
 class LoginPayload(BaseModel):

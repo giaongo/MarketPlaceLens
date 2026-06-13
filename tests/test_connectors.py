@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import unittest
 
-from app.connectors import HtmlListingConnector, apply_kleinanzeigen_location_to_url, facebook_requires_login
+from app.connectors import HtmlListingConnector, apply_kleinanzeigen_location_to_url, facebook_requires_login, safe_cookie_header
 
 
 class FakeResponse:
@@ -35,6 +35,32 @@ def article(title: str, href: str, price: str = "10 EUR") -> str:
 
 
 class ConnectorTests(unittest.TestCase):
+    def test_safe_cookie_header_rejects_multiline_values(self) -> None:
+        self.assertEqual(safe_cookie_header(" c_user=1; xs=2; "), "c_user=1; xs=2;")
+        self.assertEqual(safe_cookie_header("c_user=1\nX-Bad: yes"), "")
+
+    def test_facebook_marketplace_item_links_are_parsed(self) -> None:
+        html = """
+        <html><body>
+          <div>
+            <a href="/marketplace/item/123456789/?ref=browse_tab">
+              <img src="https://example.test/photo.jpg" />
+              <span>120 €</span>
+              <span>Vintage Stuhl</span>
+              <span>21629 Neu Wulmstorf</span>
+            </a>
+          </div>
+        </body></html>
+        """
+        connector = HtmlListingConnector("facebook")
+        listings = connector.parse_facebook_listings(html, {"search_url": "https://www.facebook.com/marketplace/"})
+        self.assertEqual(len(listings), 1)
+        self.assertEqual(listings[0].source_listing_id, "123456789")
+        self.assertEqual(listings[0].listing_url, "https://www.facebook.com/marketplace/item/123456789/")
+        self.assertEqual(listings[0].title, "Vintage Stuhl")
+        self.assertEqual(listings[0].price_text, "120 €")
+        self.assertEqual(listings[0].location_text, "21629 Neu Wulmstorf")
+
     def test_kleinanzeigen_location_hint_is_added_to_search_url(self) -> None:
         url = apply_kleinanzeigen_location_to_url(
             "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl",

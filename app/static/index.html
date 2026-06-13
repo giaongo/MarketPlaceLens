@@ -533,6 +533,21 @@
         <section class="panel narrow settings-section admin-only settings-panel-admin">
           <div class="panel-heading">
             <div>
+              <h2 data-i18n="settings.facebook">Facebook Marketplace session</h2>
+              <p class="panel-subtitle" data-i18n="settings.facebookSubtitle">Paste a Cookie header from your own browser session. Stored locally and only sent to Facebook.</p>
+            </div>
+          </div>
+          <form id="facebook-settings-form" class="form-grid">
+            <label class="wide"><span data-i18n="settings.facebookCookie">Cookie header</span><textarea id="facebook-cookie-header" rows="4" autocomplete="off" spellcheck="false" placeholder="c_user=...; xs=...;"></textarea></label>
+            <p class="meta wide" data-i18n="settings.facebookCookieHint">Use only your own account/session. No password is stored. Leave ******** unchanged to keep the saved cookie.</p>
+            <div class="actions wide">
+              <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
+            </div>
+          </form>
+        </section>
+        <section class="panel narrow settings-section admin-only settings-panel-admin">
+          <div class="panel-heading">
+            <div>
               <h2 data-i18n="settings.ai">AI inquiry texts</h2>
               <p class="panel-subtitle" data-i18n="settings.aiSubtitle">Generate short buyer messages from a listing when a provider is configured.</p>
             </div>

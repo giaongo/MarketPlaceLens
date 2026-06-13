@@ -678,6 +678,8 @@ async def get_settings() -> dict[str, Any]:
         "ai_base_url": values.get("ai_base_url", ""),
         "ai_model": values.get("ai_model", "gpt-4o-mini") or "gpt-4o-mini",
         "ai_tone": values.get("ai_tone", "normal") or "normal",
+        "facebook_cookie_header": mask_secret(values.get("facebook_cookie_header", "")),
+        "facebook_cookie_header_set": bool(values.get("facebook_cookie_header")),
     }
 
 
@@ -687,6 +689,7 @@ async def update_settings(payload: SettingsPayload, request: Request) -> dict[st
     with connect() as db:
         current_token = get_setting(db, "telegram_bot_token")
         current_ai_key = get_setting(db, "ai_api_key")
+        current_facebook_cookie = get_setting(db, "facebook_cookie_header")
         values = {
             "telegram_bot_token": current_token if payload.telegram_bot_token == "********" else payload.telegram_bot_token,
             "telegram_chat_id": payload.telegram_chat_id,
@@ -699,6 +702,7 @@ async def update_settings(payload: SettingsPayload, request: Request) -> dict[st
             "ai_base_url": payload.ai_base_url.strip(),
             "ai_model": payload.ai_model.strip(),
             "ai_tone": payload.ai_tone,
+            "facebook_cookie_header": current_facebook_cookie if payload.facebook_cookie_header == "********" else payload.facebook_cookie_header.strip(),
         }
         for key, value in values.items():
             db.execute(
@@ -788,6 +792,9 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
     if not row:
         raise HTTPException(404, "Profile not found")
     profile = row_to_profile(row)
+    app_settings = {item["key"]: item["value"] for item in settings_rows}
+    if profile["source_type"] == "facebook":
+        profile["facebook_cookie_header"] = app_settings.get("facebook_cookie_header", "")
     connector = get_connector(profile["source_type"])
     try:
         candidates = await connector.fetch_listings(profile)
@@ -803,7 +810,6 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
             )
         raise HTTPException(502, f"Connector failed: {exc}") from exc
 
-    app_settings = {item["key"]: item["value"] for item in settings_rows}
     notifier = TelegramNotifier(app_settings.get("telegram_bot_token", ""), app_settings.get("telegram_chat_id", ""))
     webhook = WebhookNotifier(app_settings.get("webhook_url", ""))
     stats = {"fetched": len(candidates), "new": 0, "hidden": 0, "duplicates": 0, "notified": 0}

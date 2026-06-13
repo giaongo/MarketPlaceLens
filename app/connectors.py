@@ -40,12 +40,8 @@ class MarketplaceConnector:
             path = parsed.path.rstrip("/").lower()
             if host not in {"facebook.com", "www.facebook.com", "m.facebook.com"}:
                 raise ValueError("Facebook jobs need a facebook.com Marketplace URL.")
-            if path == "/marketplace":
-                raise ValueError(
-                    "Facebook Marketplace start pages cannot be watched. Use a Marketplace search or category URL."
-                )
-            if not path.startswith("/marketplace/"):
-                raise ValueError("Facebook jobs need a Marketplace search or category URL.")
+            if path != "/marketplace" and not path.startswith("/marketplace/"):
+                raise ValueError("Facebook jobs need a Marketplace URL.")
             if path == "/marketplace/search" and not parse_qs(parsed.query).get("query", [""])[0].strip():
                 raise ValueError("Facebook Marketplace search URLs need a query term.")
         if self.source_type == "mobilede":
@@ -73,12 +69,16 @@ class HtmlListingConnector(MarketplaceConnector):
             if self.source_type in {"facebook", "mobilede"}
             else settings.user_agent
         )
+        request_headers = {
+            "User-Agent": user_agent,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
+        }
+        facebook_cookie = safe_cookie_header(profile.get("facebook_cookie_header", ""))
+        if self.source_type == "facebook" and facebook_cookie:
+            request_headers["Cookie"] = facebook_cookie
         async with httpx.AsyncClient(
-            headers={
-                "User-Agent": user_agent,
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
-            },
+            headers=request_headers,
             follow_redirects=True,
             timeout=20.0,
         ) as client:
@@ -88,8 +88,8 @@ class HtmlListingConnector(MarketplaceConnector):
             except httpx.HTTPStatusError as exc:
                 if self.source_type == "facebook" and exc.response.status_code in {400, 401, 403}:
                     raise ValueError(
-                        "Facebook blocked the anonymous server request. "
-                        "Use a concrete public Marketplace search/category URL; if Facebook still returns a login or error page, it cannot be watched from this server."
+                        "Facebook blocked the server request. "
+                        "If this is a Facebook job, add a Cookie header from your own browser session in Settings and try again."
                     ) from exc
                 if self.source_type == "mobilede" and exc.response.status_code in {401, 403}:
                     raise ValueError(
@@ -107,13 +107,15 @@ class HtmlListingConnector(MarketplaceConnector):
         if self.source_type == "facebook" and facebook_requires_login(response.text, str(response.url)):
             raise ValueError(
                 "Facebook returned a login, consent, or upsell page instead of public Marketplace listings. "
-                "MarketPlaceLens cannot extract listings unless Facebook serves public listing links to anonymous server requests."
+                "Add a Cookie header from your own browser session in Settings if this URL works in your browser."
             )
         if self.source_type == "facebook" and "/marketplace/item/" not in response.text:
             raise ValueError(
-                "Facebook returned Marketplace HTML without public listing links. "
-                "This usually means the page is login-, location-, consent-, or JavaScript-rendered for anonymous server requests."
+                "Facebook returned Marketplace HTML without listing links. "
+                "This usually means the page is login-, location-, consent-, or JavaScript-rendered for this server session."
             )
+        if self.source_type == "facebook":
+            return self.parse_facebook_listings(response.text, profile)
         if self.source_type == "mobilede":
             listings = self.parse_mobilede_listings(response.text, profile)
             if not listings:
@@ -151,6 +153,61 @@ class HtmlListingConnector(MarketplaceConnector):
             html = response.text
             current_url = str(response.url)
         return candidates[:500]
+
+    def parse_facebook_listings(self, html: str, profile: dict) -> list[ListingCandidate]:
+        soup = BeautifulSoup(html, "html.parser")
+        anchors = [
+            node
+            for node in soup.select("a[href*='/marketplace/item/']")
+            if isinstance(node, Tag) and node.get("href")
+        ]
+        candidates: list[ListingCandidate] = []
+        seen_urls: set[str] = set()
+        for anchor in anchors[:250]:
+            listing_url = urljoin("https://www.facebook.com", str(anchor.get("href") or ""))
+            listing_url = canonical_facebook_item_url(listing_url)
+            if listing_url in seen_urls:
+                continue
+            seen_urls.add(listing_url)
+            card = facebook_listing_card(anchor)
+            candidate = self.normalize_facebook_listing(card, anchor, listing_url)
+            if candidate:
+                candidates.append(candidate)
+        return candidates[:200]
+
+    def normalize_facebook_listing(self, card: Tag, anchor: Tag, listing_url: str) -> ListingCandidate | None:
+        lines = facebook_text_lines(card)
+        anchor_label = clean_text(str(anchor.get("aria-label") or anchor.get("title") or ""))
+        if anchor_label and anchor_label not in lines:
+            lines.insert(0, anchor_label)
+        price_text = next((line for line in lines if looks_like_price(line)), "")
+        title = next((line for line in lines if line != price_text and not looks_like_location(line)), "")
+        if not title:
+            title = clean_text(anchor.get_text(" ", strip=True))
+        if not title or len(title) < 3:
+            return None
+        location_text = next((line for line in lines if line not in {title, price_text} and looks_like_location(line)), "")
+        snippet = " · ".join(line for line in lines if line not in {title, price_text, location_text})[:400]
+        image = card.find("img") or anchor.find("img")
+        thumbnail_url = ""
+        if isinstance(image, Tag):
+            thumbnail_url = str(image.get("src") or image.get("data-src") or "")
+        source_listing_id = extract_facebook_item_id(listing_url)
+        hash_input = "|".join([source_listing_id, title, price_text, location_text])
+        return ListingCandidate(
+            source_type=self.source_type,
+            source_listing_id=source_listing_id,
+            title=title,
+            price_text=price_text,
+            price_value=parse_price(price_text),
+            location_text=location_text,
+            category_text="",
+            posted_at_text="",
+            description_snippet=snippet,
+            listing_url=listing_url,
+            thumbnail_url=thumbnail_url,
+            content_hash=hashlib.sha256(hash_input.encode("utf-8")).hexdigest(),
+        )
 
     def parse_kleinanzeigen_listings(self, html: str, profile: dict) -> list[ListingCandidate]:
         soup = BeautifulSoup(html, "html.parser")
@@ -395,6 +452,54 @@ def extract_listing_id(url: str) -> str:
     return tail or hashlib.sha1(url.encode("utf-8")).hexdigest()
 
 
+def canonical_facebook_item_url(url: str) -> str:
+    parsed = urlparse(url)
+    path_match = re.search(r"(/marketplace/item/\d+)", parsed.path)
+    path = path_match.group(1) + "/" if path_match else parsed.path
+    return urlunparse(("https", "www.facebook.com", path, "", "", ""))
+
+
+def extract_facebook_item_id(url: str) -> str:
+    match = re.search(r"/marketplace/item/(\d+)", url)
+    return match.group(1) if match else extract_listing_id(url)
+
+
+def facebook_listing_card(anchor: Tag) -> Tag:
+    card = anchor
+    current: Tag | None = anchor
+    for _ in range(5):
+        parent = current.parent if current else None
+        if not isinstance(parent, Tag):
+            break
+        text = clean_text(parent.get_text(" ", strip=True))
+        if len(text) > 25 and parent.find("img"):
+            card = parent
+        current = parent
+    return card
+
+
+def facebook_text_lines(card: Tag) -> list[str]:
+    lines: list[str] = []
+    for raw in card.stripped_strings:
+        text = clean_text(str(raw))
+        if not text or text in lines:
+            continue
+        if text.lower() in {"sponsored", "gesponsert"}:
+            continue
+        lines.append(text)
+    return lines
+
+
+def looks_like_price(value: str) -> bool:
+    text = value.strip().lower()
+    return bool(re.search(r"(€|eur|\$|£|\bfree\b|kostenlos|zu verschenken|\bvb\b|\bvhb\b)", text))
+
+
+def looks_like_location(value: str) -> bool:
+    text = value.strip()
+    return bool(re.search(r"\b\d{5}\b", text) or re.search(r"\bkm\b", text, re.IGNORECASE))
+
+
 def apply_kleinanzeigen_location_to_url(url: str, location_hint: str) -> str:
     location, radius = parse_location_hint(location_hint)
     if not location:
@@ -444,6 +549,13 @@ def facebook_requires_login(html: str, final_url: str) -> bool:
         or 'href="/login' in lowered
         or "/login/device-based/" in lowered
     )
+
+
+def safe_cookie_header(value: str) -> str:
+    cookie = (value or "").strip()
+    if "\n" in cookie or "\r" in cookie:
+        return ""
+    return cookie
 
 
 def parse_price(value: str) -> float | None:

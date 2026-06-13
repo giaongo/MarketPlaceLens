@@ -94,9 +94,9 @@ User:
 
 ## Source Notes
 
-MarketPlaceLens expects user-supplied search result URLs. It does not automate private sessions or bypass access controls.
+MarketPlaceLens expects user-supplied Marketplace URLs. It does not bypass CAPTCHA, bot protection, private APIs, or platform access controls.
 
-Facebook Marketplace and mobile.de may return login, consent, protection, or JavaScript-only pages to anonymous server requests. When that happens, MarketPlaceLens records a connector error with a direct explanation.
+Facebook Marketplace and mobile.de may return login, consent, protection, or JavaScript-only pages to anonymous server requests. When that happens, MarketPlaceLens records a connector error with a direct explanation. For Facebook URLs that only work in the admin's own browser session, admins can paste their Facebook `Cookie` header in Settings. The value is stored locally in SQLite, masked in the UI/API, and only sent to `facebook.com`; no password is stored.
 
 The official mobile.de Search API requires Basic Auth access. The built-in mobile.de connector therefore reads public search pages when mobile.de makes embedded vehicle data available to the server.
 

@@ -121,11 +121,11 @@ Each user can save personal buyer details in Settings: name, location, contact n
 MarketPlaceLens works best with concrete search result URLs that are publicly reachable by the server.
 
 - Kleinanzeigen: public search and category URLs
-- Facebook Marketplace: concrete marketplace search/category URLs when Facebook returns public listing links
+- Facebook Marketplace: marketplace URLs when Facebook returns listing links; if the URL only works in your browser, admins can paste their own Facebook `Cookie` header in Settings so the request uses that local session
 - mobile.de: public `mobile.de` / `suchen.mobile.de` search result URLs when embedded vehicle data is present
 - Generic HTML: user-supplied search result pages with ordinary link cards
 
-Some platforms return login, consent, protection, or JavaScript shell pages to anonymous server requests. MarketPlaceLens does not bypass login, CAPTCHA, bot protection, private APIs, or platform access controls. In those cases runs are recorded as connector errors with a clear message.
+Some platforms return login, consent, protection, or JavaScript shell pages to anonymous server requests. MarketPlaceLens does not bypass login, CAPTCHA, bot protection, private APIs, or platform access controls. In those cases runs are recorded as connector errors with a clear message. The optional Facebook Cookie setting stores only the pasted Cookie header locally in SQLite, masks it in the UI/API, and sends it only to `facebook.com`; cookies can expire or be revoked from Facebook at any time.
 
 The official mobile.de Search API requires Basic Auth access, so the built-in connector uses public search pages rather than a private API.
 
