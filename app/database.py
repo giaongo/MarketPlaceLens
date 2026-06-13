@@ -161,6 +161,13 @@ def init_db() -> None:
         ensure_column(db, "users", "contact_hint", "TEXT NOT NULL DEFAULT ''")
         ensure_column(db, "users", "inquiry_signature", "TEXT NOT NULL DEFAULT ''")
         ensure_column(db, "users", "default_watchlist_id", "INTEGER REFERENCES watchlists(id)")
+        db.execute(
+            """
+            DELETE FROM listings
+            WHERE source_type = 'kleinanzeigen'
+              AND listing_url NOT LIKE '%/s-anzeige/%'
+            """
+        )
         ensure_admin_user(db)
         assign_unowned_profiles_to_admin(db)
         default_watchlist_id = ensure_default_watchlist(db)

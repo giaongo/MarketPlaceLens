@@ -112,6 +112,36 @@ class ConnectorTests(unittest.TestCase):
         self.assertEqual(listing.posted_at_text, "Heute")
         self.assertEqual(listing.listing_url, "https://www.kleinanzeigen.de/s-anzeige/eiche-stuhl/12345-86-1")
 
+    def test_kleinanzeigen_parser_ignores_account_links(self) -> None:
+        html = """
+        <ul id="srchrslt-adtable">
+          <li class="ad-listitem">
+            <article class="aditem" data-href="/m-passwort-vergessen.html">
+              <a href="/m-passwort-vergessen.html">Passwort vergessen?</a>
+            </article>
+          </li>
+          <li class="ad-listitem">
+            <article class="aditem" data-href="/m-benutzer-anmeldung.html">
+              <a href="/m-benutzer-anmeldung.html">Erstelle ein Konto</a>
+            </article>
+          </li>
+          <li class="ad-listitem">
+            <article class="aditem" data-href="/s-anzeige/echte-anzeige/12345-172-1">
+              <a href="/s-anzeige/echte-anzeige/12345-172-1">Echte Anzeige</a>
+              <p class="aditem-main--middle--price-shipping--price">15 € VB</p>
+            </article>
+          </li>
+        </ul>
+        """
+
+        listings = HtmlListingConnector("kleinanzeigen").parse_kleinanzeigen_listings(
+            html,
+            {"search_url": "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=defekt"},
+        )
+
+        self.assertEqual([listing.title for listing in listings], ["Echte Anzeige"])
+        self.assertEqual(listings[0].price_text, "15 € VB")
+
     def test_kleinanzeigen_pagination_keeps_client_available(self) -> None:
         first_url = "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl"
         second_url = "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl&pageNum=2"

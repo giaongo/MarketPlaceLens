@@ -921,6 +921,7 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
             if existing:
                 updates = ["last_seen_at = ?"]
                 values: list[Any] = [now]
+                refresh_existing_listing_fields(existing, candidate, updates, values)
                 if not bool(existing["user_hidden"]):
                     result = apply_filters(candidate, profile)
                     result = apply_listing_age_limit(candidate, profile, result)
@@ -1532,6 +1533,32 @@ def find_existing_listing(db: sqlite3.Connection, profile_id: int, candidate: Li
         """,
         (profile_id, candidate.source_listing_id, candidate.content_hash),
     ).fetchone()
+
+
+def refresh_existing_listing_fields(
+    existing: sqlite3.Row,
+    candidate: ListingCandidate,
+    updates: list[str],
+    values: list[Any],
+) -> None:
+    fill_fields = [
+        ("price_text", candidate.price_text),
+        ("location_text", candidate.location_text),
+        ("category_text", candidate.category_text),
+        ("posted_at_text", candidate.posted_at_text),
+        ("description_snippet", candidate.description_snippet),
+        ("thumbnail_url", candidate.thumbnail_url),
+    ]
+    for field, value in fill_fields:
+        if value and not existing[field]:
+            updates.append(f"{field} = ?")
+            values.append(value)
+    if candidate.price_value is not None and existing["price_value"] is None:
+        updates.append("price_value = ?")
+        values.append(candidate.price_value)
+    if candidate.content_hash and candidate.content_hash != existing["content_hash"]:
+        updates.append("content_hash = ?")
+        values.append(candidate.content_hash)
 
 
 def insert_listing(

@@ -233,6 +233,8 @@ class HtmlListingConnector(MarketplaceConnector):
         anchor = card.select_one("a[href*='/s-anzeige/']")
         if not link and isinstance(anchor, Tag):
             link = str(anchor.get("href") or "")
+        if not link or not is_kleinanzeigen_listing_url(link):
+            return None
         listing_url = urljoin("https://www.kleinanzeigen.de", link) if link else ""
         title = clean_text(first_text(card, [".aditem-main .text-module-begin", ".ellipsis", "h2", "h3", "a"]))
         if not title or not listing_url:
@@ -444,6 +446,11 @@ def first_text(card: Tag, selectors: list[str]) -> str:
         if node:
             return node.get_text(" ", strip=True)
     return ""
+
+
+def is_kleinanzeigen_listing_url(url: str) -> bool:
+    parsed = urlparse(urljoin("https://www.kleinanzeigen.de", url))
+    return "kleinanzeigen.de" in parsed.netloc.lower() and "/s-anzeige/" in parsed.path
 
 
 def extract_listing_id(url: str) -> str:

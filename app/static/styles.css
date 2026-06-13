@@ -341,7 +341,7 @@ nav {
 main {
   min-width: 0;
   width: 100%;
-  padding: 26px;
+  padding: 26px 26px 116px;
 }
 
 .topbar {
@@ -2019,11 +2019,23 @@ textarea.chip-source {
 
 .watch-menu-toggle::before {
   content: "";
+  position: absolute;
   width: 8px;
-  height: 8px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(45deg) translateY(-1px);
+  height: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(-3px, -1px) rotate(45deg);
+}
+
+.watch-menu-toggle::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(3px, -1px) rotate(-45deg);
 }
 
 .watch-menu {
@@ -2308,7 +2320,8 @@ textarea.chip-source {
 #toast {
   position: fixed;
   right: 18px;
-  bottom: 18px;
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 76px);
+  z-index: 90;
   max-width: min(420px, calc(100vw - 36px));
   padding: 12px 14px;
   border: 1px solid var(--line);
@@ -2397,12 +2410,16 @@ textarea.chip-source {
   }
 
   main {
-    padding: 16px 16px 88px;
+    padding: 16px 16px 132px;
   }
 
   .display-options {
     right: max(10px, env(safe-area-inset-right));
     bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  #toast {
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 76px);
   }
 
   .display-version {
