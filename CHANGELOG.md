@@ -18,6 +18,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 - Settings now use LanLens-style tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account instead of one long admin stack.
 - Notification settings are split into Telegram, webhook, and delivery-rule cards for clearer channel configuration.
+- The default watchlist is now saved per user, and non-admin users can manage their own Watchlist settings tab.
 - UI cards, buttons, and list items now use stronger shadows, hover motion, and subtle entrance animation with reduced-motion support.
 
 ### Fixed

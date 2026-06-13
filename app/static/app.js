@@ -1026,7 +1026,7 @@ async function loadAuthStatus() {
   state.currentUser = status.user || null;
   const admin = isAdmin();
   $$(".admin-only").forEach((node) => node.classList.toggle("hidden", !admin));
-  if (!admin && state.settingsTab !== "account") state.settingsTab = "account";
+  if (!admin && !["watchlists", "account"].includes(state.settingsTab)) state.settingsTab = "watchlists";
   renderSettingsTabs();
 }
 
@@ -1035,15 +1035,15 @@ function isAdmin() {
 }
 
 function setSettingsTab(tab) {
-  const adminTabs = ["notifications", "facebook", "ai", "watchlists", "users", "runs"];
+  const adminTabs = ["notifications", "facebook", "ai", "users", "runs"];
   state.settingsTab = adminTabs.includes(tab) && !isAdmin() ? "account" : tab;
   renderSettingsTabs();
 }
 
 function renderSettingsTabs() {
-  const adminTabs = ["notifications", "facebook", "ai", "watchlists", "users", "runs"];
-  const visibleTabs = isAdmin() ? [...adminTabs, "account"] : ["account"];
-  const active = visibleTabs.includes(state.settingsTab) ? state.settingsTab : (isAdmin() ? "notifications" : "account");
+  const adminTabs = ["notifications", "facebook", "ai", "users", "runs"];
+  const visibleTabs = isAdmin() ? ["notifications", "facebook", "ai", "watchlists", "users", "runs", "account"] : ["watchlists", "account"];
+  const active = visibleTabs.includes(state.settingsTab) ? state.settingsTab : (isAdmin() ? "notifications" : "watchlists");
   state.settingsTab = active;
   $$("[data-settings-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.settingsTab === active);

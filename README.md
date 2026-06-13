@@ -46,7 +46,7 @@ Screenshots below use demo data.
 - Background polling with conservative interval limits and manual run controls
 - Listing inbox with list/tile views, filters, pagination, lazy thumbnails, and clear seen/hidden/watchlist states
 - Tinder-style review mode with large images, double-click watchlisting, swipe-to-seen, and desktop button fallbacks
-- Multiple watchlists, default watchlist selection, and per-listing watchlist dropdowns
+- Multiple watchlists, per-user default watchlist selection, and per-listing watchlist dropdowns
 - Optional AI inquiry text generation through OpenAI API, Ollama, or LM Studio compatible chat completions
 - Per-user buyer details for AI inquiry text personalization
 - Multi-user roles: admins manage global settings and users; normal users manage their own jobs and listings
@@ -100,7 +100,7 @@ MarketPlaceLens creates and stores its own session secret at startup when none i
 
 Admins can manage every job, all users, notification settings, AI settings, watchlists, and global app configuration.
 
-Normal users can create, edit, delete, and manually run their own search jobs. They can review their own listings, mark items seen or hidden, use watchlists, and change their own password. They cannot change global settings, provider configuration, AI configuration, notification secrets, or other users.
+Normal users can create, edit, delete, and manually run their own search jobs. They can review their own listings, mark items seen or hidden, choose their own default watchlist, use watchlists, and change their own password. They cannot change global settings, provider configuration, AI configuration, notification secrets, or other users.
 
 ## AI Features
 
@@ -137,7 +137,7 @@ Important: connectors for Kleinanzeigen, Facebook Marketplace, mobile.de, and si
 
 ## Configuration
 
-Settings are organized into tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account. Notification settings use separate Telegram and webhook cards, while individual jobs still decide whether their matches should be delivered to Telegram and/or webhook.
+Settings are organized into tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account. Notification settings use separate Telegram and webhook cards, while individual jobs still decide whether their matches should be delivered to Telegram and/or webhook. The Watchlists tab is available to every user and stores that user's own default watchlist.
 
 Environment variables can seed first-run defaults:
 

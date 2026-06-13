@@ -468,7 +468,8 @@ async def trigger_open_check(request: Request) -> dict[str, Any]:
 
 
 @app.get("/api/watchlists")
-async def list_watchlists() -> list[dict[str, Any]]:
+async def list_watchlists(request: Request) -> list[dict[str, Any]]:
+    request_user(request)
     with connect() as db:
         rows = db.execute(
             """
@@ -483,7 +484,8 @@ async def list_watchlists() -> list[dict[str, Any]]:
 
 
 @app.post("/api/watchlists")
-async def create_watchlist(payload: WatchlistPayload) -> dict[str, Any]:
+async def create_watchlist(payload: WatchlistPayload, request: Request) -> dict[str, Any]:
+    request_user(request)
     now = utc_now()
     name = payload.name.strip()
     with connect() as db:
@@ -601,7 +603,7 @@ async def update_listing_status(listing_id: int, payload: ListingStatusPayload, 
                 updates.append("filter_reason = ?")
                 values.append("")
         if payload.watchlisted is not None:
-            set_listing_watchlisted(db, listing_id, payload.watchlisted, payload.watchlist_id)
+            set_listing_watchlisted(db, listing_id, payload.watchlisted, payload.watchlist_id, user)
             updates.append("watchlisted = ?")
             values.append(int(payload.watchlisted) if payload.watchlisted else listing_has_watchlists(db, listing_id))
         if not updates:
@@ -744,10 +746,11 @@ async def test_ai_provider(request: Request) -> dict[str, str]:
 
 
 @app.get("/api/settings")
-async def get_settings() -> dict[str, Any]:
+async def get_settings(request: Request) -> dict[str, Any]:
+    user = request_user(request)
     with connect() as db:
         rows = db.execute("SELECT key, value FROM app_settings").fetchall()
-        default_watchlist_id = normalized_default_watchlist_id(db)
+        default_watchlist_id = normalized_user_default_watchlist_id(db, user)
     values = {row["key"]: row["value"] for row in rows}
     return {
         "telegram_bot_token": mask_secret(values.get("telegram_bot_token", "")),
@@ -772,32 +775,34 @@ async def get_settings() -> dict[str, Any]:
 
 @app.put("/api/settings")
 async def update_settings(payload: SettingsPayload, request: Request) -> dict[str, Any]:
-    require_admin(request)
+    user = request_user(request)
     with connect() as db:
-        current_token = get_setting(db, "telegram_bot_token")
-        current_ai_key = get_setting(db, "ai_api_key")
-        current_facebook_cookie = get_setting(db, "facebook_cookie_header")
-        values = {
-            "telegram_bot_token": current_token if payload.telegram_bot_token == "********" else payload.telegram_bot_token,
-            "telegram_chat_id": payload.telegram_chat_id,
-            "webhook_url": payload.webhook_url,
-            "global_rate_limit_seconds": str(payload.global_rate_limit_seconds),
-            "default_watchlist_id": str(valid_watchlist_id(db, payload.default_watchlist_id)),
-            "ai_enabled": "1" if payload.ai_enabled else "0",
-            "ai_listing_assessments_enabled": "1" if payload.ai_listing_assessments_enabled else "0",
-            "ai_provider": payload.ai_provider,
-            "ai_api_key": current_ai_key if payload.ai_api_key == "********" else payload.ai_api_key,
-            "ai_base_url": payload.ai_base_url.strip(),
-            "ai_model": payload.ai_model.strip(),
-            "ai_tone": payload.ai_tone,
-            "facebook_cookie_header": current_facebook_cookie if payload.facebook_cookie_header == "********" else payload.facebook_cookie_header.strip(),
-        }
-        for key, value in values.items():
-            db.execute(
-                "INSERT INTO app_settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-                (key, value),
-            )
-    return await get_settings()
+        user_default_id = valid_watchlist_id(db, payload.default_watchlist_id)
+        db.execute("UPDATE users SET default_watchlist_id = ?, updated_at = ? WHERE id = ?", (user_default_id, utc_now(), user["id"]))
+        if user.get("role") == "admin":
+            current_token = get_setting(db, "telegram_bot_token")
+            current_ai_key = get_setting(db, "ai_api_key")
+            current_facebook_cookie = get_setting(db, "facebook_cookie_header")
+            values = {
+                "telegram_bot_token": current_token if payload.telegram_bot_token == "********" else payload.telegram_bot_token,
+                "telegram_chat_id": payload.telegram_chat_id,
+                "webhook_url": payload.webhook_url,
+                "global_rate_limit_seconds": str(payload.global_rate_limit_seconds),
+                "ai_enabled": "1" if payload.ai_enabled else "0",
+                "ai_listing_assessments_enabled": "1" if payload.ai_listing_assessments_enabled else "0",
+                "ai_provider": payload.ai_provider,
+                "ai_api_key": current_ai_key if payload.ai_api_key == "********" else payload.ai_api_key,
+                "ai_base_url": payload.ai_base_url.strip(),
+                "ai_model": payload.ai_model.strip(),
+                "ai_tone": payload.ai_tone,
+                "facebook_cookie_header": current_facebook_cookie if payload.facebook_cookie_header == "********" else payload.facebook_cookie_header.strip(),
+            }
+            for key, value in values.items():
+                db.execute(
+                    "INSERT INTO app_settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    (key, value),
+                )
+    return await get_settings(request)
 
 
 @app.post("/api/settings/password")
@@ -1169,14 +1174,23 @@ def normalized_default_watchlist_id(db: sqlite3.Connection) -> int:
     return default_id
 
 
+def normalized_user_default_watchlist_id(db: sqlite3.Connection, user: dict[str, Any]) -> int:
+    row = db.execute("SELECT default_watchlist_id FROM users WHERE id = ?", (user["id"],)).fetchone()
+    configured = row["default_watchlist_id"] if row else None
+    default_id = valid_watchlist_id(db, configured or normalized_default_watchlist_id(db))
+    db.execute("UPDATE users SET default_watchlist_id = ?, updated_at = ? WHERE id = ?", (default_id, utc_now(), user["id"]))
+    return default_id
+
+
 def set_listing_watchlisted(
     db: sqlite3.Connection,
     listing_id: int,
     watchlisted: bool,
     watchlist_id: int | None,
+    user: dict[str, Any],
 ) -> None:
     if watchlisted:
-        target_id = valid_watchlist_id(db, watchlist_id or normalized_default_watchlist_id(db))
+        target_id = valid_watchlist_id(db, watchlist_id or normalized_user_default_watchlist_id(db, user))
         db.execute(
             """
             INSERT OR IGNORE INTO listing_watchlists(listing_id, watchlist_id, created_at)

@@ -59,7 +59,7 @@ Review mode shows one listing at a time with image, price, location, source, and
 
 ## Watchlists
 
-Admins can create watchlists and choose the default watchlist in Settings. The normal Watch action saves to that default list. The dropdown on listing cards and review cards lets users choose another list or create a new one directly.
+Users can create watchlists and choose their own default watchlist in Settings. The normal Watch action saves to that user's default list. The dropdown on listing cards and review cards lets users choose another list or create a new one directly.
 
 ## AI Features
 
@@ -88,13 +88,13 @@ Admin:
 - edit notification, webhook, AI, and watchlist settings
 - see all run logs and dashboard counts
 
-The Settings page uses separate tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account. Notification settings are grouped into Telegram, webhook, and delivery-rule cards, matching the LanLens-style settings layout while keeping per-job notification delivery on the job cards.
+The Settings page uses separate tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account. Notification settings are grouped into Telegram, webhook, and delivery-rule cards, matching the LanLens-style settings layout while keeping per-job notification delivery on the job cards. The Watchlists tab is available to every user and stores a per-user default watchlist.
 
 User:
 
 - create, edit, delete, and run their own jobs
 - review and mark listings from their own jobs
-- use watchlists
+- use watchlists and choose their own default watchlist
 - change their own password
 - cannot access global settings or other users' jobs
 

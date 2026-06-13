@@ -113,6 +113,7 @@ def init_db() -> None:
               buyer_location TEXT NOT NULL DEFAULT '',
               contact_hint TEXT NOT NULL DEFAULT '',
               inquiry_signature TEXT NOT NULL DEFAULT '',
+              default_watchlist_id INTEGER REFERENCES watchlists(id),
               created_at TEXT NOT NULL,
               updated_at TEXT NOT NULL,
               last_login_at TEXT
@@ -159,6 +160,7 @@ def init_db() -> None:
         ensure_column(db, "users", "buyer_location", "TEXT NOT NULL DEFAULT ''")
         ensure_column(db, "users", "contact_hint", "TEXT NOT NULL DEFAULT ''")
         ensure_column(db, "users", "inquiry_signature", "TEXT NOT NULL DEFAULT ''")
+        ensure_column(db, "users", "default_watchlist_id", "INTEGER REFERENCES watchlists(id)")
         ensure_admin_user(db)
         assign_unowned_profiles_to_admin(db)
         default_watchlist_id = ensure_default_watchlist(db)
