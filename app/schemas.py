@@ -47,6 +47,7 @@ class SettingsPayload(BaseModel):
     global_rate_limit_seconds: int = Field(default=20, ge=5, le=3600)
     default_watchlist_id: int | None = None
     ai_enabled: bool = False
+    ai_listing_assessments_enabled: bool = False
     ai_provider: str = Field(default="openai", pattern="^(openai|ollama|lmstudio)$")
     ai_api_key: str = ""
     ai_base_url: str = ""

@@ -150,6 +150,8 @@ def init_db() -> None:
         )
         ensure_column(db, "listings", "watchlisted", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "listings", "user_hidden", "INTEGER NOT NULL DEFAULT 0")
+        ensure_column(db, "listings", "ai_assessment_text", "TEXT NOT NULL DEFAULT ''")
+        ensure_column(db, "listings", "ai_assessed_at", "TEXT")
         ensure_column(db, "watch_profiles", "notify_webhook", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "watch_profiles", "user_id", "INTEGER REFERENCES users(id)")
         ensure_column(db, "watch_profiles", "max_listing_age_days", "INTEGER NOT NULL DEFAULT 365")
@@ -177,6 +179,7 @@ def init_db() -> None:
             "global_rate_limit_seconds": "20",
             "default_watchlist_id": str(default_watchlist_id),
             "ai_enabled": "0",
+            "ai_listing_assessments_enabled": "0",
             "ai_provider": "openai",
             "ai_api_key": "",
             "ai_base_url": "",

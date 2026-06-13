@@ -679,6 +679,41 @@ async def generate_listing_inquiry(listing_id: int, payload: InquiryPayload, req
     return {"text": text.strip()}
 
 
+@app.post("/api/listings/{listing_id}/assessment")
+async def generate_listing_assessment(listing_id: int, request: Request) -> dict[str, str]:
+    user = request_user(request)
+    with connect() as db:
+        if not can_access_listing(db, listing_id, user):
+            raise HTTPException(404, "Listing not found")
+        listing_row = db.execute(
+            """
+            SELECT listings.*, watch_profiles.name profile_name
+            FROM listings
+            JOIN watch_profiles ON watch_profiles.id = listings.profile_id
+            WHERE listings.id = ?
+            """,
+            (listing_id,),
+        ).fetchone()
+        settings_rows = db.execute("SELECT key, value FROM app_settings").fetchall()
+    if not listing_row:
+        raise HTTPException(404, "Listing not found")
+    app_settings = {item["key"]: item["value"] for item in settings_rows}
+    if app_settings.get("ai_enabled") != "1":
+        raise HTTPException(400, "AI features are not enabled")
+    if app_settings.get("ai_listing_assessments_enabled") != "1":
+        raise HTTPException(400, "AI listing assessments are not enabled")
+    listing = row_to_listing(listing_row)
+    text = await generate_ai_text(app_settings, listing_assessment_prompt(listing), max_tokens=180)
+    assessed_at = utc_now()
+    cleaned = text.strip()
+    with connect() as db:
+        db.execute(
+            "UPDATE listings SET ai_assessment_text = ?, ai_assessed_at = ? WHERE id = ?",
+            (cleaned, assessed_at, listing_id),
+        )
+    return {"text": cleaned, "assessed_at": assessed_at}
+
+
 @app.post("/api/ai/search-draft")
 async def generate_search_draft(payload: SearchDraftPayload, request: Request) -> dict[str, Any]:
     request_user(request)
@@ -723,6 +758,7 @@ async def get_settings() -> dict[str, Any]:
         "global_rate_limit_seconds": int(values.get("global_rate_limit_seconds", "20") or 20),
         "default_watchlist_id": default_watchlist_id,
         "ai_enabled": values.get("ai_enabled", "0") == "1",
+        "ai_listing_assessments_enabled": values.get("ai_listing_assessments_enabled", "0") == "1",
         "ai_provider": values.get("ai_provider", "openai") or "openai",
         "ai_api_key": mask_secret(values.get("ai_api_key", "")),
         "ai_api_key_set": bool(values.get("ai_api_key")),
@@ -748,6 +784,7 @@ async def update_settings(payload: SettingsPayload, request: Request) -> dict[st
             "global_rate_limit_seconds": str(payload.global_rate_limit_seconds),
             "default_watchlist_id": str(valid_watchlist_id(db, payload.default_watchlist_id)),
             "ai_enabled": "1" if payload.ai_enabled else "0",
+            "ai_listing_assessments_enabled": "1" if payload.ai_listing_assessments_enabled else "0",
             "ai_provider": payload.ai_provider,
             "ai_api_key": current_ai_key if payload.ai_api_key == "********" else payload.ai_api_key,
             "ai_base_url": payload.ai_base_url.strip(),
@@ -1252,6 +1289,39 @@ def inquiry_prompt(
                 "Ask whether the item is still available and, if fitting, mention pickup or a quick viewing. "
                 "Keep it concise. If a signature is provided, end with it.\n\nListing facts:\n"
                 f"{facts}\n\nBuyer profile:\n{buyer_facts}"
+            ),
+        },
+    ]
+
+
+def listing_assessment_prompt(listing: dict[str, Any]) -> list[dict[str, str]]:
+    facts = "\n".join(
+        [
+            f"Title: {listing.get('title') or ''}",
+            f"Price: {listing.get('price_text') or 'unknown'}",
+            f"Location: {listing.get('location_text') or 'unknown'}",
+            f"Category: {listing.get('category_text') or 'unknown'}",
+            f"Search job: {listing.get('profile_name') or ''}",
+            f"Match score: {listing.get('score') or 0}",
+            f"Filter note: {listing.get('filter_reason') or ''}",
+            f"Description: {listing.get('description_snippet') or ''}",
+        ]
+    )
+    return [
+        {
+            "role": "system",
+            "content": (
+                "You assess marketplace listings for a buyer. Return only a short German assessment. "
+                "Do not mention AI. Do not invent facts. If the information is thin, say what is missing. "
+                "Keep it to two compact sentences."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                "Give a concise usefulness/risk assessment for this listing. "
+                "Mention likely fit, price/location relevance, and any caution signs visible in the data.\n\n"
+                f"{facts}"
             ),
         },
     ]

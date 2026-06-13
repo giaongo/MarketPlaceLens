@@ -13,6 +13,7 @@ const state = {
   watchlists: [],
   defaultWatchlistId: null,
   aiEnabled: false,
+  aiAssessmentsEnabled: false,
   wizardStep: 0,
   currentUser: null,
   accountProfile: null,
@@ -236,6 +237,7 @@ const translations = {
     "settings.ai": "AI features",
     "settings.aiSubtitle": "Generate buyer messages and quick-job search drafts when a provider is configured.",
     "settings.aiEnabled": "Enable AI features",
+    "settings.aiAssessmentsEnabled": "Show AI listing assessments",
     "settings.aiTest": "Test AI",
     "settings.aiProvider": "Provider",
     "settings.aiApiKey": "API key",
@@ -298,6 +300,8 @@ const translations = {
     "listing.newWatchlistPrompt": "New watchlist name",
     "listing.addToWatchlist": "Add to {name}",
     "listing.aiInquiry": "AI text",
+    "listing.aiAssessment": "AI assessment",
+    "listing.aiAssessmentEmpty": "No AI assessment yet.",
     "listing.seen": "Seen",
     "listing.hide": "Hide",
     "listing.new": "New",
@@ -310,6 +314,7 @@ const translations = {
     "toast.watchlistCreated": "Watchlist created",
     "toast.watchlistRemoved": "Removed from watchlist",
     "toast.inquiryGenerated": "Inquiry text generated",
+    "toast.assessmentGenerated": "AI assessment saved",
     "toast.searchDraftCreated": "Search draft created",
     "toast.aiTestOk": "AI provider answered",
     "toast.inquiryCopied": "Inquiry copied",
@@ -548,6 +553,7 @@ const translations = {
     "settings.ai": "KI-Funktionen",
     "settings.aiSubtitle": "Erzeugt Käufernachrichten und Schnelljob-Suchentwürfe, sobald ein Provider konfiguriert ist.",
     "settings.aiEnabled": "KI-Funktionen aktivieren",
+    "settings.aiAssessmentsEnabled": "KI-Einschätzungen bei Anzeigen zeigen",
     "settings.aiTest": "KI testen",
     "settings.aiProvider": "Provider",
     "settings.aiApiKey": "API-Key",
@@ -610,6 +616,8 @@ const translations = {
     "listing.newWatchlistPrompt": "Name der neuen Watchlist",
     "listing.addToWatchlist": "Zu {name} hinzufügen",
     "listing.aiInquiry": "KI-Text",
+    "listing.aiAssessment": "KI-Einschätzung",
+    "listing.aiAssessmentEmpty": "Noch keine KI-Einschätzung.",
     "listing.seen": "Gesehen",
     "listing.hide": "Ausblenden",
     "listing.new": "Neu",
@@ -622,6 +630,7 @@ const translations = {
     "toast.watchlistCreated": "Watchlist angelegt",
     "toast.watchlistRemoved": "Aus Watchlist entfernt",
     "toast.inquiryGenerated": "Anfragetext erstellt",
+    "toast.assessmentGenerated": "KI-Einschätzung gespeichert",
     "toast.searchDraftCreated": "Suchentwurf erstellt",
     "toast.aiTestOk": "KI-Anbieter hat geantwortet",
     "toast.inquiryCopied": "Anfrage kopiert",
@@ -2062,6 +2071,7 @@ function renderReviewCard() {
   target.querySelector("[data-review-seen]")?.addEventListener("click", reviewSeenCurrent);
   target.querySelector("[data-review-open]")?.addEventListener("click", reviewOpenCurrent);
   target.querySelector("[data-review-inquiry]")?.addEventListener("click", reviewInquiryCurrent);
+  target.querySelector("[data-review-assessment]")?.addEventListener("click", (event) => reviewAssessmentCurrent(event.currentTarget));
 }
 
 function reviewListingMarkup(listing) {
@@ -2087,11 +2097,18 @@ function reviewListingMarkup(listing) {
           ${listing.posted_at_text ? `<span>${escapeHtml(listing.posted_at_text)}</span>` : ""}
         </div>
         <p class="review-reason">${escapeHtml(t("review.reason", { score: listing.score }))}</p>
+        ${listing.ai_assessment_text ? `
+          <div class="ai-assessment">
+            <strong>${escapeHtml(t("listing.aiAssessment"))}</strong>
+            <p>${escapeHtml(listing.ai_assessment_text)}</p>
+          </div>
+        ` : ""}
         <div class="review-card-actions">
           <button class="button ghost" type="button" data-review-watch>${escapeHtml(t("review.watch"))}</button>
           <button class="button primary" type="button" data-review-open>${escapeHtml(t("review.open"))}</button>
           <button class="button ghost" type="button" data-review-seen>${escapeHtml(t("review.seen"))}</button>
           ${state.aiEnabled ? `<button class="button ghost" type="button" data-review-inquiry>${escapeHtml(t("listing.aiInquiry"))}</button>` : ""}
+          ${state.aiEnabled && state.aiAssessmentsEnabled ? `<button class="button ghost" type="button" data-review-assessment>${escapeHtml(t("listing.aiAssessment"))}</button>` : ""}
         </div>
       </div>
     </article>
@@ -2156,6 +2173,12 @@ function reviewInquiryCurrent() {
   generateInquiry(listing.id, $("#review-inquiry-button"));
 }
 
+function reviewAssessmentCurrent(button) {
+  const listing = currentReviewListing();
+  if (!listing) return;
+  generateAssessment(listing.id, button);
+}
+
 async function generateInquiry(listingId, button) {
   if (!listingId) return;
   if (button) button.disabled = true;
@@ -2167,6 +2190,30 @@ async function generateInquiry(listingId, button) {
     $("#inquiry-text").value = result.text || "";
     $("#inquiry-dialog").showModal();
     toast(t("toast.inquiryGenerated"));
+  } catch (error) {
+    toast(errorMessage(error));
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function generateAssessment(listingId, button) {
+  if (!listingId) return;
+  if (button) button.disabled = true;
+  try {
+    const result = await api(`/api/listings/${listingId}/assessment`, { method: "POST" });
+    const applyAssessment = (listing) => {
+      if (!listing || Number(listing.id) !== Number(listingId)) return listing;
+      return {
+        ...listing,
+        ai_assessment_text: result.text || "",
+        ai_assessed_at: result.assessed_at || null,
+      };
+    };
+    state.reviewQueue = state.reviewQueue.map(applyAssessment);
+    toast(t("toast.assessmentGenerated"));
+    renderReviewCard();
+    await Promise.all([loadListings(), loadWatchlist()]);
   } catch (error) {
     toast(errorMessage(error));
   } finally {
@@ -2345,6 +2392,9 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
   browser.querySelectorAll("[data-inquiry-action]").forEach((button) => {
     button.addEventListener("click", () => generateInquiry(button.dataset.id, button));
   });
+  browser.querySelectorAll("[data-assessment-action]").forEach((button) => {
+    button.addEventListener("click", () => generateAssessment(button.dataset.id, button));
+  });
   browser.querySelectorAll(".listing-image").forEach((img) => {
     img.addEventListener("error", () => {
       const fallback = document.createElement("span");
@@ -2462,6 +2512,12 @@ function listingMarkup(listing) {
           <span>${formatDate(listing.first_seen_at)}</span>
         </div>
         ${listing.filter_reason ? `<p class="filter-reason">${escapeHtml(listing.filter_reason)}</p>` : ""}
+        ${listing.ai_assessment_text ? `
+          <div class="ai-assessment compact">
+            <strong>${escapeHtml(t("listing.aiAssessment"))}</strong>
+            <p>${escapeHtml(listing.ai_assessment_text)}</p>
+          </div>
+        ` : ""}
       </div>
       <div class="row-actions">
         <div class="watch-split">
@@ -2473,6 +2529,7 @@ function listingMarkup(listing) {
         <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">${escapeHtml(t("listing.hide"))}</button>
         <button class="mini-button" data-listing-action="new" data-id="${listing.id}">${escapeHtml(t("listing.new"))}</button>
         ${state.aiEnabled ? `<button class="mini-button ai-button" data-inquiry-action data-id="${listing.id}">${escapeHtml(t("listing.aiInquiry"))}</button>` : ""}
+        ${state.aiEnabled && state.aiAssessmentsEnabled ? `<button class="mini-button ai-button" data-assessment-action data-id="${listing.id}">${escapeHtml(t("listing.aiAssessment"))}</button>` : ""}
       </div>
     </article>
   `;
@@ -2498,7 +2555,9 @@ async function loadSettings() {
   $("#webhook-url").value = settings.webhook_url;
   $("#global-rate").value = settings.global_rate_limit_seconds;
   state.aiEnabled = Boolean(settings.ai_enabled);
+  state.aiAssessmentsEnabled = Boolean(settings.ai_listing_assessments_enabled);
   $("#ai-enabled").checked = Boolean(settings.ai_enabled);
+  $("#ai-assessments-enabled").checked = Boolean(settings.ai_listing_assessments_enabled);
   $("#ai-provider").value = settings.ai_provider || "openai";
   $("#ai-api-key").value = settings.ai_api_key || "";
   $("#ai-base-url").value = settings.ai_base_url || "";
@@ -2542,6 +2601,7 @@ async function saveSettings() {
       global_rate_limit_seconds: Number($("#global-rate").value || 20),
       default_watchlist_id: Number($("#default-watchlist").value || state.defaultWatchlistId || 0),
       ai_enabled: $("#ai-enabled").checked,
+      ai_listing_assessments_enabled: $("#ai-assessments-enabled").checked,
       ai_provider: $("#ai-provider").value,
       ai_api_key: $("#ai-api-key").value,
       ai_base_url: $("#ai-base-url").value,
@@ -2552,6 +2612,7 @@ async function saveSettings() {
   });
   state.defaultWatchlistId = settings.default_watchlist_id;
   state.aiEnabled = Boolean(settings.ai_enabled);
+  state.aiAssessmentsEnabled = Boolean(settings.ai_listing_assessments_enabled);
   renderDefaultWatchlistSelect();
   toast(t("toast.settingsSaved"));
   loadListings();
