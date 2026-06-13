@@ -118,6 +118,27 @@ select {
   }
 }
 
+@keyframes soft-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tab-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 button,
 .button,
 .mini-button,
@@ -725,18 +746,23 @@ textarea.chip-source {
 }
 
 .settings-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: inline-flex;
   flex-wrap: wrap;
   gap: 6px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface-soft);
+  background: color-mix(in srgb, var(--surface-soft) 92%, transparent);
+  backdrop-filter: blur(14px);
   padding: 5px;
   margin-bottom: 18px;
   box-shadow: var(--shadow-soft);
 }
 
 .settings-tab {
+  position: relative;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -744,12 +770,123 @@ textarea.chip-source {
   padding: 9px 12px;
   cursor: pointer;
   font-weight: 850;
+  transition: color 160ms ease, background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.settings-tab:hover {
+  background: var(--surface);
+  color: var(--text);
+  transform: translateY(-1px);
 }
 
 .settings-tab.active {
   background: var(--surface);
   color: var(--brand-dark);
   box-shadow: var(--shadow-soft);
+}
+
+.settings-tab.active::after {
+  position: absolute;
+  right: 10px;
+  bottom: 4px;
+  left: 10px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+  content: "";
+  animation: tab-glow 2.6s ease-in-out infinite;
+}
+
+.settings-panel {
+  animation: soft-pop 240ms ease both;
+}
+
+.settings-panel-notifications {
+  max-width: 1120px;
+}
+
+.notification-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.notification-channel-card {
+  display: grid;
+  align-content: start;
+  gap: 13px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, transparent), var(--surface-soft));
+  box-shadow: var(--shadow);
+  padding: 16px;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.notification-channel-card:hover {
+  border-color: color-mix(in srgb, var(--brand) 44%, var(--line));
+  box-shadow: 0 20px 54px rgba(24, 35, 29, 0.14);
+  transform: translateY(-3px);
+}
+
+.notification-card-heading {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+}
+
+.notification-card-heading h3 {
+  margin: 0;
+  color: var(--brand-dark);
+}
+
+.notification-card-heading p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.notification-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: var(--brand);
+  color: var(--on-brand);
+  box-shadow: 0 12px 28px rgba(36, 116, 90, 0.22);
+  font-weight: 950;
+}
+
+.notification-rule-preview {
+  display: grid;
+  gap: 8px;
+}
+
+.notification-rule-preview div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+  padding: 9px 10px;
+}
+
+.notification-rule-preview span {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.notification-rule-preview strong {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .source-summary-grid {
@@ -2122,6 +2259,7 @@ textarea.chip-source {
   .guided-filter-controls,
   .location-fields,
   .ai-draft-box,
+  .notification-settings-grid,
   .notification-choice-grid,
   .wizard-grid,
   .source-card-grid,
@@ -2134,6 +2272,7 @@ textarea.chip-source {
   }
 
   .settings-tabs {
+    position: static;
     display: grid;
     grid-template-columns: 1fr;
     width: 100%;

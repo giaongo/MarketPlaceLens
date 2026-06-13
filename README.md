@@ -137,6 +137,8 @@ Important: connectors for Kleinanzeigen, Facebook Marketplace, mobile.de, and si
 
 ## Configuration
 
+Settings are organized into tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account. Notification settings use separate Telegram and webhook cards, while individual jobs still decide whether their matches should be delivered to Telegram and/or webhook.
+
 Environment variables can seed first-run defaults:
 
 ```env

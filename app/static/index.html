@@ -517,27 +517,74 @@
 
       <section id="settings-view" class="view">
         <div class="settings-tabs" role="tablist" aria-label="Settings sections">
-          <button class="settings-tab active admin-only" type="button" data-settings-tab="admin" data-i18n="settings.adminCategory">Admin settings</button>
+          <button class="settings-tab active admin-only" type="button" data-settings-tab="notifications" data-i18n="settings.notifications">Notifications</button>
+          <button class="settings-tab admin-only" type="button" data-settings-tab="facebook" data-i18n="settings.facebookShort">Facebook</button>
+          <button class="settings-tab admin-only" type="button" data-settings-tab="ai" data-i18n="settings.aiShort">AI</button>
+          <button class="settings-tab admin-only" type="button" data-settings-tab="watchlists" data-i18n="settings.watchlists">Watchlists</button>
+          <button class="settings-tab admin-only" type="button" data-settings-tab="users" data-i18n="settings.usersShort">Users</button>
+          <button class="settings-tab admin-only" type="button" data-settings-tab="runs" data-i18n="dashboard.recentRuns">Recent runs</button>
           <button class="settings-tab" type="button" data-settings-tab="account" data-i18n="settings.accountCategory">Account</button>
         </div>
-        <h2 class="settings-category-title settings-panel-admin admin-only" data-i18n="settings.adminCategory">Admin settings</h2>
-        <section class="panel narrow admin-only settings-panel-admin">
+        <section class="settings-panel settings-panel-notifications admin-only">
           <div class="panel-heading">
-            <h2 data-i18n="settings.notifications">Notifications</h2>
+            <div>
+              <h2 data-i18n="settings.notifications">Notifications</h2>
+              <p class="panel-subtitle" data-i18n="settings.notificationsSubtitle">Configure delivery channels for job matches and tests.</p>
+            </div>
           </div>
           <form id="settings-form" class="form-grid">
-            <label class="wide"><span data-i18n="settings.botToken">Bot token</span><input id="telegram-token" type="password" autocomplete="off" placeholder="123456:ABC..."></label>
-            <label class="wide"><span data-i18n="settings.chatId">Chat ID</span><input id="telegram-chat" placeholder="123456789"></label>
-            <label class="wide"><span data-i18n="settings.webhookUrl">Webhook URL</span><input id="webhook-url" type="url" placeholder="https://example.com/webhook"></label>
-            <label><span data-i18n="settings.rateLimit">Global rate limit seconds</span><input id="global-rate" type="number" min="5" value="20"></label>
-            <div class="actions wide">
-              <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
-              <button class="button ghost" id="telegram-test-button" type="button" data-i18n="settings.sendTest">Send test</button>
-              <button class="button ghost" id="webhook-test-button" type="button" data-i18n="settings.sendWebhookTest">Send webhook test</button>
+            <div class="notification-settings-grid wide">
+              <article class="notification-channel-card">
+                <div class="notification-card-heading">
+                  <span class="notification-icon">T</span>
+                  <div>
+                    <h3 data-i18n="settings.telegram">Telegram</h3>
+                    <p data-i18n="settings.telegramHint">Bot messages to the configured chat.</p>
+                  </div>
+                </div>
+                <label><span data-i18n="settings.botToken">Bot token</span><input id="telegram-token" type="password" autocomplete="off" placeholder="123456:ABC..."></label>
+                <label><span data-i18n="settings.chatId">Chat ID</span><input id="telegram-chat" placeholder="123456789"></label>
+                <div class="actions">
+                  <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
+                  <button class="button ghost" id="telegram-test-button" type="button" data-i18n="settings.sendTest">Send test</button>
+                </div>
+              </article>
+              <article class="notification-channel-card">
+                <div class="notification-card-heading">
+                  <span class="notification-icon">W</span>
+                  <div>
+                    <h3 data-i18n="settings.webhook">Webhook</h3>
+                    <p data-i18n="settings.webhookHint">HTTP delivery to your configured receiver.</p>
+                  </div>
+                </div>
+                <label><span data-i18n="settings.webhookUrl">Webhook URL</span><input id="webhook-url" type="url" placeholder="https://example.com/webhook"></label>
+                <div class="actions">
+                  <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
+                  <button class="button ghost" id="webhook-test-button" type="button" data-i18n="settings.sendWebhookTest">Send webhook test</button>
+                </div>
+              </article>
+              <article class="notification-channel-card">
+                <div class="notification-card-heading">
+                  <span class="notification-icon">R</span>
+                  <div>
+                    <h3 data-i18n="settings.deliveryRules">Delivery rules</h3>
+                    <p data-i18n="settings.deliveryRulesHint">Job cards choose whether Telegram and webhook receive new matches.</p>
+                  </div>
+                </div>
+                <div class="notification-rule-preview">
+                  <div><span data-i18n="form.telegram">Telegram</span><strong data-i18n="settings.perJob">per job</strong></div>
+                  <div><span data-i18n="form.webhook">Webhook</span><strong data-i18n="settings.perJob">per job</strong></div>
+                  <div><span data-i18n="form.backgroundPolling">Background polling</span><strong data-i18n="settings.perJob">per job</strong></div>
+                </div>
+                <label><span data-i18n="settings.rateLimit">Global rate limit seconds</span><input id="global-rate" type="number" min="5" value="20"></label>
+                <div class="actions">
+                  <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
+                </div>
+              </article>
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section admin-only settings-panel-admin">
+        <section class="panel narrow settings-section admin-only settings-panel settings-panel-facebook">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.facebook">Facebook Marketplace session</h2>
@@ -552,7 +599,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section admin-only settings-panel-admin">
+        <section class="panel narrow settings-section admin-only settings-panel settings-panel-ai">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.ai">AI features</h2>
@@ -585,7 +632,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section admin-only settings-panel-admin">
+        <section class="panel narrow settings-section admin-only settings-panel settings-panel-watchlists">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.watchlists">Watchlists</h2>
@@ -600,7 +647,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section admin-only settings-panel-admin">
+        <section class="panel narrow settings-section admin-only settings-panel settings-panel-users">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.users">Users & roles</h2>
@@ -626,8 +673,7 @@
           </form>
           <div id="users-list" class="simple-list settings-users-list"></div>
         </section>
-        <h2 class="settings-category-title settings-panel-account" data-i18n="settings.accountCategory">Account</h2>
-        <section class="panel narrow settings-section settings-panel-account">
+        <section class="panel narrow settings-section settings-panel settings-panel-account">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.profile">Personal details</h2>
@@ -644,7 +690,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section settings-panel-account">
+        <section class="panel narrow settings-section settings-panel settings-panel-account">
           <div class="panel-heading">
             <div>
               <h2 data-i18n="settings.password">Password</h2>
@@ -660,7 +706,7 @@
             </div>
           </form>
         </section>
-        <section class="panel narrow settings-section admin-only settings-panel-admin">
+        <section class="panel narrow settings-section admin-only settings-panel settings-panel-runs">
           <div class="panel-heading">
             <h2 data-i18n="dashboard.recentRuns">Recent runs</h2>
             <button class="mini-button" type="button" id="settings-clear-run-errors" data-i18n="dashboard.clearErrors">Clear errors</button>

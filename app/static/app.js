@@ -23,7 +23,7 @@ const state = {
   locationMarker: null,
   locationCircle: null,
   appOpenCheckStarted: false,
-  settingsTab: "admin",
+  settingsTab: "notifications",
 };
 
 const translations = {
@@ -222,9 +222,19 @@ const translations = {
     "pagination.next": "Next",
     "pagination.range": "{start}-{end} / {total}",
     "settings.notifications": "Notifications",
+    "settings.notificationsSubtitle": "Configure delivery channels for job matches and tests.",
     "settings.adminCategory": "Admin settings",
     "settings.accountCategory": "Account",
     "settings.telegram": "Telegram",
+    "settings.telegramHint": "Bot messages to the configured chat.",
+    "settings.webhook": "Webhook",
+    "settings.webhookHint": "HTTP delivery to your configured receiver.",
+    "settings.deliveryRules": "Delivery rules",
+    "settings.deliveryRulesHint": "Job cards choose whether Telegram and webhook receive new matches.",
+    "settings.perJob": "per job",
+    "settings.facebookShort": "Facebook",
+    "settings.aiShort": "AI",
+    "settings.usersShort": "Users",
     "settings.botToken": "Bot token",
     "settings.chatId": "Chat ID",
     "settings.webhookUrl": "Webhook URL",
@@ -538,9 +548,19 @@ const translations = {
     "pagination.next": "Weiter",
     "pagination.range": "{start}-{end} / {total}",
     "settings.notifications": "Benachrichtigungen",
+    "settings.notificationsSubtitle": "Konfiguriert Zustellkanäle für Job-Treffer und Tests.",
     "settings.adminCategory": "Admin-Einstellungen",
     "settings.accountCategory": "Konto",
     "settings.telegram": "Telegram",
+    "settings.telegramHint": "Bot-Nachrichten an den konfigurierten Chat.",
+    "settings.webhook": "Webhook",
+    "settings.webhookHint": "HTTP-Zustellung an deinen konfigurierten Empfänger.",
+    "settings.deliveryRules": "Zustellregeln",
+    "settings.deliveryRulesHint": "Job-Karten legen fest, ob Telegram und Webhook neue Treffer erhalten.",
+    "settings.perJob": "pro Job",
+    "settings.facebookShort": "Facebook",
+    "settings.aiShort": "KI",
+    "settings.usersShort": "User",
     "settings.botToken": "Bot-Token",
     "settings.chatId": "Chat-ID",
     "settings.webhookUrl": "Webhook-URL",
@@ -1006,7 +1026,7 @@ async function loadAuthStatus() {
   state.currentUser = status.user || null;
   const admin = isAdmin();
   $$(".admin-only").forEach((node) => node.classList.toggle("hidden", !admin));
-  if (!admin && state.settingsTab === "admin") state.settingsTab = "account";
+  if (!admin && state.settingsTab !== "account") state.settingsTab = "account";
   renderSettingsTabs();
 }
 
@@ -1015,18 +1035,23 @@ function isAdmin() {
 }
 
 function setSettingsTab(tab) {
-  state.settingsTab = tab === "admin" && !isAdmin() ? "account" : tab;
+  const adminTabs = ["notifications", "facebook", "ai", "watchlists", "users", "runs"];
+  state.settingsTab = adminTabs.includes(tab) && !isAdmin() ? "account" : tab;
   renderSettingsTabs();
 }
 
 function renderSettingsTabs() {
-  const active = state.settingsTab === "admin" && isAdmin() ? "admin" : "account";
+  const adminTabs = ["notifications", "facebook", "ai", "watchlists", "users", "runs"];
+  const visibleTabs = isAdmin() ? [...adminTabs, "account"] : ["account"];
+  const active = visibleTabs.includes(state.settingsTab) ? state.settingsTab : (isAdmin() ? "notifications" : "account");
   state.settingsTab = active;
   $$("[data-settings-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.settingsTab === active);
+    button.setAttribute("aria-selected", String(button.dataset.settingsTab === active));
   });
-  $$(".settings-panel-admin").forEach((node) => node.classList.toggle("hidden", active !== "admin"));
-  $$(".settings-panel-account").forEach((node) => node.classList.toggle("hidden", active !== "account"));
+  $$(".settings-panel").forEach((node) => {
+    node.classList.toggle("hidden", !node.classList.contains(`settings-panel-${active}`));
+  });
 }
 
 async function triggerAppOpenCheck() {

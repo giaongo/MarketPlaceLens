@@ -88,6 +88,8 @@ Admin:
 - edit notification, webhook, AI, and watchlist settings
 - see all run logs and dashboard counts
 
+The Settings page uses separate tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account. Notification settings are grouped into Telegram, webhook, and delivery-rule cards, matching the LanLens-style settings layout while keeping per-job notification delivery on the job cards.
+
 User:
 
 - create, edit, delete, and run their own jobs
