@@ -1592,10 +1592,19 @@ textarea.chip-source {
 }
 
 .collapsible-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   cursor: pointer;
   list-style: none;
   margin: -4px 0 0;
+  min-height: 44px;
   user-select: none;
+}
+
+.collapsible-summary > span:first-child {
+  min-width: 0;
 }
 
 .collapsible-summary::-webkit-details-marker {
@@ -1998,9 +2007,23 @@ textarea.chip-source {
 }
 
 .watch-menu-toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
   min-width: 30px;
   border-left: 0;
   border-radius: 0 8px 8px 0;
+  color: var(--muted);
+  font-size: 0;
+}
+
+.watch-menu-toggle::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
 }
 
 .watch-menu {

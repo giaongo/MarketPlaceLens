@@ -2592,7 +2592,7 @@ function listingMarkup(listing) {
       <div class="row-actions">
         <div class="watch-split">
           <button class="mini-button watch-button ${listing.watchlisted ? "active" : ""}" data-watchlist-action="${watchlistAction}" data-id="${listing.id}">${listing.watchlisted ? "★" : "☆"} ${escapeHtml(watchlistLabel)}</button>
-          <button class="mini-button watch-menu-toggle" type="button" data-watchlist-menu-toggle data-id="${listing.id}" aria-label="${escapeAttribute(t("listing.watchMenu"))}">v</button>
+          <button class="mini-button watch-menu-toggle" type="button" data-watchlist-menu-toggle data-id="${listing.id}" aria-label="${escapeAttribute(t("listing.watchMenu"))}"></button>
           <div class="watch-menu hidden">${watchlistMenuMarkup(listing.id)}</div>
         </div>
         <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">${escapeHtml(t("listing.seen"))}</button>

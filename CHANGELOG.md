@@ -28,6 +28,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Fixed
 
+- Mobile listing controls now align the collapsed filter chevron and watchlist split-button chevrons cleanly.
 - HTML pages now load build-versioned CSS and JavaScript assets to prevent stale mobile browser caches from showing raw translation keys after updates.
 - Local Ollama and LM Studio calls now get a longer provider timeout, which avoids failing while local models are still loading.
 - Kleinanzeigen paginated scans now keep the HTTP client open while following result pages.
