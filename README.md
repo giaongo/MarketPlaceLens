@@ -45,7 +45,7 @@ Screenshots below use demo data.
 - Listing age limit per job, defaulting to one year
 - Background polling with conservative interval limits and manual run controls
 - Listing inbox with list/tile views, filters, pagination, lazy thumbnails, and clear seen/hidden/watchlist states
-- Tinder-style review mode with large images, double-click watchlisting, swipe-to-seen, and desktop button fallbacks
+- Kramlet-style review mode with compact mobile product cards, large images, double-click watchlisting, swipe-to-seen, and button fallbacks
 - Multiple watchlists, per-user default watchlist selection, and per-listing watchlist dropdowns
 - Optional AI inquiry text generation through OpenAI API, Ollama, or LM Studio compatible chat completions
 - Per-user buyer details for AI inquiry text personalization
@@ -149,7 +149,7 @@ MARKETPLACELENS_MIN_POLL_MINUTES=30
 MARKETPLACELENS_DEFAULT_POLL_MINUTES=60
 MARKETPLACELENS_POLL_ENABLED=true
 MARKETPLACELENS_ADMIN_USERNAME=admin
-MARKETPLACELENS_BUILD_CODE=20260613.14
+MARKETPLACELENS_BUILD_CODE=20260613.15
 MARKETPLACELENS_BUILD_COMMIT=dev
 MARKETPLACELENS_BUILD_BRANCH=main
 MARKETPLACELENS_BUILD_CREATED=

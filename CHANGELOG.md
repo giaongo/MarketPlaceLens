@@ -17,6 +17,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Changed
 
+- Review cards are now more Kramlet-like on phones, with the actions inside the product card and compact mobile sizing so a listing fits into one screen more reliably.
 - Language and light/dark theme controls now use Kramlet-style quick buttons on login and in the main header instead of select menus.
 - Settings now use LanLens-style tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account instead of one long admin stack.
 - Notification settings are split into Telegram, webhook, and delivery-rule cards for clearer channel configuration.

@@ -2079,6 +2079,10 @@ textarea.chip-source {
   min-height: 560px;
 }
 
+.review-panel > .review-actions {
+  display: none;
+}
+
 .review-card {
   display: grid;
   grid-template-columns: minmax(280px, 0.92fr) minmax(0, 1fr);
@@ -2417,11 +2421,105 @@ textarea.chip-source {
 
   .review-card {
     grid-template-columns: 1fr;
+    max-width: 560px;
+    margin-inline: auto;
+    border-radius: 8px;
+    box-shadow: 0 16px 46px rgba(15, 23, 42, 0.14);
+  }
+
+  .review-panel {
+    padding: 10px;
+  }
+
+  .review-panel > .panel-heading {
+    display: none;
+  }
+
+  .review-stage {
+    min-height: 0;
   }
 
   .review-image-wrap,
   .review-image {
-    min-height: 280px;
+    min-height: 0;
+    height: clamp(150px, 28vh, 220px);
+    aspect-ratio: 16 / 10;
+  }
+
+  .review-details {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .review-provider-row {
+    gap: 6px;
+  }
+
+  .review-details h3 {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 1.12rem;
+    line-height: 1.15;
+  }
+
+  .review-price {
+    font-size: 1.15rem;
+  }
+
+  .review-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  .review-card .listing-facts {
+    gap: 5px;
+  }
+
+  .review-card .listing-facts span {
+    padding: 5px 8px;
+    font-size: 0.78rem;
+  }
+
+  .review-reason {
+    border-left-width: 2px;
+    padding-left: 8px;
+    font-size: 0.82rem;
+  }
+
+  .review-card .ai-assessment {
+    padding: 8px;
+  }
+
+  .review-card .ai-assessment p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .review-card-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-top: 2px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+
+  .review-card-actions .button {
+    flex: 0 0 auto;
+    min-height: 38px;
+    min-width: 136px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
   }
 
   .listing-browser.grid-view {
@@ -2495,6 +2593,104 @@ textarea.chip-source {
 
   h1 {
     font-size: 1.6rem;
+  }
+
+  .review-panel {
+    padding: 10px;
+  }
+
+  .review-panel > .panel-heading {
+    display: none;
+  }
+
+  .review-stage {
+    min-height: 0;
+  }
+
+  .review-card {
+    border-radius: 8px;
+    box-shadow: 0 16px 46px rgba(15, 23, 42, 0.14);
+  }
+
+  .review-image-wrap,
+  .review-image {
+    min-height: 0;
+    height: clamp(150px, 28vh, 220px);
+    aspect-ratio: 16 / 10;
+  }
+
+  .review-details {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .review-provider-row {
+    gap: 6px;
+  }
+
+  .review-details h3 {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 1.12rem;
+    line-height: 1.15;
+  }
+
+  .review-price {
+    font-size: 1.15rem;
+  }
+
+  .review-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  .review-card .listing-facts {
+    gap: 5px;
+  }
+
+  .review-card .listing-facts span {
+    padding: 5px 8px;
+    font-size: 0.78rem;
+  }
+
+  .review-reason {
+    border-left-width: 2px;
+    padding-left: 8px;
+    font-size: 0.82rem;
+  }
+
+  .review-card .ai-assessment {
+    padding: 8px;
+  }
+
+  .review-card .ai-assessment p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .review-card-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .review-card-actions .button {
+    flex: 0 0 auto;
+    min-height: 38px;
+    min-width: 136px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
   }
 
   .status-grid {

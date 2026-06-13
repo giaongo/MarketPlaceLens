@@ -57,9 +57,9 @@ Language and theme controls are available on the login screen and in the main he
 Review mode shows one listing at a time with image, price, location, source, and key details.
 
 - Double-click or use `Watchlist` to save the listing.
-- Use the arrow menu next to Watchlist to choose or create a specific watchlist.
 - Swipe horizontally or use `Seen, next` to mark the item seen and move on.
 - Use `Open original` to inspect the marketplace page.
+- On phones, the review card uses a compact Kramlet-style layout with the primary actions inside the product card so image, details, and buttons fit into one screen more reliably.
 
 ## Watchlists
 
