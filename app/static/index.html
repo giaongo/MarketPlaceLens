@@ -198,10 +198,10 @@
                 <div class="wizard-step" data-wizard-step="3">
                   <h3 data-i18n="wizard.reviewPrompt">How should the job run?</h3>
                   <p class="meta" data-i18n="wizard.reviewHelp">Decide whether this job should run automatically and send notifications.</p>
-                  <div class="wizard-grid">
-                    <label class="switch"><input id="wizard-enabled" type="checkbox"> <span data-i18n="form.backgroundPolling">Background polling</span></label>
-                    <label class="switch"><input id="wizard-notify" type="checkbox"> <span data-i18n="form.telegram">Telegram</span></label>
-                    <label class="switch"><input id="wizard-notify-webhook" type="checkbox"> <span data-i18n="form.webhook">Webhook</span></label>
+                  <div class="notification-choice-grid">
+                    <label class="notification-option"><input id="wizard-enabled" type="checkbox"> <span><strong data-i18n="form.backgroundPolling">Background polling</strong><small data-i18n="notifications.pollingHint">Run this job automatically.</small></span></label>
+                    <label class="notification-option"><input id="wizard-notify" type="checkbox"> <span><strong data-i18n="form.telegram">Telegram</strong><small data-i18n="notifications.telegramHint">Send new matches to Telegram.</small></span></label>
+                    <label class="notification-option"><input id="wizard-notify-webhook" type="checkbox"> <span><strong data-i18n="form.webhook">Webhook</strong><small data-i18n="notifications.webhookHint">Post new matches to your webhook.</small></span></label>
                   </div>
                   <div id="wizard-summary" class="wizard-summary"></div>
                 </div>
@@ -379,10 +379,10 @@
                 <div class="filter-grid automation-grid">
                   <label><span data-i18n="profile.pollInterval">Poll interval</span><input id="profile-interval" type="number" min="30" value="60"></label>
                 </div>
-                <div class="toggle-row">
-                  <label class="switch"><input id="profile-enabled" type="checkbox" checked> <span data-i18n="form.backgroundPolling">Background polling</span></label>
-                  <label class="switch"><input id="profile-notify" type="checkbox" checked> <span data-i18n="form.telegramNotifications">Telegram notifications</span></label>
-                  <label class="switch"><input id="profile-notify-webhook" type="checkbox"> <span data-i18n="form.webhookNotifications">Webhook notifications</span></label>
+                <div class="notification-choice-grid compact">
+                  <label class="notification-option"><input id="profile-enabled" type="checkbox" checked> <span><strong data-i18n="form.backgroundPolling">Background polling</strong><small data-i18n="notifications.pollingHint">Run this job automatically.</small></span></label>
+                  <label class="notification-option"><input id="profile-notify" type="checkbox" checked> <span><strong data-i18n="form.telegramNotifications">Telegram notifications</strong><small data-i18n="notifications.telegramHint">Send new matches to Telegram.</small></span></label>
+                  <label class="notification-option"><input id="profile-notify-webhook" type="checkbox"> <span><strong data-i18n="form.webhookNotifications">Webhook notifications</strong><small data-i18n="notifications.webhookHint">Post new matches to your webhook.</small></span></label>
                 </div>
                 <div id="profile-filter-preview" class="filter-preview"></div>
               </div>

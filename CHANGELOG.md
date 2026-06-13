@@ -10,6 +10,11 @@ All notable changes to MarketPlaceLens are documented here.
 - The review flow now uses larger product-focused cards with inline actions inspired by the Kramlet card layout.
 - Quick jobs can now generate a structured search draft from one natural-language sentence through the configured AI provider.
 - Admin settings now include an AI provider test action to verify OpenAI/Ollama/LM Studio connectivity from the running container.
+- Job notification choices now present background polling, Telegram, and webhook delivery as first-class options in both quick and manual job setup.
+
+### Changed
+
+- UI cards, buttons, and list items now use stronger shadows, hover motion, and subtle entrance animation with reduced-motion support.
 
 ### Fixed
 
