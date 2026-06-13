@@ -129,7 +129,7 @@ class HtmlListingConnector(MarketplaceConnector):
         html = first_html
         current_url = first_url
         for _ in range(12):
-            for candidate in self.parse_listings(html, profile):
+            for candidate in self.parse_kleinanzeigen_listings(html, profile):
                 if candidate.content_hash in seen:
                     continue
                 seen.add(candidate.content_hash)
@@ -143,6 +143,60 @@ class HtmlListingConnector(MarketplaceConnector):
             html = response.text
             current_url = str(response.url)
         return candidates[:500]
+
+    def parse_kleinanzeigen_listings(self, html: str, profile: dict) -> list[ListingCandidate]:
+        soup = BeautifulSoup(html, "html.parser")
+        cards = [node for node in soup.select("#srchrslt-adtable .ad-listitem, .aditem") if isinstance(node, Tag)]
+        if not cards:
+            return self.parse_listings(html, profile)
+
+        candidates: list[ListingCandidate] = []
+        seen: set[str] = set()
+        for card in cards[:200]:
+            candidate = self.normalize_kleinanzeigen_listing(card, profile["search_url"])
+            if not candidate or candidate.content_hash in seen:
+                continue
+            seen.add(candidate.content_hash)
+            candidates.append(candidate)
+        return candidates
+
+    def normalize_kleinanzeigen_listing(self, card: Tag, base_url: str) -> ListingCandidate | None:
+        ad_node = card.select_one(".aditem") if "aditem" not in (card.get("class") or []) else card
+        if not isinstance(ad_node, Tag):
+            ad_node = card
+        link = str(ad_node.get("data-href") or "")
+        anchor = card.select_one("a[href*='/s-anzeige/']")
+        if not link and isinstance(anchor, Tag):
+            link = str(anchor.get("href") or "")
+        listing_url = urljoin("https://www.kleinanzeigen.de", link) if link else ""
+        title = clean_text(first_text(card, [".aditem-main .text-module-begin", ".ellipsis", "h2", "h3", "a"]))
+        if not title or not listing_url:
+            return None
+        price_text = clean_text(first_text(card, [".aditem-main--middle--price-shipping--price", "[class*=price]"]))
+        location_text = clean_text(first_text(card, [".aditem-main--top--left", "[class*=location]"]))
+        posted_at_text = clean_text(first_text(card, [".aditem-main--top--right", "time", "[class*=date]"]))
+        tags = clean_text(first_text(card, [".aditem-main--middle--tags"]))
+        snippet = clean_text(first_text(card, [".aditem-main--middle--description", "[class*=description]", "p"]))
+        image = card.find("img")
+        thumbnail_url = ""
+        if isinstance(image, Tag):
+            thumbnail_url = urljoin(base_url, str(image.get("src") or image.get("data-src") or image.get("data-imgsrc") or ""))
+        source_listing_id = str(ad_node.get("data-adid") or extract_listing_id(listing_url))
+        hash_input = "|".join([source_listing_id, title, price_text, location_text])
+        return ListingCandidate(
+            source_type=self.source_type,
+            source_listing_id=source_listing_id,
+            title=title,
+            price_text=price_text,
+            price_value=parse_price(price_text),
+            location_text=location_text,
+            category_text=tags,
+            posted_at_text=posted_at_text,
+            description_snippet=snippet[:400],
+            listing_url=listing_url,
+            thumbnail_url=thumbnail_url,
+            content_hash=hashlib.sha256(hash_input.encode("utf-8")).hexdigest(),
+        )
 
     def next_page_url(self, html: str, base_url: str) -> str:
         soup = BeautifulSoup(html, "html.parser")

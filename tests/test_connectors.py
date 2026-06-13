@@ -35,6 +35,41 @@ def article(title: str, href: str, price: str = "10 EUR") -> str:
 
 
 class ConnectorTests(unittest.TestCase):
+    def test_kleinanzeigen_dedicated_parser_reads_aditem_fields(self) -> None:
+        html = """
+        <ul id="srchrslt-adtable">
+          <li class="ad-listitem">
+            <article class="aditem" data-adid="12345" data-href="/s-anzeige/eiche-stuhl/12345-86-1">
+              <div class="aditem-main--top--left">10115 Mitte</div>
+              <div class="aditem-main--top--right">Heute</div>
+              <div class="aditem-main">
+                <a class="text-module-begin" href="/s-anzeige/eiche-stuhl/12345-86-1">Eiche Stuhl</a>
+                <p class="aditem-main--middle--price-shipping--price">25 EUR VB</p>
+                <p class="aditem-main--middle--tags">Haus & Garten</p>
+                <p class="aditem-main--middle--description">Massiver Stuhl.</p>
+              </div>
+              <img src="/image.jpg">
+            </article>
+          </li>
+        </ul>
+        """
+
+        listings = HtmlListingConnector("kleinanzeigen").parse_kleinanzeigen_listings(
+            html,
+            {"search_url": "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl"},
+        )
+
+        self.assertEqual(len(listings), 1)
+        listing = listings[0]
+        self.assertEqual(listing.source_listing_id, "12345")
+        self.assertEqual(listing.title, "Eiche Stuhl")
+        self.assertEqual(listing.price_text, "25 EUR VB")
+        self.assertEqual(listing.price_value, 25.0)
+        self.assertEqual(listing.location_text, "10115 Mitte")
+        self.assertEqual(listing.category_text, "Haus & Garten")
+        self.assertEqual(listing.posted_at_text, "Heute")
+        self.assertEqual(listing.listing_url, "https://www.kleinanzeigen.de/s-anzeige/eiche-stuhl/12345-86-1")
+
     def test_kleinanzeigen_pagination_keeps_client_available(self) -> None:
         first_url = "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl"
         second_url = "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl&pageNum=2"
