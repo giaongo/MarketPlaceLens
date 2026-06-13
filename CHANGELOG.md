@@ -8,6 +8,8 @@ All notable changes to MarketPlaceLens are documented here.
 
 - Kleinanzeigen paginated scans now keep the HTTP client open while following result pages.
 - Kleinanzeigen parsing now uses dedicated result-card selectors instead of the generic HTML fallback.
+- Kleinanzeigen jobs now pass text location and radius hints to the source URL and avoid exact ZIP text filtering for radius-based searches.
+- Existing duplicate listings are re-evaluated during profile runs so corrected filters can restore previously hidden items.
 - Listing page-size controls now honor 50 and 100 item options, with 100 as the default.
 - Facebook connector errors now distinguish anonymous access/login blocks from empty result pages.
 - Responsive controls, listing cards, pagination, and headers wrap more defensively to avoid UI overlaps.

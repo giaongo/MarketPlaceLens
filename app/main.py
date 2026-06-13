@@ -812,7 +812,18 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
         for candidate in candidates:
             existing = find_existing_listing(db, profile["id"], candidate)
             if existing:
-                db.execute("UPDATE listings SET last_seen_at = ? WHERE id = ?", (now, existing["id"]))
+                updates = ["last_seen_at = ?"]
+                values: list[Any] = [now]
+                if not bool(existing["user_hidden"]):
+                    result = apply_filters(candidate, profile)
+                    result = apply_listing_age_limit(candidate, profile, result)
+                    next_status = result.status
+                    if next_status != "hidden" and existing["status"] in {"seen", "notified"}:
+                        next_status = existing["status"]
+                    updates.extend(["status = ?", "score = ?", "filter_reason = ?"])
+                    values.extend([next_status, result.score, result.reason])
+                values.append(existing["id"])
+                db.execute(f"UPDATE listings SET {', '.join(updates)} WHERE id = ?", values)
                 stats["duplicates"] += 1
                 continue
             result = apply_filters(candidate, profile)

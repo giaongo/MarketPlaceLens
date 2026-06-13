@@ -4,7 +4,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
-from urllib.parse import parse_qs, urljoin, urlparse
+from urllib.parse import parse_qs, urlencode, urljoin, urlparse, urlunparse
 
 import httpx
 from bs4 import BeautifulSoup, Tag
@@ -64,7 +64,10 @@ class HtmlListingConnector(MarketplaceConnector):
         self.source_type = source_type
 
     async def fetch_listings(self, profile: dict) -> list[ListingCandidate]:
-        self.validate_search_url(profile["search_url"])
+        search_url = profile["search_url"]
+        if self.source_type == "kleinanzeigen":
+            search_url = apply_kleinanzeigen_location_to_url(search_url, profile.get("location_hint", ""))
+        self.validate_search_url(search_url)
         user_agent = (
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
             if self.source_type in {"facebook", "mobilede"}
@@ -79,7 +82,7 @@ class HtmlListingConnector(MarketplaceConnector):
             follow_redirects=True,
             timeout=20.0,
         ) as client:
-            response = await client.get(profile["search_url"])
+            response = await client.get(search_url)
             try:
                 response.raise_for_status()
             except httpx.HTTPStatusError as exc:
@@ -95,7 +98,12 @@ class HtmlListingConnector(MarketplaceConnector):
                     ) from exc
                 raise
             if self.source_type == "kleinanzeigen":
-                return await self.fetch_paginated_kleinanzeigen(client, profile, response.text, str(response.url))
+                return await self.fetch_paginated_kleinanzeigen(
+                    client,
+                    {**profile, "search_url": search_url},
+                    response.text,
+                    str(response.url),
+                )
         if self.source_type == "facebook" and facebook_requires_login(response.text, str(response.url)):
             raise ValueError(
                 "Facebook returned a login, consent, or upsell page instead of public Marketplace listings. "
@@ -385,6 +393,41 @@ def extract_listing_id(url: str) -> str:
     parsed = urlparse(url)
     tail = parsed.path.rstrip("/").split("/")[-1]
     return tail or hashlib.sha1(url.encode("utf-8")).hexdigest()
+
+
+def apply_kleinanzeigen_location_to_url(url: str, location_hint: str) -> str:
+    location, radius = parse_location_hint(location_hint)
+    if not location:
+        return url
+    parsed = urlparse(url)
+    if "kleinanzeigen.de" not in parsed.netloc.lower():
+        return url
+    query = parse_qs(parsed.query, keep_blank_values=True)
+    if query.get("locationStr") or re.search(r"l\d+(?:r\d+)?(?:\D|$)", parsed.path):
+        return url
+    query["locationStr"] = [location]
+    if radius:
+        query["radius"] = [radius]
+    return urlunparse(parsed._replace(query=urlencode(query, doseq=True)))
+
+
+def parse_location_hint(value: str) -> tuple[str, str]:
+    normalized = value.replace("·", ",").strip()
+    if normalized.lower().startswith(("map point:", "kartenpunkt:")):
+        return "", ""
+    location = ""
+    radius = ""
+    for part in normalized.split(","):
+        cleaned = part.strip()
+        if not cleaned or cleaned.lower() in {"whole place", "ganzer ort"}:
+            continue
+        radius_match = re.search(r"\+?\s*(\d+)\s*km\b", cleaned, re.IGNORECASE)
+        if radius_match:
+            radius = radius_match.group(1)
+            continue
+        if not location:
+            location = cleaned
+    return location, radius
 
 
 def facebook_requires_login(html: str, final_url: str) -> bool:

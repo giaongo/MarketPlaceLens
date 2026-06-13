@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from .connectors import ListingCandidate
@@ -62,6 +63,8 @@ def location_filter_terms(value: str) -> list[str]:
     normalized = value.replace("·", ",").replace("/", ",")
     if normalized.lower().startswith(("map point:", "kartenpunkt:")):
         return []
+    if has_radius_hint(normalized):
+        return []
     for part in normalized.split(","):
         cleaned = part.strip().lower()
         if (
@@ -74,3 +77,7 @@ def location_filter_terms(value: str) -> list[str]:
             continue
         terms.append(cleaned)
     return terms
+
+
+def has_radius_hint(value: str) -> bool:
+    return bool(re.search(r"\+?\s*\d+\s*km\b", value, re.IGNORECASE))

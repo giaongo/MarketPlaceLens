@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import unittest
 
-from app.connectors import HtmlListingConnector, facebook_requires_login
+from app.connectors import HtmlListingConnector, apply_kleinanzeigen_location_to_url, facebook_requires_login
 
 
 class FakeResponse:
@@ -35,6 +35,22 @@ def article(title: str, href: str, price: str = "10 EUR") -> str:
 
 
 class ConnectorTests(unittest.TestCase):
+    def test_kleinanzeigen_location_hint_is_added_to_search_url(self) -> None:
+        url = apply_kleinanzeigen_location_to_url(
+            "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl",
+            "21629 · +50 km",
+        )
+
+        self.assertEqual(
+            url,
+            "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl&locationStr=21629&radius=50",
+        )
+
+    def test_existing_kleinanzeigen_location_url_is_not_rewritten(self) -> None:
+        url = "https://www.kleinanzeigen.de/s-immobilien/duesseldorf/anzeige:angebote/wohnung/k0c195l2068r5"
+
+        self.assertEqual(apply_kleinanzeigen_location_to_url(url, "21629 · +50 km"), url)
+
     def test_kleinanzeigen_dedicated_parser_reads_aditem_fields(self) -> None:
         html = """
         <ul id="srchrslt-adtable">
