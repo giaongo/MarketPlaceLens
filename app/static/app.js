@@ -313,6 +313,10 @@ const translations = {
     "listing.noImage": "No image available",
     "listing.noPrice": "no price",
     "listing.noLocation": "no location",
+    "listing.postedAt": "Listed",
+    "listing.firstSeen": "Found",
+    "listing.postcode": "ZIP",
+    "listing.place": "Place",
     "listing.score": "score {score}",
     "listing.addWatchlist": "Watch",
     "listing.removeWatchlist": "Remove",
@@ -643,6 +647,10 @@ const translations = {
     "listing.noImage": "Kein Bild verfügbar",
     "listing.noPrice": "kein Preis",
     "listing.noLocation": "kein Ort",
+    "listing.postedAt": "Anzeige",
+    "listing.firstSeen": "Gefunden",
+    "listing.postcode": "PLZ",
+    "listing.place": "Ort",
     "listing.score": "Score {score}",
     "listing.addWatchlist": "Merken",
     "listing.removeWatchlist": "Entfernen",
@@ -2118,6 +2126,11 @@ function reviewListingMarkup(listing) {
   const watchlistBadges = listing.watchlists?.length
     ? listing.watchlists.map((watchlist) => `<span class="pill watchlist-pill">${escapeHtml(watchlist.name)}</span>`).join("")
     : (listing.watchlisted ? `<span class="pill watchlist-pill">${escapeHtml(t("summary.watchlist"))}</span>` : "");
+  const detailFacts = [
+    listingDateFact(listing),
+    ...locationFacts(listing),
+    ...(listing.category_text ? [listing.category_text] : []),
+  ];
   return `
     <article class="review-card" data-review-card data-id="${listing.id}">
       <div class="review-image-wrap">
@@ -2132,9 +2145,7 @@ function reviewListingMarkup(listing) {
         ${listing.description_snippet ? `<p class="review-description">${escapeHtml(listing.description_snippet)}</p>` : ""}
         <strong class="review-price">${escapeHtml(listing.price_text || t("listing.noPrice"))}</strong>
         <div class="listing-facts">
-          <span>${escapeHtml(listing.location_text || t("listing.noLocation"))}</span>
-          ${listing.category_text ? `<span>${escapeHtml(listing.category_text)}</span>` : ""}
-          ${listing.posted_at_text ? `<span>${escapeHtml(listing.posted_at_text)}</span>` : ""}
+          ${detailFacts.map((fact) => `<span>${escapeHtml(fact)}</span>`).join("")}
         </div>
         <p class="review-reason">${escapeHtml(t("review.reason", { score: listing.score }))}</p>
         ${listing.ai_assessment_text ? `
@@ -2552,12 +2563,41 @@ function sortListings(listings) {
   });
 }
 
+function locationFacts(listing) {
+  const location = String(listing.location_text || "").trim();
+  if (!location) return [`${t("listing.place")}: ${t("listing.noLocation")}`];
+  const zipMatch = location.match(/\b\d{5}\b/);
+  if (!zipMatch) return [`${t("listing.place")}: ${location}`];
+  const zip = zipMatch[0];
+  const place = location
+    .replace(zip, "")
+    .replace(/\s+/g, " ")
+    .replace(/^[,\-·\s]+|[,\-·\s]+$/g, "")
+    .trim();
+  return [
+    `${t("listing.postcode")}: ${zip}`,
+    place ? `${t("listing.place")}: ${place}` : "",
+  ].filter(Boolean);
+}
+
+function listingDateFact(listing) {
+  const posted = String(listing.posted_at_text || "").trim();
+  if (posted) return `${t("listing.postedAt")}: ${posted}`;
+  return `${t("listing.firstSeen")}: ${formatDate(listing.first_seen_at)}`;
+}
+
 function listingMarkup(listing) {
   const watchlistAction = listing.watchlisted ? "remove" : "add";
   const watchlistLabel = listing.watchlisted ? t("listing.removeWatchlist") : t("listing.addWatchlist");
   const watchlistBadges = listing.watchlists?.length
     ? listing.watchlists.map((watchlist) => `<span class="pill watchlist-pill">★ ${escapeHtml(watchlist.name)}</span>`).join("")
     : (listing.watchlisted ? `<span class="pill watchlist-pill">★ ${escapeHtml(t("nav.watchlist"))}</span>` : "");
+  const detailFacts = [
+    ...(listing.profile_name ? [listing.profile_name] : []),
+    listingDateFact(listing),
+    ...locationFacts(listing),
+    t("listing.score", { score: listing.score }),
+  ];
   return `
     <article class="listing-card ${listing.watchlisted ? "watchlisted" : ""}">
       <div class="listing-media">
@@ -2576,10 +2616,7 @@ function listingMarkup(listing) {
         <strong class="listing-price">${escapeHtml(listing.price_text || t("listing.noPrice"))}</strong>
         <p class="meta listing-description">${escapeHtml(listing.description_snippet || "")}</p>
         <div class="listing-facts">
-          <span>${escapeHtml(listing.profile_name || "")}</span>
-          <span>${escapeHtml(listing.location_text || t("listing.noLocation"))}</span>
-          <span>${escapeHtml(t("listing.score", { score: listing.score }))}</span>
-          <span>${formatDate(listing.first_seen_at)}</span>
+          ${detailFacts.map((fact) => `<span>${escapeHtml(fact)}</span>`).join("")}
         </div>
         ${listing.filter_reason ? `<p class="filter-reason">${escapeHtml(listing.filter_reason)}</p>` : ""}
         ${listing.ai_assessment_text ? `
