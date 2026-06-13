@@ -61,7 +61,7 @@ Review mode shows one listing at a time with image, price, location, source, and
 
 Admins can create watchlists and choose the default watchlist in Settings. The normal Watch action saves to that default list. The dropdown on listing cards and review cards lets users choose another list or create a new one directly.
 
-## AI Inquiry Texts
+## AI Features
 
 Admins can enable AI inquiry texts in Settings.
 
@@ -74,6 +74,8 @@ Supported providers:
 The configured tone controls how the buyer message is written: very polite, normal, or cheeky. Generated text is displayed for copying only. MarketPlaceLens does not send seller messages.
 
 Each user can store personal buyer details in Settings, including display name, location, contact note, and preferred signature. When AI inquiry texts are generated, those details are included in the prompt so the draft can sound like the user and include the right context.
+
+The quick-job wizard can also use the configured AI provider to turn one sentence into a search draft. It fills source, query, category hint, price, location, radius, and keyword filters before the user saves the job. Admins can use the `Test AI` button in Settings to verify provider connectivity from the running container.
 
 ## Users and Roles
 

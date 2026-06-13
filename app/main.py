@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import ipaddress
+import json
 import random
 import sqlite3
 import time
@@ -22,7 +23,7 @@ from .connectors import ListingCandidate, get_connector
 from .database import connect, encode_list, ensure_default_watchlist, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import FilterResult, apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
-from .schemas import AccountProfilePayload, InquiryPayload, ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SettingsPayload, SetupPayload, UserPayload, UserUpdatePayload, WatchlistPayload
+from .schemas import AccountProfilePayload, InquiryPayload, ListingStatusPayload, LoginPayload, PasswordPayload, ProfilePayload, SearchDraftPayload, SettingsPayload, SetupPayload, UserPayload, UserUpdatePayload, WatchlistPayload
 from .version import APP_VERSION, version_payload
 
 app = FastAPI(title="MarketPlaceLens", version=APP_VERSION)
@@ -657,6 +658,35 @@ async def generate_listing_inquiry(listing_id: int, payload: InquiryPayload, req
     return {"text": text.strip()}
 
 
+@app.post("/api/ai/search-draft")
+async def generate_search_draft(payload: SearchDraftPayload, request: Request) -> dict[str, Any]:
+    request_user(request)
+    with connect() as db:
+        settings_rows = db.execute("SELECT key, value FROM app_settings").fetchall()
+    app_settings = {item["key"]: item["value"] for item in settings_rows}
+    if app_settings.get("ai_enabled") != "1":
+        raise HTTPException(400, "AI features are not enabled")
+    text = await generate_ai_text(app_settings, search_draft_prompt(payload.prompt, payload.language), max_tokens=420)
+    return normalize_search_draft(text)
+
+
+@app.post("/api/ai/test")
+async def test_ai_provider(request: Request) -> dict[str, str]:
+    require_admin(request)
+    with connect() as db:
+        settings_rows = db.execute("SELECT key, value FROM app_settings").fetchall()
+    app_settings = {item["key"]: item["value"] for item in settings_rows}
+    text = await generate_ai_text(
+        app_settings,
+        [
+            {"role": "system", "content": "Return exactly the word OK and nothing else."},
+            {"role": "user", "content": "OK"},
+        ],
+        max_tokens=20,
+    )
+    return {"text": text.strip()[:200]}
+
+
 @app.get("/api/settings")
 async def get_settings() -> dict[str, Any]:
     with connect() as db:
@@ -1206,7 +1236,106 @@ def inquiry_prompt(
     ]
 
 
-async def generate_ai_text(app_settings: dict[str, str], messages: list[dict[str, str]]) -> str:
+def search_draft_prompt(prompt: str, language: str) -> list[dict[str, str]]:
+    output_language = "German" if language == "de" else "English"
+    return [
+        {
+            "role": "system",
+            "content": (
+                "You convert one natural-language marketplace search wish into a structured job draft. "
+                "Return only one JSON object, without markdown or explanations. "
+                "Allowed source_type values: kleinanzeigen, facebook, mobilede. "
+                "Use kleinanzeigen unless the user clearly asks for Facebook Marketplace, mobile.de, cars, or vehicles. "
+                "Use null for unknown numeric values and [] for empty keyword arrays."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Language for labels: {output_language}.\n"
+                "Return these fields exactly: "
+                "name, source_type, query, category_hint, location, radius_km, max_price, "
+                "max_listing_age_days, required_keywords, exclude_keywords.\n\n"
+                f"Search wish: {prompt.strip()}"
+            ),
+        },
+    ]
+
+
+def normalize_search_draft(text: str) -> dict[str, Any]:
+    raw = extract_json_object(text)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(502, "AI provider did not return a valid search draft") from exc
+    if not isinstance(data, dict):
+        raise HTTPException(502, "AI provider did not return a valid search draft")
+    source_type = str(data.get("source_type") or "kleinanzeigen").strip().lower()
+    if source_type not in {"kleinanzeigen", "facebook", "mobilede"}:
+        source_type = "kleinanzeigen"
+    query = clean_ai_string(data.get("query")) or clean_ai_string(data.get("name"))
+    if not query:
+        raise HTTPException(502, "AI provider did not return a search query")
+    radius = bounded_int(data.get("radius_km"), 0, 200)
+    max_age = bounded_int(data.get("max_listing_age_days"), 1, 3650) or 365
+    return {
+        "name": clean_ai_string(data.get("name")) or query,
+        "source_type": source_type,
+        "query": query[:120],
+        "category_hint": clean_ai_string(data.get("category_hint"))[:120],
+        "location": clean_ai_string(data.get("location"))[:120],
+        "radius_km": radius,
+        "max_price": bounded_float(data.get("max_price"), 0, 1_000_000),
+        "max_listing_age_days": max_age,
+        "required_keywords": clean_ai_list(data.get("required_keywords"))[:12],
+        "exclude_keywords": clean_ai_list(data.get("exclude_keywords"))[:12],
+    }
+
+
+def extract_json_object(value: str) -> str:
+    text = value.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE).strip()
+        text = re.sub(r"\s*```$", "", text).strip()
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise HTTPException(502, "AI provider did not return JSON")
+    return text[start : end + 1]
+
+
+def clean_ai_string(value: Any) -> str:
+    return re.sub(r"\s+", " ", str(value or "")).strip()
+
+
+def clean_ai_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    result: list[str] = []
+    for item in value:
+        cleaned = clean_ai_string(item)
+        if cleaned and cleaned not in result:
+            result.append(cleaned[:80])
+    return result
+
+
+def bounded_int(value: Any, minimum: int, maximum: int) -> int | None:
+    try:
+        number = int(float(value))
+    except (TypeError, ValueError):
+        return None
+    return min(max(number, minimum), maximum)
+
+
+def bounded_float(value: Any, minimum: float, maximum: float) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return min(max(number, minimum), maximum)
+
+
+async def generate_ai_text(app_settings: dict[str, str], messages: list[dict[str, str]], max_tokens: int = 220) -> str:
     provider = app_settings.get("ai_provider", "openai") or "openai"
     model = app_settings.get("ai_model", "").strip() or default_ai_model(provider)
     base_url = normalized_ai_base_url(provider, app_settings.get("ai_base_url", ""))
@@ -1216,8 +1345,9 @@ async def generate_ai_text(app_settings: dict[str, str], messages: list[dict[str
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
+    timeout = 180.0 if provider in {"ollama", "lmstudio"} else 45.0
     try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
+        async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.post(
                 f"{base_url}/chat/completions",
                 headers=headers,
@@ -1225,7 +1355,8 @@ async def generate_ai_text(app_settings: dict[str, str], messages: list[dict[str
                     "model": model,
                     "messages": messages,
                     "temperature": 0.65,
-                    "max_tokens": 220,
+                    "max_tokens": max_tokens,
+                    "stream": False,
                 },
             )
             response.raise_for_status()

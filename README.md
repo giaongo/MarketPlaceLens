@@ -102,9 +102,9 @@ Admins can manage every job, all users, notification settings, AI settings, watc
 
 Normal users can create, edit, delete, and manually run their own search jobs. They can review their own listings, mark items seen or hidden, use watchlists, and change their own password. They cannot change global settings, provider configuration, AI configuration, notification secrets, or other users.
 
-## AI Inquiry Texts
+## AI Features
 
-AI text generation is disabled by default. When an admin enables and configures it, listings show a `KI-Text` / `AI text` button. The generated text is shown in a copyable dialog only; MarketPlaceLens does not send messages to sellers.
+AI text generation is disabled by default. When an admin enables and configures it, listings show a `KI-Text` / `AI text` button. The generated text is shown in a copyable dialog only; MarketPlaceLens does not send messages to sellers. The quick-job wizard can also turn one natural-language sentence into a structured search draft with source, query, price, location, radius, and keyword filters.
 
 Supported compatible providers:
 
@@ -115,6 +115,8 @@ Supported compatible providers:
 Available tones are very polite, normal, and cheeky.
 
 Each user can save personal buyer details in Settings: name, location, contact note, and preferred signature. These details are included when that user generates an AI inquiry text.
+
+Use the `Test AI` action in Settings after changing provider details. Local Ollama and LM Studio models can take longer on the first request while the model is loading.
 
 ## Sources
 

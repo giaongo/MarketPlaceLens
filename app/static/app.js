@@ -116,6 +116,8 @@ const translations = {
     "profile.runNow": "Run now",
     "wizard.title": "Quick job",
     "wizard.subtitle": "I will guide you through source, search, filters, and automation.",
+    "wizard.aiPrompt": "Describe the search in one sentence",
+    "wizard.aiCreate": "Create with AI",
     "wizard.stepSource": "Source",
     "wizard.stepSearch": "Search",
     "wizard.stepFilters": "Filters",
@@ -226,9 +228,10 @@ const translations = {
     "settings.defaultWatchlist": "Default watchlist",
     "settings.newWatchlist": "New watchlist",
     "settings.createWatchlist": "Create list",
-    "settings.ai": "AI inquiry texts",
-    "settings.aiSubtitle": "Generate short buyer messages from a listing when a provider is configured.",
-    "settings.aiEnabled": "Enable AI inquiry texts",
+    "settings.ai": "AI features",
+    "settings.aiSubtitle": "Generate buyer messages and quick-job search drafts when a provider is configured.",
+    "settings.aiEnabled": "Enable AI features",
+    "settings.aiTest": "Test AI",
     "settings.aiProvider": "Provider",
     "settings.aiApiKey": "API key",
     "settings.aiBaseUrl": "Base URL",
@@ -302,6 +305,8 @@ const translations = {
     "toast.watchlistCreated": "Watchlist created",
     "toast.watchlistRemoved": "Removed from watchlist",
     "toast.inquiryGenerated": "Inquiry text generated",
+    "toast.searchDraftCreated": "Search draft created",
+    "toast.aiTestOk": "AI provider answered",
     "toast.inquiryCopied": "Inquiry copied",
     "inquiry.title": "AI inquiry text",
     "inquiry.copy": "Copy",
@@ -416,6 +421,8 @@ const translations = {
     "profile.runNow": "Jetzt ausführen",
     "wizard.title": "Schnelljob",
     "wizard.subtitle": "Ich führe dich durch Quelle, Suche, Filter und Automation.",
+    "wizard.aiPrompt": "Suche in einem Satz beschreiben",
+    "wizard.aiCreate": "Mit KI erstellen",
     "wizard.stepSource": "Quelle",
     "wizard.stepSearch": "Suche",
     "wizard.stepFilters": "Filter",
@@ -526,9 +533,10 @@ const translations = {
     "settings.defaultWatchlist": "Standard-Watchlist",
     "settings.newWatchlist": "Neue Watchlist",
     "settings.createWatchlist": "Liste anlegen",
-    "settings.ai": "KI-Anfragetexte",
-    "settings.aiSubtitle": "Erzeugt kurze Käufernachrichten aus einem Listing, sobald ein Provider konfiguriert ist.",
-    "settings.aiEnabled": "KI-Anfragetexte aktivieren",
+    "settings.ai": "KI-Funktionen",
+    "settings.aiSubtitle": "Erzeugt Käufernachrichten und Schnelljob-Suchentwürfe, sobald ein Provider konfiguriert ist.",
+    "settings.aiEnabled": "KI-Funktionen aktivieren",
+    "settings.aiTest": "KI testen",
     "settings.aiProvider": "Provider",
     "settings.aiApiKey": "API-Key",
     "settings.aiBaseUrl": "Base-URL",
@@ -602,6 +610,8 @@ const translations = {
     "toast.watchlistCreated": "Watchlist angelegt",
     "toast.watchlistRemoved": "Aus Watchlist entfernt",
     "toast.inquiryGenerated": "Anfragetext erstellt",
+    "toast.searchDraftCreated": "Suchentwurf erstellt",
+    "toast.aiTestOk": "KI-Anbieter hat geantwortet",
     "toast.inquiryCopied": "Anfrage kopiert",
     "inquiry.title": "KI-Anfragetext",
     "inquiry.copy": "Kopieren",
@@ -703,6 +713,7 @@ function bindNavigation() {
   $("#wizard-cancel-button").addEventListener("click", () => showWizard(false));
   $("#wizard-back-button").addEventListener("click", previousWizardStep);
   $("#wizard-next-button").addEventListener("click", nextWizardStep);
+  $("#wizard-ai-button").addEventListener("click", createWizardDraftWithAi);
   $$("[data-wizard-jump]").forEach((button) => {
     button.addEventListener("click", () => jumpWizardStep(Number(button.dataset.wizardJump)));
   });
@@ -856,6 +867,7 @@ function bindForms() {
   });
   $("#telegram-test-button").addEventListener("click", testTelegram);
   $("#webhook-test-button").addEventListener("click", testWebhook);
+  $("#ai-test-button").addEventListener("click", testAiProvider);
 }
 
 function showView(view) {
@@ -1667,6 +1679,63 @@ function selectedWizardCategory() {
   const value = $("#wizard-category").value;
   if (!value) return null;
   return (providerCategories[source] || []).find((category) => (category.id || category.slug) === value) || null;
+}
+
+async function createWizardDraftWithAi() {
+  const prompt = $("#wizard-ai-prompt").value.trim();
+  if (!prompt) return toast(t("toast.searchRequired"));
+  const button = $("#wizard-ai-button");
+  button.disabled = true;
+  try {
+    const draft = await api("/api/ai/search-draft", {
+      method: "POST",
+      body: JSON.stringify({ prompt, language: state.language }),
+    });
+    applyWizardDraft(draft);
+    toast(t("toast.searchDraftCreated"));
+  } catch (error) {
+    toast(errorMessage(error));
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function applyWizardDraft(draft) {
+  const source = ["kleinanzeigen", "facebook", "mobilede"].includes(draft.source_type) ? draft.source_type : "kleinanzeigen";
+  $("#wizard-source").value = source;
+  updateWizardCategories();
+  const category = matchWizardCategory(source, draft.category_hint || "");
+  $("#wizard-category").value = category ? (category.id || category.slug) : "";
+  updateKleinanzeigenTypeVisibility();
+  $("#wizard-query").value = draft.query || "";
+  $("#wizard-max-price").value = draft.max_price ?? "";
+  $("#wizard-max-age").value = draft.max_listing_age_days || 365;
+  $("#wizard-location").value = draft.location || "";
+  $("#wizard-location-radius").value = draft.radius_km ? String(draft.radius_km) : "";
+  $("#wizard-required").value = (draft.required_keywords || []).join("\n");
+  $("#wizard-exclude").value = (draft.exclude_keywords || []).join("\n");
+  syncAllChipInputs();
+  setWizardStep(1);
+  updateWizardSummary();
+}
+
+function matchWizardCategory(source, hint) {
+  const normalized = normalizeCategoryHint(hint);
+  if (!normalized) return null;
+  return (providerCategories[source] || []).find((category) => {
+    return [category.label, category.slug, category.id, category.path]
+      .filter(Boolean)
+      .some((value) => normalizeCategoryHint(value).includes(normalized) || normalized.includes(normalizeCategoryHint(value)));
+  }) || null;
+}
+
+function normalizeCategoryHint(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 function updateWizardSummary() {
@@ -2585,6 +2654,20 @@ async function testTelegram() {
 async function testWebhook() {
   await api("/api/settings/webhook/test", { method: "POST" });
   toast(t("toast.webhookSent"));
+}
+
+async function testAiProvider() {
+  const button = $("#ai-test-button");
+  button.disabled = true;
+  try {
+    await saveSettings();
+    await api("/api/ai/test", { method: "POST" });
+    toast(t("toast.aiTestOk"));
+  } catch (error) {
+    toast(errorMessage(error));
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function addGuidedFilterRule() {

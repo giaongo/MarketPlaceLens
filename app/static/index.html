@@ -130,6 +130,12 @@
                   <p data-i18n="wizard.subtitle">Create a Kleinanzeigen job from a search term, then fine-tune it below.</p>
                 </div>
               </div>
+              <div class="ai-draft-box">
+                <label class="wide"><span data-i18n="wizard.aiPrompt">Describe the search in one sentence</span><textarea id="wizard-ai-prompt" rows="2" placeholder="Defekte Elektronik bis 100 Euro im Umkreis von 50 km um 21629"></textarea></label>
+                <div class="actions">
+                  <button class="button ghost" type="button" id="wizard-ai-button" data-i18n="wizard.aiCreate">Create with AI</button>
+                </div>
+              </div>
               <div class="wizard-progress" aria-label="Wizard progress">
                 <button class="wizard-progress-step active" type="button" data-wizard-jump="0"><span>1</span><strong data-i18n="wizard.stepSource">Source</strong></button>
                 <button class="wizard-progress-step" type="button" data-wizard-jump="1"><span>2</span><strong data-i18n="wizard.stepSearch">Search</strong></button>
@@ -548,12 +554,12 @@
         <section class="panel narrow settings-section admin-only settings-panel-admin">
           <div class="panel-heading">
             <div>
-              <h2 data-i18n="settings.ai">AI inquiry texts</h2>
-              <p class="panel-subtitle" data-i18n="settings.aiSubtitle">Generate short buyer messages from a listing when a provider is configured.</p>
+              <h2 data-i18n="settings.ai">AI features</h2>
+              <p class="panel-subtitle" data-i18n="settings.aiSubtitle">Generate buyer messages and quick-job search drafts when a provider is configured.</p>
             </div>
           </div>
           <form id="ai-settings-form" class="form-grid">
-            <label class="switch wide"><input id="ai-enabled" type="checkbox"> <span data-i18n="settings.aiEnabled">Enable AI inquiry texts</span></label>
+            <label class="switch wide"><input id="ai-enabled" type="checkbox"> <span data-i18n="settings.aiEnabled">Enable AI features</span></label>
             <label><span data-i18n="settings.aiProvider">Provider</span>
               <select id="ai-provider">
                 <option value="openai">OpenAI API</option>
@@ -573,6 +579,7 @@
             <label class="wide"><span data-i18n="settings.aiModel">Model</span><input id="ai-model" placeholder="gpt-4o-mini"></label>
             <div class="actions wide">
               <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
+              <button class="button ghost" id="ai-test-button" type="button" data-i18n="settings.aiTest">Test AI</button>
             </div>
           </form>
         </section>

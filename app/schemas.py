@@ -31,6 +31,11 @@ class InquiryPayload(BaseModel):
     language: str = Field(default="de", pattern="^(de|en)$")
 
 
+class SearchDraftPayload(BaseModel):
+    prompt: str = Field(min_length=3, max_length=600)
+    language: str = Field(default="de", pattern="^(de|en)$")
+
+
 class WatchlistPayload(BaseModel):
     name: str = Field(min_length=1, max_length=80)
 

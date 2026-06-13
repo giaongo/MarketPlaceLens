@@ -8,9 +8,12 @@ All notable changes to MarketPlaceLens are documented here.
 
 - Facebook Marketplace jobs can use an optional locally stored Cookie header from the admin settings when the URL only works in an authenticated browser session.
 - The review flow now uses larger product-focused cards with inline actions inspired by the Kramlet card layout.
+- Quick jobs can now generate a structured search draft from one natural-language sentence through the configured AI provider.
+- Admin settings now include an AI provider test action to verify OpenAI/Ollama/LM Studio connectivity from the running container.
 
 ### Fixed
 
+- Local Ollama and LM Studio calls now get a longer provider timeout, which avoids failing while local models are still loading.
 - Kleinanzeigen paginated scans now keep the HTTP client open while following result pages.
 - Kleinanzeigen parsing now uses dedicated result-card selectors instead of the generic HTML fallback.
 - Kleinanzeigen jobs now pass text location and radius hints to the source URL and avoid exact ZIP text filtering for radius-based searches.

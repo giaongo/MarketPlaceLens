@@ -750,6 +750,21 @@ textarea.chip-source {
   gap: 8px;
 }
 
+.ai-draft-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 12px;
+}
+
+.ai-draft-box .actions {
+  margin: 0;
+}
+
 .wizard-progress-step {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1976,6 +1991,7 @@ textarea.chip-source {
   .keyword-grid,
   .guided-filter-controls,
   .location-fields,
+  .ai-draft-box,
   .wizard-grid,
   .source-card-grid,
   .provider-url-row {
