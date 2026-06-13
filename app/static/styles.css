@@ -557,7 +557,7 @@ select:focus {
 
 textarea {
   min-height: 96px;
-  resize: vertical;
+  resize: none;
 }
 
 textarea.chip-source {
