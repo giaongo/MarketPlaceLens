@@ -67,11 +67,15 @@ class HtmlListingConnector(MarketplaceConnector):
         self.validate_search_url(profile["search_url"])
         user_agent = (
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-            if self.source_type == "mobilede"
+            if self.source_type in {"facebook", "mobilede"}
             else settings.user_agent
         )
         async with httpx.AsyncClient(
-            headers={"User-Agent": user_agent},
+            headers={
+                "User-Agent": user_agent,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
+            },
             follow_redirects=True,
             timeout=20.0,
         ) as client:
@@ -79,12 +83,24 @@ class HtmlListingConnector(MarketplaceConnector):
             try:
                 response.raise_for_status()
             except httpx.HTTPStatusError as exc:
+                if self.source_type == "facebook" and exc.response.status_code in {400, 401, 403}:
+                    raise ValueError(
+                        "Facebook blocked the anonymous server request. "
+                        "Use a concrete public Marketplace search/category URL; if Facebook still returns a login or error page, it cannot be watched from this server."
+                    ) from exc
                 if self.source_type == "mobilede" and exc.response.status_code in {401, 403}:
                     raise ValueError(
                         "mobile.de blocked the anonymous server request. "
                         "Try a concrete public search result URL; if mobile.de still returns 403, the page cannot be watched from this server."
                     ) from exc
                 raise
+            if self.source_type == "kleinanzeigen":
+                return await self.fetch_paginated_kleinanzeigen(client, profile, response.text, str(response.url))
+        if self.source_type == "facebook" and facebook_requires_login(response.text, str(response.url)):
+            raise ValueError(
+                "Facebook returned a login, consent, or upsell page instead of public Marketplace listings. "
+                "MarketPlaceLens cannot extract listings unless Facebook serves public listing links to anonymous server requests."
+            )
         if self.source_type == "facebook" and "/marketplace/item/" not in response.text:
             raise ValueError(
                 "Facebook returned Marketplace HTML without public listing links. "
@@ -98,8 +114,6 @@ class HtmlListingConnector(MarketplaceConnector):
                     "Use a concrete mobile.de search result URL copied from the browser."
                 )
             return listings
-        if self.source_type == "kleinanzeigen":
-            return await self.fetch_paginated_kleinanzeigen(client, profile, response.text, str(response.url))
         return self.parse_listings(response.text, profile)
 
     async def fetch_paginated_kleinanzeigen(
@@ -317,6 +331,22 @@ def extract_listing_id(url: str) -> str:
     parsed = urlparse(url)
     tail = parsed.path.rstrip("/").split("/")[-1]
     return tail or hashlib.sha1(url.encode("utf-8")).hexdigest()
+
+
+def facebook_requires_login(html: str, final_url: str) -> bool:
+    lowered = html.lower()
+    parsed = urlparse(final_url)
+    return (
+        "/login" in parsed.path
+        or "/checkpoint" in parsed.path
+        or "loggedinlandingupselleligible" in lowered
+        or "marketplace_logged_out_content" in lowered
+        or "loginbutton" in lowered
+        or "login_form" in lowered
+        or "facebook.com/login" in lowered
+        or 'href="/login' in lowered
+        or "/login/device-based/" in lowered
+    )
 
 
 def parse_price(value: str) -> float | None:

@@ -6,7 +6,7 @@ const state = {
   theme: localStorage.getItem("marketplacelens.theme") || "light",
   listingPage: 0,
   watchlistPage: 0,
-  pageSize: Number(localStorage.getItem("marketplacelens.pageSize") || 10),
+  pageSize: Number(localStorage.getItem("marketplacelens.pageSize") || 100),
   reviewQueue: [],
   reviewIndex: 0,
   reviewPointer: null,
@@ -2234,7 +2234,7 @@ function resetListingsPage() {
 }
 
 function setPageSize(value) {
-  state.pageSize = [5, 10, 20].includes(Number(value)) ? Number(value) : 10;
+  state.pageSize = [5, 10, 20, 50, 100].includes(Number(value)) ? Number(value) : 100;
   localStorage.setItem("marketplacelens.pageSize", String(state.pageSize));
   state.listingPage = 0;
   state.watchlistPage = 0;
