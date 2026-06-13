@@ -14,6 +14,9 @@ const state = {
   defaultWatchlistId: null,
   aiEnabled: false,
   aiAssessmentsEnabled: false,
+  aiAssessmentsAutoEnabled: false,
+  autoAssessmentBatches: new Set(),
+  autoAssessmentRunning: false,
   wizardStep: 0,
   currentUser: null,
   accountProfile: null,
@@ -24,7 +27,10 @@ const state = {
   locationCircle: null,
   appOpenCheckStarted: false,
   settingsTab: "notifications",
+  currentView: "dashboard",
 };
+
+const AUTO_ASSESSMENT_BATCH_LIMIT = 8;
 
 const translations = {
   en: {
@@ -248,6 +254,8 @@ const translations = {
     "settings.aiSubtitle": "Generate buyer messages and quick-job search drafts when a provider is configured.",
     "settings.aiEnabled": "Enable AI features",
     "settings.aiAssessmentsEnabled": "Show AI listing assessments",
+    "settings.aiAssessmentsAutoEnabled": "Automatically assess visible listings",
+    "settings.aiAssessmentCostWarning": "AI assessments send listing text to the configured provider and can use many tokens, especially when automatic assessment is enabled.",
     "settings.aiTest": "Test AI",
     "settings.aiProvider": "Provider",
     "settings.aiApiKey": "API key",
@@ -574,6 +582,8 @@ const translations = {
     "settings.aiSubtitle": "Erzeugt Käufernachrichten und Schnelljob-Suchentwürfe, sobald ein Provider konfiguriert ist.",
     "settings.aiEnabled": "KI-Funktionen aktivieren",
     "settings.aiAssessmentsEnabled": "KI-Einschätzungen bei Anzeigen zeigen",
+    "settings.aiAssessmentsAutoEnabled": "Sichtbare Anzeigen automatisch einschätzen",
+    "settings.aiAssessmentCostWarning": "KI-Einschätzungen senden Anzeigentext an den konfigurierten Anbieter und können viele Tokens verbrauchen, besonders wenn automatische Einschätzungen aktiv sind.",
     "settings.aiTest": "KI testen",
     "settings.aiProvider": "Provider",
     "settings.aiApiKey": "API-Key",
@@ -916,6 +926,7 @@ function bindForms() {
 }
 
 function showView(view) {
+  state.currentView = view;
   $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === view));
   $$(".view").forEach((item) => item.classList.toggle("active", item.id === `${view}-view`));
   $("#view-title").textContent = t({
@@ -2222,8 +2233,10 @@ async function generateInquiry(listingId, button) {
   }
 }
 
-async function generateAssessment(listingId, button) {
+async function generateAssessment(listingId, button, options = {}) {
   if (!listingId) return;
+  const silent = Boolean(options.silent);
+  const refresh = options.refresh !== false;
   if (button) button.disabled = true;
   try {
     const result = await api(`/api/listings/${listingId}/assessment`, { method: "POST" });
@@ -2236,11 +2249,12 @@ async function generateAssessment(listingId, button) {
       };
     };
     state.reviewQueue = state.reviewQueue.map(applyAssessment);
-    toast(t("toast.assessmentGenerated"));
+    if (!silent) toast(t("toast.assessmentGenerated"));
     renderReviewCard();
-    await Promise.all([loadListings(), loadWatchlist()]);
+    if (refresh) await Promise.all([loadListings(), loadWatchlist()]);
   } catch (error) {
-    toast(errorMessage(error));
+    if (silent) console.warn("Automatic AI assessment failed", error);
+    else toast(errorMessage(error));
   } finally {
     if (button) button.disabled = false;
   }
@@ -2428,6 +2442,33 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
       img.replaceWith(fallback);
     });
   });
+  queueAutoAssessments(listings, containerSelector, watchlistedOnly, page);
+}
+
+function queueAutoAssessments(listings, containerSelector, watchlistedOnly, page) {
+  if (!state.aiEnabled || !state.aiAssessmentsEnabled || !state.aiAssessmentsAutoEnabled) return;
+  if ((watchlistedOnly && state.currentView !== "watchlist") || (!watchlistedOnly && state.currentView !== "listings")) return;
+  if (state.autoAssessmentRunning || !Array.isArray(listings) || !listings.length) return;
+  const batchKey = `${containerSelector}:${watchlistedOnly}:${page}:${listings.map((listing) => listing.id).join(",")}`;
+  if (state.autoAssessmentBatches.has(batchKey)) return;
+  const candidates = listings
+    .filter((listing) => listing?.id && !listing.ai_assessment_text)
+    .slice(0, AUTO_ASSESSMENT_BATCH_LIMIT);
+  if (!candidates.length) return;
+  state.autoAssessmentBatches.add(batchKey);
+  state.autoAssessmentRunning = true;
+  void (async () => {
+    try {
+      for (const listing of candidates) {
+        await generateAssessment(listing.id, null, { silent: true, refresh: false });
+      }
+      if ((watchlistedOnly && state.currentView === "watchlist") || (!watchlistedOnly && state.currentView === "listings")) {
+        await loadListingBrowser(containerSelector, watchlistedOnly);
+      }
+    } finally {
+      state.autoAssessmentRunning = false;
+    }
+  })();
 }
 
 function resetListingsPage() {
@@ -2581,8 +2622,10 @@ async function loadSettings() {
   $("#global-rate").value = settings.global_rate_limit_seconds;
   state.aiEnabled = Boolean(settings.ai_enabled);
   state.aiAssessmentsEnabled = Boolean(settings.ai_listing_assessments_enabled);
+  state.aiAssessmentsAutoEnabled = Boolean(settings.ai_listing_assessments_auto_enabled);
   $("#ai-enabled").checked = Boolean(settings.ai_enabled);
   $("#ai-assessments-enabled").checked = Boolean(settings.ai_listing_assessments_enabled);
+  $("#ai-assessments-auto-enabled").checked = Boolean(settings.ai_listing_assessments_auto_enabled);
   $("#ai-provider").value = settings.ai_provider || "openai";
   $("#ai-api-key").value = settings.ai_api_key || "";
   $("#ai-base-url").value = settings.ai_base_url || "";
@@ -2627,6 +2670,7 @@ async function saveSettings() {
       default_watchlist_id: Number($("#default-watchlist").value || state.defaultWatchlistId || 0),
       ai_enabled: $("#ai-enabled").checked,
       ai_listing_assessments_enabled: $("#ai-assessments-enabled").checked,
+      ai_listing_assessments_auto_enabled: $("#ai-assessments-auto-enabled").checked,
       ai_provider: $("#ai-provider").value,
       ai_api_key: $("#ai-api-key").value,
       ai_base_url: $("#ai-base-url").value,
@@ -2638,6 +2682,8 @@ async function saveSettings() {
   state.defaultWatchlistId = settings.default_watchlist_id;
   state.aiEnabled = Boolean(settings.ai_enabled);
   state.aiAssessmentsEnabled = Boolean(settings.ai_listing_assessments_enabled);
+  state.aiAssessmentsAutoEnabled = Boolean(settings.ai_listing_assessments_auto_enabled);
+  state.autoAssessmentBatches.clear();
   renderDefaultWatchlistSelect();
   toast(t("toast.settingsSaved"));
   loadListings();

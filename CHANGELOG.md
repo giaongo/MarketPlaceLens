@@ -13,6 +13,7 @@ All notable changes to MarketPlaceLens are documented here.
 - Job notification choices now present background polling, Telegram, and webhook delivery as first-class options in both quick and manual job setup.
 - Admins can now delete individual run errors or clear all run-error logs to reset the dashboard error counter.
 - Listings can now show an optional saved AI assessment that summarizes fit and visible caution signs directly on listing and review cards.
+- AI listing assessments now have a separate automatic mode for visible listing batches, with an in-settings warning about potential token usage.
 
 ### Changed
 

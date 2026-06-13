@@ -77,7 +77,7 @@ Each user can store personal buyer details in Settings, including display name, 
 
 The quick-job wizard can also use the configured AI provider to turn one sentence into a search draft. It fills source, query, category hint, price, location, radius, and keyword filters before the user saves the job. Admins can use the `Test AI` button in Settings to verify provider connectivity from the running container.
 
-Admins can enable AI listing assessments separately from the base AI switch. When this is active, listing and review cards offer a `KI-Einschätzung` action. The generated note is stored with the listing and shown inline so the user can quickly judge fit, price/location relevance, and visible caution signs.
+Admins can enable AI listing assessments separately from the base AI switch. When this is active, listing and review cards offer a `KI-Einschätzung` action. The generated note is stored with the listing and shown inline so the user can quickly judge fit, price/location relevance, and visible caution signs. Admins can also enable automatic assessments for visible listing batches; the settings panel includes a warning because every assessment sends listing text to the configured AI provider and can consume many tokens.
 
 ## Users and Roles
 

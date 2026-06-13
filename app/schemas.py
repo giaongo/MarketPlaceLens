@@ -48,6 +48,7 @@ class SettingsPayload(BaseModel):
     default_watchlist_id: int | None = None
     ai_enabled: bool = False
     ai_listing_assessments_enabled: bool = False
+    ai_listing_assessments_auto_enabled: bool = False
     ai_provider: str = Field(default="openai", pattern="^(openai|ollama|lmstudio)$")
     ai_api_key: str = ""
     ai_base_url: str = ""
