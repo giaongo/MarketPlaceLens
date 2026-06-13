@@ -48,6 +48,8 @@ const translations = {
     "summary.runErrors": "Run errors",
     "dashboard.recentRuns": "Recent runs",
     "dashboard.recentRunsSubtitle": "Last source checks and connector status.",
+    "dashboard.clearErrors": "Clear errors",
+    "dashboard.deleteError": "Delete error",
     "dashboard.sources": "Sources",
     "dashboard.sourcesSubtitle": "Jobs and collected listings by marketplace.",
     "profiles.title": "Jobs",
@@ -323,6 +325,8 @@ const translations = {
     "toast.selectJobFirst": "Select a job first",
     "toast.runStarted": "Run started",
     "toast.runComplete": "Run complete: {new} new, {hidden} hidden, {duplicates} duplicate",
+    "toast.runErrorDeleted": "Run error deleted",
+    "toast.runErrorsCleared": "{deleted} run errors cleared",
     "toast.profileDeleted": "Profile deleted",
     "toast.searchRequired": "Search term is required",
     "toast.facebookUrlRequired": "Facebook Marketplace needs a reachable Marketplace URL.",
@@ -356,6 +360,8 @@ const translations = {
     "summary.runErrors": "Run-Fehler",
     "dashboard.recentRuns": "Letzte Runs",
     "dashboard.recentRunsSubtitle": "Letzte Quellenprüfungen und Connector-Status.",
+    "dashboard.clearErrors": "Fehler leeren",
+    "dashboard.deleteError": "Fehler löschen",
     "dashboard.sources": "Quellen",
     "dashboard.sourcesSubtitle": "Jobs und gefundene Listings je Marktplatz.",
     "profiles.title": "Jobs",
@@ -631,6 +637,8 @@ const translations = {
     "toast.selectJobFirst": "Wähle zuerst einen Job aus",
     "toast.runStarted": "Run gestartet",
     "toast.runComplete": "Run fertig: {new} neu, {hidden} ausgeblendet, {duplicates} Duplikate",
+    "toast.runErrorDeleted": "Run-Fehler gelöscht",
+    "toast.runErrorsCleared": "{deleted} Run-Fehler geleert",
     "toast.profileDeleted": "Profil gelöscht",
     "toast.searchRequired": "Suchbegriff ist erforderlich",
     "toast.facebookUrlRequired": "Facebook Marketplace braucht eine erreichbare Marketplace-URL.",
@@ -874,6 +882,8 @@ function bindForms() {
   $("#telegram-test-button").addEventListener("click", testTelegram);
   $("#webhook-test-button").addEventListener("click", testWebhook);
   $("#ai-test-button").addEventListener("click", testAiProvider);
+  $("#dashboard-clear-run-errors").addEventListener("click", clearRunErrors);
+  $("#settings-clear-run-errors").addEventListener("click", clearRunErrors);
 }
 
 function showView(view) {
@@ -1061,8 +1071,11 @@ async function loadSummary() {
   $("#summary-errors").textContent = summary.run_errors;
   const runsHtml = summary.recent_runs.length
     ? summary.recent_runs.map((run) => `
-      <article>
-        <strong>${escapeHtml(run.profile_name)}</strong>
+      <article class="${run.status === "error" ? "run-error-card" : ""}">
+        <div class="run-log-heading">
+          <strong>${escapeHtml(run.profile_name)}</strong>
+          ${isAdmin() && run.status === "error" ? `<button class="mini-button danger" type="button" data-run-error-delete="${run.id}">${escapeHtml(t("dashboard.deleteError"))}</button>` : ""}
+        </div>
         <p class="meta">${escapeHtml(run.status)} · fetched ${run.fetched} · new ${run.new_count} · hidden ${run.hidden_count} · duplicate ${run.duplicate_count} · ${formatDate(run.finished_at)}</p>
         ${run.error_message ? `<p class="meta danger-text">${escapeHtml(run.error_message)}</p>` : ""}
       </article>
@@ -1070,6 +1083,7 @@ async function loadSummary() {
     : `<article><strong>${escapeHtml(t("empty.noRuns"))}</strong><p class="meta">${escapeHtml(t("empty.noRunsHint"))}</p></article>`;
   $("#recent-runs").innerHTML = runsHtml;
   $("#dashboard-recent-runs").innerHTML = runsHtml;
+  bindRunErrorButtons();
   $("#dashboard-sources").innerHTML = (summary.source_counts || []).length
     ? summary.source_counts.map((source) => `
       <article class="source-summary-card">
@@ -1079,6 +1093,25 @@ async function loadSummary() {
       </article>
     `).join("")
     : `<article><strong>${escapeHtml(t("empty.noProfiles"))}</strong><p class="meta">${escapeHtml(t("empty.noProfilesHint"))}</p></article>`;
+}
+
+function bindRunErrorButtons() {
+  $$("[data-run-error-delete]").forEach((button) => {
+    button.addEventListener("click", () => deleteRunError(button.dataset.runErrorDelete));
+  });
+}
+
+async function deleteRunError(id) {
+  if (!id) return;
+  await api(`/api/run-logs/${id}`, { method: "DELETE" });
+  toast(t("toast.runErrorDeleted"));
+  await loadSummary();
+}
+
+async function clearRunErrors() {
+  const result = await api("/api/run-logs/errors", { method: "DELETE" });
+  toast(t("toast.runErrorsCleared", { deleted: result.deleted || 0 }));
+  await loadSummary();
 }
 
 async function loadProfiles() {

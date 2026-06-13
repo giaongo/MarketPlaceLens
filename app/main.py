@@ -347,6 +347,27 @@ async def summary(request: Request) -> dict[str, Any]:
     }
 
 
+@app.delete("/api/run-logs/errors")
+async def clear_run_errors(request: Request) -> dict[str, int]:
+    require_admin(request)
+    with connect() as db:
+        cursor = db.execute("DELETE FROM run_logs WHERE status = 'error'")
+    return {"deleted": cursor.rowcount}
+
+
+@app.delete("/api/run-logs/{run_id}")
+async def delete_run_error(run_id: int, request: Request) -> dict[str, bool]:
+    require_admin(request)
+    with connect() as db:
+        row = db.execute("SELECT id, status FROM run_logs WHERE id = ?", (run_id,)).fetchone()
+        if not row:
+            raise HTTPException(404, "Run log not found")
+        if row["status"] != "error":
+            raise HTTPException(400, "Only error run logs can be deleted")
+        db.execute("DELETE FROM run_logs WHERE id = ?", (run_id,))
+    return {"ok": True}
+
+
 @app.get("/api/profiles")
 async def list_profiles(request: Request) -> list[dict[str, Any]]:
     user = request_user(request)

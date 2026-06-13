@@ -11,6 +11,7 @@ All notable changes to MarketPlaceLens are documented here.
 - Quick jobs can now generate a structured search draft from one natural-language sentence through the configured AI provider.
 - Admin settings now include an AI provider test action to verify OpenAI/Ollama/LM Studio connectivity from the running container.
 - Job notification choices now present background polling, Telegram, and webhook delivery as first-class options in both quick and manual job setup.
+- Admins can now delete individual run errors or clear all run-error logs to reset the dashboard error counter.
 
 ### Changed
 
