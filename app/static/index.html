@@ -38,14 +38,11 @@
           <h1 id="view-title">Dashboard</h1>
         </div>
         <div class="top-actions">
-          <select id="language-select" class="language-select" aria-label="Language">
-            <option value="en">English</option>
-            <option value="de">Deutsch</option>
-          </select>
-          <select id="theme-select" class="language-select" aria-label="Theme">
-            <option value="light" data-i18n="theme.light">Light</option>
-            <option value="dark" data-i18n="theme.dark">Dark</option>
-          </select>
+          <button id="theme-toggle" class="button ghost preference-toggle" type="button"></button>
+          <div class="language-toggle" role="group" aria-label="Language">
+            <button class="language-option" type="button" data-language-option="de">DE</button>
+            <button class="language-option" type="button" data-language-option="en">EN</button>
+          </div>
           <button id="refresh-button" class="button ghost" data-i18n="action.refresh">Refresh</button>
           <button id="logout-button" class="button ghost" data-i18n="action.logout">Logout</button>
         </div>

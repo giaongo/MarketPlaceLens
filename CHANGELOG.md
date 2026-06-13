@@ -17,6 +17,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Changed
 
+- Language and light/dark theme controls now use Kramlet-style quick buttons on login and in the main header instead of select menus.
 - Settings now use LanLens-style tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account instead of one long admin stack.
 - Notification settings are split into Telegram, webhook, and delivery-rule cards for clearer channel configuration.
 - The default watchlist is now saved per user, and non-admin users can manage their own Watchlist settings tab.

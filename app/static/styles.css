@@ -99,6 +99,15 @@ body.login-page {
   margin: -12px 0 18px;
 }
 
+.login-preferences {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin: -12px 0 18px;
+}
+
 button,
 input,
 textarea,
@@ -299,6 +308,55 @@ main {
   width: auto;
   min-width: 128px;
   max-width: 100%;
+}
+
+.preference-toggle,
+.language-option {
+  min-height: 42px;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.preference-toggle {
+  min-width: 84px;
+  justify-content: center;
+}
+
+.language-toggle {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.language-option {
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+  padding: 0 13px;
+  box-shadow: 0 10px 20px rgba(24, 35, 29, 0.08);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.language-option:hover {
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
+  box-shadow: 0 12px 24px rgba(24, 35, 29, 0.12);
+  transform: translateY(-1px);
+}
+
+.language-option.active {
+  border-color: rgba(217, 154, 34, 0.8);
+  background: var(--accent);
+  color: #17211d;
+  box-shadow: 0 12px 24px rgba(217, 154, 34, 0.22);
 }
 
 .eyebrow {
@@ -2317,8 +2375,19 @@ textarea.chip-source {
     width: 100%;
   }
 
-  .language-select {
+  .language-select,
+  .preference-toggle,
+  .language-toggle {
     grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .language-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .language-option {
     width: 100%;
   }
 

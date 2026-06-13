@@ -51,7 +51,7 @@ Screenshots below use demo data.
 - Per-user buyer details for AI inquiry text personalization
 - Multi-user roles: admins manage global settings and users; normal users manage their own jobs and listings
 - Telegram and webhook notification settings
-- English/German UI, light/dark theme, and mobile-friendly layouts
+- English/German UI, Kramlet-style language and light/dark theme controls, and mobile-friendly layouts
 
 ## Quick Start
 
@@ -149,7 +149,7 @@ MARKETPLACELENS_MIN_POLL_MINUTES=30
 MARKETPLACELENS_DEFAULT_POLL_MINUTES=60
 MARKETPLACELENS_POLL_ENABLED=true
 MARKETPLACELENS_ADMIN_USERNAME=admin
-MARKETPLACELENS_BUILD_CODE=0.3.0
+MARKETPLACELENS_BUILD_CODE=20260613.14
 MARKETPLACELENS_BUILD_COMMIT=dev
 MARKETPLACELENS_BUILD_BRANCH=main
 MARKETPLACELENS_BUILD_CREATED=

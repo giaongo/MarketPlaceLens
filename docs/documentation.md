@@ -48,6 +48,10 @@ The listing browser starts collapsed by default. Open it when you want to filter
 
 Default listing views show active items. Listings marked `seen` or `hidden` disappear from the active list and stay available through explicit status filters.
 
+## Interface Preferences
+
+Language and theme controls are available on the login screen and in the main header. Use `DE` / `EN` to switch the UI language, and use the adjacent light/dark button to switch the current theme. Preferences are saved in the browser so the next visit uses the same language and theme.
+
 ## Review Mode
 
 Review mode shows one listing at a time with image, price, location, source, and key details.

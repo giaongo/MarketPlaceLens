@@ -20,14 +20,13 @@
           <small data-i18n="brand.subtitle">self-hosted listing watcher</small>
           </div>
         </div>
-        <select id="language-select" class="language-select login-language" aria-label="Language">
-          <option value="en">English</option>
-          <option value="de">Deutsch</option>
-        </select>
-        <select id="theme-select" class="language-select login-language" aria-label="Theme">
-          <option value="light" data-i18n="theme.light">Light</option>
-          <option value="dark" data-i18n="theme.dark">Dark</option>
-        </select>
+        <div class="login-preferences">
+          <button id="theme-toggle" class="button ghost preference-toggle" type="button"></button>
+          <div class="language-toggle" role="group" aria-label="Language">
+            <button class="language-option" type="button" data-language-option="de">DE</button>
+            <button class="language-option" type="button" data-language-option="en">EN</button>
+          </div>
+        </div>
         <form id="login-form" class="form-grid">
           <label class="wide"><span data-i18n="login.username">Username</span><input id="username" autocomplete="username"></label>
           <label class="wide"><span data-i18n="login.password">Password</span><input id="password" type="password" autocomplete="current-password"></label>
@@ -46,6 +45,8 @@
           "login.failed": "Login failed",
           "theme.light": "Light",
           "theme.dark": "Dark",
+          "theme.switchToLight": "Light",
+          "theme.switchToDark": "Dark",
         },
         de: {
           "brand.subtitle": "selbst gehosteter Anzeigen-Watcher",
@@ -55,34 +56,45 @@
           "login.failed": "Login fehlgeschlagen",
           "theme.light": "Hell",
           "theme.dark": "Dunkel",
+          "theme.switchToLight": "Hell",
+          "theme.switchToDark": "Dunkel",
         },
       };
       let language = localStorage.getItem("marketplacelens.language") || "en";
       let theme = localStorage.getItem("marketplacelens.theme") || "light";
-      const languageSelect = document.querySelector("#language-select");
-      const themeSelect = document.querySelector("#theme-select");
-      languageSelect.value = language;
-      themeSelect.value = theme;
+      const languageButtons = [...document.querySelectorAll("[data-language-option]")];
+      const themeToggle = document.querySelector("#theme-toggle");
       function t(key) {
         return translations[language]?.[key] || translations.en[key] || key;
+      }
+      function syncPreferences() {
+        languageButtons.forEach((button) => {
+          const active = button.dataset.languageOption === language;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-pressed", String(active));
+        });
+        themeToggle.textContent = theme === "dark" ? t("theme.switchToLight") : t("theme.switchToDark");
+        themeToggle.setAttribute("aria-label", themeToggle.textContent);
       }
       function applyTranslations() {
         document.documentElement.lang = language;
         document.querySelectorAll("[data-i18n]").forEach((node) => {
           node.textContent = t(node.dataset.i18n);
         });
+        syncPreferences();
       }
       function applyTheme() {
         document.body.dataset.theme = theme === "dark" ? "dark" : "light";
         document.documentElement.style.colorScheme = theme === "dark" ? "dark" : "light";
+        syncPreferences();
       }
-      languageSelect.addEventListener("change", () => {
-        language = languageSelect.value === "de" ? "de" : "en";
+      languageButtons.forEach((button) => button.addEventListener("click", () => {
+        language = button.dataset.languageOption === "de" ? "de" : "en";
         localStorage.setItem("marketplacelens.language", language);
         applyTranslations();
-      });
-      themeSelect.addEventListener("change", () => {
-        theme = themeSelect.value === "dark" ? "dark" : "light";
+      }));
+      themeToggle.addEventListener("click", () => {
+        theme = theme === "dark" ? "light" : "dark";
         localStorage.setItem("marketplacelens.theme", theme);
         applyTheme();
       });

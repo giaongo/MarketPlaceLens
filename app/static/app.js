@@ -47,6 +47,8 @@ const translations = {
     "action.delete": "Delete",
     "theme.light": "Light",
     "theme.dark": "Dark",
+    "theme.switchToLight": "Light",
+    "theme.switchToDark": "Dark",
     "summary.activeProfiles": "Active profiles",
     "summary.newListings": "New listings",
     "summary.watchlist": "Watchlist",
@@ -375,6 +377,8 @@ const translations = {
     "action.delete": "Löschen",
     "theme.light": "Hell",
     "theme.dark": "Dunkel",
+    "theme.switchToLight": "Hell",
+    "theme.switchToDark": "Dunkel",
     "summary.activeProfiles": "Aktive Profile",
     "summary.newListings": "Neue Listings",
     "summary.watchlist": "Watchlist",
@@ -741,8 +745,7 @@ document.addEventListener("DOMContentLoaded", () => {
   applyTheme();
   bindNavigation();
   bindForms();
-  $("#language-select").value = state.language;
-  $("#theme-select").value = state.theme;
+  syncPreferenceControls();
   syncPageSizeControls();
   applyTranslations();
   setupChipInputs();
@@ -760,8 +763,10 @@ function bindNavigation() {
   $$("[data-settings-tab]").forEach((button) => {
     button.addEventListener("click", () => setSettingsTab(button.dataset.settingsTab));
   });
-  $("#language-select").addEventListener("change", () => setLanguage($("#language-select").value));
-  $("#theme-select").addEventListener("change", () => setTheme($("#theme-select").value));
+  $$("[data-language-option]").forEach((button) => {
+    button.addEventListener("click", () => setLanguage(button.dataset.languageOption));
+  });
+  $("#theme-toggle").addEventListener("click", () => setTheme(state.theme === "dark" ? "light" : "dark"));
   $("#wizard-button").addEventListener("click", () => showWizard(true));
   $("#wizard-cancel-button").addEventListener("click", () => showWizard(false));
   $("#wizard-back-button").addEventListener("click", previousWizardStep);
@@ -3030,7 +3035,7 @@ function formatDate(value) {
 function setLanguage(language) {
   state.language = language === "de" ? "de" : "en";
   localStorage.setItem("marketplacelens.language", state.language);
-  $("#language-select").value = state.language;
+  syncPreferenceControls();
   applyTranslations();
   const activeView = $(".view.active")?.id?.replace("-view", "") || "dashboard";
   $("#view-title").textContent = t({
@@ -3055,13 +3060,13 @@ function setLanguage(language) {
 function setTheme(theme) {
   state.theme = theme === "dark" ? "dark" : "light";
   localStorage.setItem("marketplacelens.theme", state.theme);
-  $("#theme-select").value = state.theme;
   applyTheme();
 }
 
 function applyTheme() {
   document.body.dataset.theme = state.theme === "dark" ? "dark" : "light";
   document.documentElement.style.colorScheme = state.theme === "dark" ? "dark" : "light";
+  syncPreferenceControls();
 }
 
 function applyTranslations() {
@@ -3081,8 +3086,22 @@ function applyTranslations() {
     button.setAttribute("aria-label", t("view.tiles"));
   });
   updateListingRunButton();
+  syncPreferenceControls();
   syncAllChipInputs();
   renderGuidedFilterRules();
+}
+
+function syncPreferenceControls() {
+  $$("[data-language-option]").forEach((button) => {
+    const active = button.dataset.languageOption === state.language;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  const themeToggle = $("#theme-toggle");
+  if (themeToggle) {
+    themeToggle.textContent = state.theme === "dark" ? t("theme.switchToLight") : t("theme.switchToDark");
+    themeToggle.setAttribute("aria-label", themeToggle.textContent);
+  }
 }
 
 function t(key, values = {}) {
