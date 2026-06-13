@@ -20,13 +20,6 @@
           <small data-i18n="brand.subtitle">self-hosted listing watcher</small>
           </div>
         </div>
-        <div class="login-preferences">
-          <button id="theme-toggle" class="button ghost preference-toggle" type="button"></button>
-          <div class="language-toggle" role="group" aria-label="Language">
-            <button class="language-option" type="button" data-language-option="de">DE</button>
-            <button class="language-option" type="button" data-language-option="en">EN</button>
-          </div>
-        </div>
         <form id="login-form" class="form-grid">
           <label class="wide"><span data-i18n="login.username">Username</span><input id="username" autocomplete="username"></label>
           <label class="wide"><span data-i18n="login.password">Password</span><input id="password" type="password" autocomplete="current-password"></label>
@@ -35,6 +28,13 @@
         </form>
       </section>
     </main>
+    <aside class="display-options" aria-label="Display options">
+      <select id="language-select" class="display-language" aria-label="Language">
+        <option value="de">DE</option>
+        <option value="en">EN</option>
+      </select>
+      <button id="theme-toggle" class="display-theme-toggle" type="button" aria-label="Theme"></button>
+    </aside>
     <script>
       const translations = {
         en: {
@@ -62,19 +62,15 @@
       };
       let language = localStorage.getItem("marketplacelens.language") || "en";
       let theme = localStorage.getItem("marketplacelens.theme") || "light";
-      const languageButtons = [...document.querySelectorAll("[data-language-option]")];
+      const languageSelect = document.querySelector("#language-select");
       const themeToggle = document.querySelector("#theme-toggle");
       function t(key) {
         return translations[language]?.[key] || translations.en[key] || key;
       }
       function syncPreferences() {
-        languageButtons.forEach((button) => {
-          const active = button.dataset.languageOption === language;
-          button.classList.toggle("active", active);
-          button.setAttribute("aria-pressed", String(active));
-        });
-        themeToggle.textContent = theme === "dark" ? t("theme.switchToLight") : t("theme.switchToDark");
-        themeToggle.setAttribute("aria-label", themeToggle.textContent);
+        languageSelect.value = language;
+        themeToggle.textContent = theme === "dark" ? "☀" : "☾";
+        themeToggle.setAttribute("aria-label", theme === "dark" ? t("theme.switchToLight") : t("theme.switchToDark"));
       }
       function applyTranslations() {
         document.documentElement.lang = language;
@@ -88,11 +84,11 @@
         document.documentElement.style.colorScheme = theme === "dark" ? "dark" : "light";
         syncPreferences();
       }
-      languageButtons.forEach((button) => button.addEventListener("click", () => {
-        language = button.dataset.languageOption === "de" ? "de" : "en";
+      languageSelect.addEventListener("change", () => {
+        language = languageSelect.value === "de" ? "de" : "en";
         localStorage.setItem("marketplacelens.language", language);
         applyTranslations();
-      }));
+      });
       themeToggle.addEventListener("click", () => {
         theme = theme === "dark" ? "light" : "dark";
         localStorage.setItem("marketplacelens.theme", theme);

@@ -38,11 +38,6 @@
           <h1 id="view-title">Dashboard</h1>
         </div>
         <div class="top-actions">
-          <button id="theme-toggle" class="button ghost preference-toggle" type="button"></button>
-          <div class="language-toggle" role="group" aria-label="Language">
-            <button class="language-option" type="button" data-language-option="de">DE</button>
-            <button class="language-option" type="button" data-language-option="en">EN</button>
-          </div>
           <button id="refresh-button" class="button ghost" data-i18n="action.refresh">Refresh</button>
           <button id="logout-button" class="button ghost" data-i18n="action.logout">Logout</button>
         </div>
@@ -714,6 +709,15 @@
         </section>
       </section>
     </main>
+
+    <aside class="display-options" aria-label="Display options">
+      <span id="floating-app-version" class="display-version" aria-label="Version"></span>
+      <select id="language-select" class="display-language" aria-label="Language">
+        <option value="de">DE</option>
+        <option value="en">EN</option>
+      </select>
+      <button id="theme-toggle" class="display-theme-toggle" type="button" aria-label="Theme"></button>
+    </aside>
 
     <div id="toast" role="status"></div>
     <dialog id="inquiry-dialog" class="modal-dialog">

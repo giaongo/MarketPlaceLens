@@ -50,7 +50,7 @@ Default listing views show active items. Listings marked `seen` or `hidden` disa
 
 ## Interface Preferences
 
-Language and theme controls are available on the login screen and in the main header. Use `DE` / `EN` to switch the UI language, and use the adjacent light/dark button to switch the current theme. Preferences are saved in the browser so the next visit uses the same language and theme.
+Language, version, and theme controls live in the bottom-right display-options control, matching Kramlet's layout. Use the `DE` / `EN` select to switch the UI language, and use the adjacent icon button to switch the current theme. Preferences are saved in the browser so the next visit uses the same language and theme.
 
 ## Review Mode
 

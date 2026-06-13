@@ -763,9 +763,7 @@ function bindNavigation() {
   $$("[data-settings-tab]").forEach((button) => {
     button.addEventListener("click", () => setSettingsTab(button.dataset.settingsTab));
   });
-  $$("[data-language-option]").forEach((button) => {
-    button.addEventListener("click", () => setLanguage(button.dataset.languageOption));
-  });
+  $("#language-select").addEventListener("change", () => setLanguage($("#language-select").value));
   $("#theme-toggle").addEventListener("click", () => setTheme(state.theme === "dark" ? "light" : "dark"));
   $("#wizard-button").addEventListener("click", () => showWizard(true));
   $("#wizard-cancel-button").addEventListener("click", () => showWizard(false));
@@ -1035,6 +1033,7 @@ async function loadVersion() {
   state.version = version;
   const label = version.build_code || version.version || "";
   $("#app-version").textContent = label;
+  $("#floating-app-version").textContent = label;
 }
 
 async function loadAuthStatus() {
@@ -3092,15 +3091,11 @@ function applyTranslations() {
 }
 
 function syncPreferenceControls() {
-  $$("[data-language-option]").forEach((button) => {
-    const active = button.dataset.languageOption === state.language;
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-pressed", String(active));
-  });
+  $("#language-select").value = state.language;
   const themeToggle = $("#theme-toggle");
   if (themeToggle) {
-    themeToggle.textContent = state.theme === "dark" ? t("theme.switchToLight") : t("theme.switchToDark");
-    themeToggle.setAttribute("aria-label", themeToggle.textContent);
+    themeToggle.textContent = state.theme === "dark" ? "☀" : "☾";
+    themeToggle.setAttribute("aria-label", state.theme === "dark" ? t("theme.switchToLight") : t("theme.switchToDark"));
   }
 }
 
