@@ -29,7 +29,7 @@ All notable changes to MarketPlaceLens are documented here.
 ### Fixed
 
 - Duplicate listing refreshes now backfill missing marketplace fields such as price, location, description, and image; invalid Kleinanzeigen account links are cleaned up; notifications sit above the floating display controls; and watchlist chevrons render as proper icons.
-- Listing and review cards now label the marketplace listing date plus ZIP code and place instead of only showing an unlabeled location and internal discovery time.
+- Listing and review cards now label the marketplace listing date plus ZIP code and place instead of showing an unlabeled location or internal discovery time.
 - Mobile listing controls now align the collapsed filter chevron and watchlist split-button chevrons cleanly.
 - HTML pages now load build-versioned CSS and JavaScript assets to prevent stale mobile browser caches from showing raw translation keys after updates.
 - Local Ollama and LM Studio calls now get a longer provider timeout, which avoids failing while local models are still loading.

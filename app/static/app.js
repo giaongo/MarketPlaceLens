@@ -314,7 +314,7 @@ const translations = {
     "listing.noPrice": "no price",
     "listing.noLocation": "no location",
     "listing.postedAt": "Listed",
-    "listing.firstSeen": "Found",
+    "listing.unknownPostedAt": "unknown",
     "listing.postcode": "ZIP",
     "listing.place": "Place",
     "listing.score": "score {score}",
@@ -648,7 +648,7 @@ const translations = {
     "listing.noPrice": "kein Preis",
     "listing.noLocation": "kein Ort",
     "listing.postedAt": "Anzeige",
-    "listing.firstSeen": "Gefunden",
+    "listing.unknownPostedAt": "unbekannt",
     "listing.postcode": "PLZ",
     "listing.place": "Ort",
     "listing.score": "Score {score}",
@@ -2583,7 +2583,7 @@ function locationFacts(listing) {
 function listingDateFact(listing) {
   const posted = String(listing.posted_at_text || "").trim();
   if (posted) return `${t("listing.postedAt")}: ${posted}`;
-  return `${t("listing.firstSeen")}: ${formatDate(listing.first_seen_at)}`;
+  return `${t("listing.postedAt")}: ${t("listing.unknownPostedAt")}`;
 }
 
 function listingMarkup(listing) {
