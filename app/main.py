@@ -984,7 +984,6 @@ async def verify_unseen_listing_availability(
               AND user_hidden = 0
               AND status IN ('new', 'notified')
             ORDER BY first_seen_at DESC
-            LIMIT 250
             """,
             (profile["id"],),
         ).fetchall()
