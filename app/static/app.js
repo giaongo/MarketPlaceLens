@@ -326,6 +326,14 @@ const translations = {
     "listing.aiInquiry": "AI text",
     "listing.aiAssessment": "AI assessment",
     "listing.aiAssessmentEmpty": "No AI assessment yet.",
+    "listing.contacted": "Contacted",
+    "listing.notContacted": "Not contacted",
+    "listing.markContacted": "Contacted",
+    "listing.unmarkContacted": "Undo contacted",
+    "availability.active": "Active",
+    "availability.reserved": "Reserved",
+    "availability.deleted": "Deleted",
+    "availability.unknown": "Not checked",
     "listing.seen": "Seen",
     "listing.hide": "Hide",
     "listing.new": "New",
@@ -333,6 +341,7 @@ const translations = {
     "toast.listingHidden": "Listing hidden",
     "toast.listingSeen": "Listing marked as seen",
     "toast.listingNew": "Listing moved back to new",
+    "toast.contactedChanged": "Contact flag updated",
     "toast.watchlistAdded": "Added to watchlist",
     "toast.watchlistAddedTo": "Added to {name}",
     "toast.watchlistCreated": "Watchlist created",
@@ -660,6 +669,14 @@ const translations = {
     "listing.aiInquiry": "KI-Text",
     "listing.aiAssessment": "KI-Einschätzung",
     "listing.aiAssessmentEmpty": "Noch keine KI-Einschätzung.",
+    "listing.contacted": "Angeschrieben",
+    "listing.notContacted": "Nicht angeschrieben",
+    "listing.markContacted": "Angeschrieben",
+    "listing.unmarkContacted": "Zurücknehmen",
+    "availability.active": "Aktiv",
+    "availability.reserved": "Reserviert",
+    "availability.deleted": "Gelöscht",
+    "availability.unknown": "Nicht geprüft",
     "listing.seen": "Gesehen",
     "listing.hide": "Ausblenden",
     "listing.new": "Neu",
@@ -667,6 +684,7 @@ const translations = {
     "toast.listingHidden": "Listing ausgeblendet",
     "toast.listingSeen": "Listing als gesehen markiert",
     "toast.listingNew": "Listing wieder auf neu gesetzt",
+    "toast.contactedChanged": "Angeschrieben-Status aktualisiert",
     "toast.watchlistAdded": "Zur Watchlist hinzugefügt",
     "toast.watchlistAddedTo": "Zu {name} hinzugefügt",
     "toast.watchlistCreated": "Watchlist angelegt",
@@ -2116,6 +2134,7 @@ function renderReviewCard() {
   const card = target.querySelector("[data-review-card]");
   bindReviewGestures(card);
   target.querySelector("[data-review-watch]")?.addEventListener("click", reviewWatchCurrent);
+  target.querySelector("[data-review-contacted]")?.addEventListener("click", reviewContactedCurrent);
   target.querySelector("[data-review-seen]")?.addEventListener("click", reviewSeenCurrent);
   target.querySelector("[data-review-open]")?.addEventListener("click", reviewOpenCurrent);
   target.querySelector("[data-review-inquiry]")?.addEventListener("click", reviewInquiryCurrent);
@@ -2139,6 +2158,8 @@ function reviewListingMarkup(listing) {
       <div class="review-details">
         <div class="review-provider-row">
           <span class="source-badge ${escapeAttribute(listing.source_type)}">${escapeHtml(sourceLabel(listing.source_type))}</span>
+          <span class="pill availability ${escapeAttribute(listing.availability_status || "unknown")}">${escapeHtml(availabilityLabel(listing.availability_status))}</span>
+          ${listing.contacted ? `<span class="pill contacted">${escapeHtml(t("listing.contacted"))}</span>` : ""}
           ${watchlistBadges}
         </div>
         <h3>${escapeHtml(listing.title)}</h3>
@@ -2156,6 +2177,7 @@ function reviewListingMarkup(listing) {
         ` : ""}
         <div class="review-card-actions">
           <button class="button ghost" type="button" data-review-watch>${escapeHtml(t("review.watch"))}</button>
+          <button class="button ghost" type="button" data-review-contacted>${escapeHtml(t(listing.contacted ? "listing.unmarkContacted" : "listing.markContacted"))}</button>
           <button class="button primary" type="button" data-review-open>${escapeHtml(t("review.open"))}</button>
           <button class="button ghost" type="button" data-review-seen>${escapeHtml(t("review.seen"))}</button>
           ${state.aiEnabled ? `<button class="button ghost" type="button" data-review-inquiry>${escapeHtml(t("listing.aiInquiry"))}</button>` : ""}
@@ -2211,6 +2233,20 @@ async function reviewSeenCurrent() {
   if (state.reviewIndex >= state.reviewQueue.length) state.reviewIndex = Math.max(0, state.reviewQueue.length - 1);
   renderReviewCard();
   await Promise.all([loadListings(), loadSummary()]);
+}
+
+async function reviewContactedCurrent() {
+  const listing = currentReviewListing();
+  if (!listing) return;
+  const contacted = !listing.contacted;
+  await api(`/api/listings/${listing.id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ contacted }),
+  });
+  listing.contacted = contacted;
+  toast(t("toast.contactedChanged"));
+  renderReviewCard();
+  await loadListings();
 }
 
 function reviewOpenCurrent() {
@@ -2416,6 +2452,17 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
       await Promise.all([loadListings(), loadWatchlist(), loadReviewQueue(), loadSummary()]);
     });
   });
+  browser.querySelectorAll("[data-contacted-action]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      await api(`/api/listings/${button.dataset.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ contacted: button.dataset.contactedAction === "true" }),
+      });
+      toast(t("toast.contactedChanged"));
+      await Promise.all([loadListings(), loadWatchlist(), loadReviewQueue()]);
+    });
+  });
   browser.querySelectorAll("[data-watchlist-action]").forEach((button) => {
     button.addEventListener("click", async () => {
       button.disabled = true;
@@ -2611,6 +2658,8 @@ function listingMarkup(listing) {
           <div class="listing-badges">
             ${watchlistBadges}
             <span class="pill ${escapeAttribute(listing.status)}">${escapeHtml(statusLabel(listing.status))}</span>
+            <span class="pill availability ${escapeAttribute(listing.availability_status || "unknown")}">${escapeHtml(availabilityLabel(listing.availability_status))}</span>
+            ${listing.contacted ? `<span class="pill contacted">${escapeHtml(t("listing.contacted"))}</span>` : ""}
           </div>
         </div>
         <strong class="listing-price">${escapeHtml(listing.price_text || t("listing.noPrice"))}</strong>
@@ -2633,6 +2682,7 @@ function listingMarkup(listing) {
           <div class="watch-menu hidden">${watchlistMenuMarkup(listing.id)}</div>
         </div>
         <button class="mini-button" data-listing-action="seen" data-id="${listing.id}">${escapeHtml(t("listing.seen"))}</button>
+        <button class="mini-button contacted-toggle ${listing.contacted ? "active" : ""}" data-contacted-action="${listing.contacted ? "false" : "true"}" data-id="${listing.id}">${escapeHtml(t(listing.contacted ? "listing.unmarkContacted" : "listing.markContacted"))}</button>
         <button class="mini-button" data-listing-action="hidden" data-id="${listing.id}">${escapeHtml(t("listing.hide"))}</button>
         <button class="mini-button" data-listing-action="new" data-id="${listing.id}">${escapeHtml(t("listing.new"))}</button>
         ${state.aiEnabled ? `<button class="mini-button ai-button" data-inquiry-action data-id="${listing.id}">${escapeHtml(t("listing.aiInquiry"))}</button>` : ""}
@@ -2644,6 +2694,10 @@ function listingMarkup(listing) {
 
 function statusLabel(status) {
   return t(`status.${status}`) || status;
+}
+
+function availabilityLabel(status) {
+  return t(`availability.${status || "unknown"}`) || status || t("availability.unknown");
 }
 
 function listingActionToast(action) {

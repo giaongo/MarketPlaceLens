@@ -1950,6 +1950,32 @@ textarea.chip-source {
   color: var(--ok);
 }
 
+.pill.availability.active {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.pill.availability.reserved {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.pill.availability.deleted {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.pill.availability.unknown {
+  background: var(--surface-strong);
+  color: var(--muted);
+}
+
+.pill.contacted,
+.mini-button.contacted-toggle.active {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+}
+
 .watchlist-pill {
   background: var(--warning-soft);
   border-color: color-mix(in srgb, var(--accent) 34%, transparent);

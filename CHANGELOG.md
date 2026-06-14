@@ -6,6 +6,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Added
 
+- Listing cards now show whether a buyer has already contacted the seller, with a quick toggle in list and swipe views.
 - Facebook Marketplace jobs can use an optional locally stored Cookie header from the admin settings when the URL only works in an authenticated browser session.
 - The review flow now uses larger product-focused cards with inline actions inspired by the Kramlet card layout.
 - Quick jobs can now generate a structured search draft from one natural-language sentence through the configured AI provider.
@@ -29,6 +30,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Fixed
 
+- Each job run now rechecks unseen listings and records whether they are active, reserved, deleted, or currently unknown.
 - Kleinanzeigen scans now read listing dates from `time` metadata and, when a result card omits the date, from the listing detail page before saving the listing. Cards no longer show an "unknown" date chip when the source still does not provide a date.
 - Duplicate listing refreshes now backfill missing marketplace fields such as price, location, description, and image; invalid Kleinanzeigen account links are cleaned up; notifications sit above the floating display controls; and watchlist chevrons render as proper icons.
 - Listing and review cards now label the marketplace listing date plus ZIP code and place instead of showing an unlabeled location or internal discovery time.

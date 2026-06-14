@@ -25,6 +25,7 @@ class ListingStatusPayload(BaseModel):
     status: str | None = Field(default=None, pattern="^(new|seen|hidden|notified)$")
     watchlisted: bool | None = None
     watchlist_id: int | None = None
+    contacted: bool | None = None
 
 
 class InquiryPayload(BaseModel):

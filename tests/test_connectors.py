@@ -8,6 +8,7 @@ from app.connectors import (
     apply_kleinanzeigen_location_to_url,
     facebook_requires_login,
     parse_kleinanzeigen_detail_posted_at,
+    parse_listing_availability,
     safe_cookie_header,
 )
 
@@ -147,6 +148,25 @@ class ConnectorTests(unittest.TestCase):
         """
 
         self.assertEqual(parse_kleinanzeigen_detail_posted_at(html), "07.06.2026")
+
+    def test_kleinanzeigen_availability_detects_reserved_and_deleted(self) -> None:
+        self.assertEqual(
+            parse_listing_availability("kleinanzeigen", 200, "<html>Reserviert</html>", "https://www.kleinanzeigen.de/s-anzeige/a/1"),
+            "reserved",
+        )
+        self.assertEqual(
+            parse_listing_availability(
+                "kleinanzeigen",
+                200,
+                "<html>Diese Anzeige ist nicht mehr verfügbar</html>",
+                "https://www.kleinanzeigen.de/s-anzeige/a/1",
+            ),
+            "deleted",
+        )
+        self.assertEqual(
+            parse_listing_availability("kleinanzeigen", 200, "<html>Normale Anzeige</html>", "https://www.kleinanzeigen.de/s-anzeige/a/1"),
+            "active",
+        )
 
     def test_kleinanzeigen_parser_ignores_account_links(self) -> None:
         html = """

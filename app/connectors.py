@@ -492,6 +492,36 @@ def parse_kleinanzeigen_detail_posted_at(html: str) -> str:
     return ""
 
 
+def parse_listing_availability(source_type: str, status_code: int, html: str, final_url: str) -> str:
+    if status_code in {404, 410}:
+        return "deleted"
+    text = clean_text(BeautifulSoup(html, "html.parser").get_text(" ", strip=True)).lower()
+    if source_type == "kleinanzeigen":
+        if any(
+            phrase in text
+            for phrase in (
+                "anzeige ist nicht mehr verfügbar",
+                "anzeige wurde gelöscht",
+                "anzeige nicht mehr verfügbar",
+                "nicht mehr verfügbar",
+                "seite wurde nicht gefunden",
+            )
+        ):
+            return "deleted"
+        if re.search(r"\breserviert\b", text):
+            return "reserved"
+        if "kleinanzeigen.de/s-anzeige/" not in final_url and "/s-anzeige/" not in final_url:
+            return "unknown"
+    if source_type == "facebook":
+        if any(phrase in text for phrase in ("listing is not available", "this content isn't available", "inserat ist nicht verfügbar")):
+            return "deleted"
+        if any(phrase in text for phrase in ("sold", "verkauft", "reserved", "reserviert")):
+            return "reserved"
+        if "login" in final_url:
+            return "unknown"
+    return "active"
+
+
 def first_text(card: Tag, selectors: list[str]) -> str:
     for selector in selectors:
         node = card.select_one(selector)

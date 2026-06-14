@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .auth import COOKIE_NAME, create_session, current_user_from_session, hash_password, valid_credentials
 from .config import settings
-from .connectors import ListingCandidate, get_connector
+from .connectors import ListingCandidate, get_connector, parse_listing_availability, safe_cookie_header
 from .database import connect, encode_list, ensure_default_watchlist, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import FilterResult, apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
@@ -612,6 +612,9 @@ async def update_listing_status(listing_id: int, payload: ListingStatusPayload, 
             set_listing_watchlisted(db, listing_id, payload.watchlisted, payload.watchlist_id, user)
             updates.append("watchlisted = ?")
             values.append(int(payload.watchlisted) if payload.watchlisted else listing_has_watchlists(db, listing_id))
+        if payload.contacted is not None:
+            updates.append("contacted = ?")
+            values.append(int(payload.contacted))
         if not updates:
             raise HTTPException(400, "No listing changes supplied")
         values.append(listing_id)
@@ -919,8 +922,8 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
         for candidate in candidates:
             existing = find_existing_listing(db, profile["id"], candidate)
             if existing:
-                updates = ["last_seen_at = ?"]
-                values: list[Any] = [now]
+                updates = ["last_seen_at = ?", "availability_status = ?", "availability_checked_at = ?"]
+                values: list[Any] = [now, "active", now]
                 refresh_existing_listing_fields(existing, candidate, updates, values)
                 if not bool(existing["user_hidden"]):
                     result = apply_filters(candidate, profile)
@@ -960,8 +963,71 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
                 db.execute("UPDATE listings SET status = 'notified', notified_at = ? WHERE id = ?", (utc_now(), listing_id))
                 stats["notified"] += 1
         db.execute("UPDATE watch_profiles SET last_run_at = ?, updated_at = ? WHERE id = ?", (now, now, profile_id))
+    stats.update(await verify_unseen_listing_availability(profile, app_settings, now))
+    with connect() as db:
         record_run(db, profile, "success", stats, started_at, "")
     return {"profile_id": profile_id, **stats}
+
+
+async def verify_unseen_listing_availability(
+    profile: dict[str, Any],
+    app_settings: dict[str, str],
+    now: str,
+) -> dict[str, int]:
+    stats = {"availability_checked": 0, "availability_deleted": 0, "availability_reserved": 0}
+    with connect() as db:
+        rows = db.execute(
+            """
+            SELECT id, source_type, listing_url
+            FROM listings
+            WHERE profile_id = ?
+              AND user_hidden = 0
+              AND status IN ('new', 'notified')
+            ORDER BY first_seen_at DESC
+            LIMIT 250
+            """,
+            (profile["id"],),
+        ).fetchall()
+    if not rows:
+        return stats
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+            if profile["source_type"] in {"facebook", "mobilede"}
+            else settings.user_agent
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
+    }
+    facebook_cookie = safe_cookie_header(app_settings.get("facebook_cookie_header", ""))
+    if profile["source_type"] == "facebook" and facebook_cookie:
+        headers["Cookie"] = facebook_cookie
+    updates: list[tuple[str, str, int]] = []
+    async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=12.0) as client:
+        for row in rows:
+            availability = "unknown"
+            try:
+                response = await client.get(row["listing_url"])
+                availability = parse_listing_availability(
+                    row["source_type"],
+                    response.status_code,
+                    response.text,
+                    str(response.url),
+                )
+            except httpx.HTTPError:
+                availability = "unknown"
+            updates.append((availability, now, row["id"]))
+            stats["availability_checked"] += 1
+            if availability == "deleted":
+                stats["availability_deleted"] += 1
+            if availability == "reserved":
+                stats["availability_reserved"] += 1
+    with connect() as db:
+        db.executemany(
+            "UPDATE listings SET availability_status = ?, availability_checked_at = ? WHERE id = ?",
+            updates,
+        )
+    return stats
 
 
 async def poll_loop() -> None:
@@ -1575,8 +1641,9 @@ def insert_listing(
         INSERT INTO listings(
           source_type, source_listing_id, profile_id, title, price_text, price_value,
           location_text, category_text, posted_at_text, description_snippet, listing_url,
-          thumbnail_url, content_hash, first_seen_at, last_seen_at, status, watchlisted, user_hidden, score, filter_reason
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          thumbnail_url, content_hash, first_seen_at, last_seen_at, status, watchlisted, user_hidden,
+          availability_status, availability_checked_at, score, filter_reason
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             candidate.source_type,
@@ -1597,6 +1664,8 @@ def insert_listing(
             status,
             0,
             0,
+            "active",
+            now,
             score,
             reason,
         ),

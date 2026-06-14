@@ -91,6 +91,9 @@ def init_db() -> None:
               status TEXT NOT NULL DEFAULT 'new',
               watchlisted INTEGER NOT NULL DEFAULT 0,
               user_hidden INTEGER NOT NULL DEFAULT 0,
+              contacted INTEGER NOT NULL DEFAULT 0,
+              availability_status TEXT NOT NULL DEFAULT 'unknown',
+              availability_checked_at TEXT,
               score INTEGER NOT NULL DEFAULT 0,
               filter_reason TEXT NOT NULL DEFAULT '',
               notified_at TEXT,
@@ -151,6 +154,9 @@ def init_db() -> None:
         )
         ensure_column(db, "listings", "watchlisted", "INTEGER NOT NULL DEFAULT 0")
         ensure_column(db, "listings", "user_hidden", "INTEGER NOT NULL DEFAULT 0")
+        ensure_column(db, "listings", "contacted", "INTEGER NOT NULL DEFAULT 0")
+        ensure_column(db, "listings", "availability_status", "TEXT NOT NULL DEFAULT 'unknown'")
+        ensure_column(db, "listings", "availability_checked_at", "TEXT")
         ensure_column(db, "listings", "ai_assessment_text", "TEXT NOT NULL DEFAULT ''")
         ensure_column(db, "listings", "ai_assessed_at", "TEXT")
         ensure_column(db, "watch_profiles", "notify_webhook", "INTEGER NOT NULL DEFAULT 0")
@@ -217,6 +223,7 @@ def row_to_listing(row: sqlite3.Row) -> dict[str, Any]:
     data = dict(row)
     data["watchlisted"] = bool(data.get("watchlisted", False))
     data["user_hidden"] = bool(data.get("user_hidden", False))
+    data["contacted"] = bool(data.get("contacted", False))
     data["watchlists"] = []
     return data
 
