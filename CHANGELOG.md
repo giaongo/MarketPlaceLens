@@ -18,6 +18,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Changed
 
+- Listing tiles and swipe cards now use the fuller Scan Card treatment, while list view keeps the compact scan row with actions on the right and mobile-friendly stacked actions.
 - Language, version, and light/dark theme controls now match Kramlet's bottom-right floating display-options control instead of living in the top header.
 - Review cards are now more Kramlet-like on phones, with the actions inside the product card and compact mobile sizing so a listing fits into one screen more reliably.
 - The Review section is now labeled Swipe/Swipen and its product cards show the same marketplace date, ZIP, and place details as listing cards.
