@@ -564,6 +564,12 @@ async def list_listings(
             lower(listings.title) LIKE '%passwort vergessen%'
             OR lower(listings.listing_url) LIKE '%passwort-vergessen%'
             OR lower(listings.listing_url) LIKE '%/m-passwort%'
+            OR lower(listings.title) LIKE '%erstelle ein konto%'
+            OR lower(listings.title) LIKE '%konto erstellen%'
+            OR lower(listings.title) LIKE '%registrieren%'
+            OR lower(listings.listing_url) LIKE '%konto-erstellen%'
+            OR lower(listings.listing_url) LIKE '%registrieren%'
+            OR lower(listings.listing_url) LIKE '%/m-benutzer-anmeldung%'
           )
         )
         """

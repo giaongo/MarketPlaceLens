@@ -542,6 +542,15 @@ def is_non_listing_artifact(source_type: str, title: str, listing_url: str) -> b
     if source_type == "kleinanzeigen":
         if "passwort vergessen" in normalized_title or "passwort-vergessen" in path:
             return True
+        if (
+            "erstelle ein konto" in normalized_title
+            or "konto erstellen" in normalized_title
+            or "registrieren" in normalized_title
+            or "konto-erstellen" in path
+            or "registrieren" in path
+            or "/m-benutzer-anmeldung" in path
+        ):
+            return True
         if "kleinanzeigen.de" in parsed.netloc.lower() and "/s-anzeige/" not in path:
             return True
     return False

@@ -176,6 +176,12 @@ def init_db() -> None:
                 OR lower(title) LIKE '%passwort vergessen%'
                 OR lower(listing_url) LIKE '%passwort-vergessen%'
                 OR lower(listing_url) LIKE '%/m-passwort%'
+                OR lower(title) LIKE '%erstelle ein konto%'
+                OR lower(title) LIKE '%konto erstellen%'
+                OR lower(title) LIKE '%registrieren%'
+                OR lower(listing_url) LIKE '%konto-erstellen%'
+                OR lower(listing_url) LIKE '%registrieren%'
+                OR lower(listing_url) LIKE '%/m-benutzer-anmeldung%'
               )
             """
         )
