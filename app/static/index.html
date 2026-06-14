@@ -391,66 +391,67 @@
       </section>
 
       <section id="listings-view" class="view">
-        <section class="panel">
-          <div class="panel-heading">
-            <div>
-              <h2 data-i18n="listings.title">Browse listings</h2>
-              <p class="panel-subtitle" data-i18n="listings.subtitle">Scroll, filter, switch between list and tiles, or open the original listing.</p>
-            </div>
-          </div>
-          <details class="collapsible-panel listing-settings-panel" id="listings-browser-panel">
-            <summary class="collapsible-summary settings-summary">
-              <span data-i18n="listings.settings">Filters and display</span>
-              <span class="collapse-indicator" aria-hidden="true"></span>
-            </summary>
-            <div class="collapsible-content">
-              <div class="filters">
-                <input id="listing-search-filter" placeholder="Search title, location, category" data-i18n-placeholder="listings.searchPlaceholder">
-                <select id="listing-status-filter">
-                  <option value="" data-i18n="listings.allStatuses">All statuses</option>
-                  <option value="new" data-i18n="status.new">New</option>
-                  <option value="notified" data-i18n="status.notified">Notified</option>
-                  <option value="hidden" data-i18n="status.hidden">Hidden</option>
-                  <option value="seen" data-i18n="status.seen">Seen</option>
+        <section class="panel listings-workspace-panel">
+          <header class="listing-appbar">
+            <div class="listing-appbar-main">
+              <div class="listing-title-block">
+                <h2 data-i18n="listings.title">Browse listings</h2>
+                <p id="listings-current-summary" class="panel-subtitle" data-i18n="listings.subtitle">Scroll, filter, switch between list and tiles, or open the original listing.</p>
+              </div>
+              <div class="listing-primary-actions">
+                <select id="listing-profile-filter" aria-label="Job">
+                  <option value="" data-i18n="profiles.all">All profiles</option>
                 </select>
-                <select id="listing-sort-filter">
-                  <option value="date_desc" data-i18n="sort.dateDesc">Newest first</option>
-                  <option value="price_asc" data-i18n="sort.priceAsc">Price low-high</option>
-                  <option value="price_desc" data-i18n="sort.priceDesc">Price high-low</option>
-                  <option value="score_desc" data-i18n="sort.scoreDesc">Best score</option>
-                </select>
-                <input id="listing-min-price-filter" type="number" step="0.01" placeholder="Min" data-i18n-placeholder="profile.minPriceShort">
-                <input id="listing-max-price-filter" type="number" step="0.01" placeholder="Max" data-i18n-placeholder="profile.maxPriceShort">
-                <label class="switch compact"><input id="include-hidden" type="checkbox"> <span data-i18n="listings.includeHidden">Show hidden</span></label>
+                <button class="button primary filter-action" type="button" id="run-listing-profile-button" data-i18n="listings.runSelectedJob">Run selected job</button>
+                <button class="icon-toggle" type="button" id="listing-refresh-button" title="Refresh" aria-label="Refresh" data-i18n="action.refresh">Refresh</button>
               </div>
             </div>
-          </details>
-          <div class="listing-toolbar" aria-label="Listing display options">
-            <div class="listing-run-controls">
-              <select id="listing-profile-filter">
-                <option value="" data-i18n="profiles.all">All profiles</option>
-              </select>
-              <button class="button ghost filter-action" type="button" id="run-listing-profile-button" data-i18n="listings.runSelectedJob">Run selected job</button>
-            </div>
-            <div class="view-toggle" role="group" aria-label="Listing view">
-              <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view" data-i18n="view.list">List</button>
-              <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view" data-i18n="view.tiles">Tiles</button>
-            </div>
-            <div class="pagination-controls" id="listings-pagination">
-              <label><span data-i18n="pagination.pageSize">Per page</span>
-                <select data-page-size>
-                  <option value="5">5</option>
-                  <option value="10">10</option>
-                  <option value="20">20</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                </select>
+            <div class="listing-appbar-tools">
+              <label class="listing-search-control" aria-label="Search listings">
+                <span aria-hidden="true">⌕</span>
+                <input id="listing-search-filter" placeholder="Search title, location, category" data-i18n-placeholder="listings.searchPlaceholder">
               </label>
-              <button class="mini-button" type="button" data-page-prev data-i18n="pagination.prev">Prev</button>
-              <span data-page-info>0-0 / 0</span>
-              <button class="mini-button" type="button" data-page-next data-i18n="pagination.next">Next</button>
+              <div class="view-toggle listing-view-toggle" role="group" aria-label="Listing view">
+                <button class="icon-toggle" type="button" id="listing-scan-button" title="Scan view" aria-label="Scan view" data-i18n="view.scan">Scan</button>
+                <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view" data-i18n="view.list">List</button>
+                <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view" data-i18n="view.tiles">Tiles</button>
+              </div>
             </div>
-          </div>
+            <div class="listing-filter-strip" aria-label="Listing filters">
+              <select id="listing-status-filter">
+                <option value="" data-i18n="listings.allStatuses">All statuses</option>
+                <option value="new" data-i18n="status.new">New</option>
+                <option value="notified" data-i18n="status.notified">Notified</option>
+                <option value="hidden" data-i18n="status.hidden">Hidden</option>
+                <option value="seen" data-i18n="status.seen">Seen</option>
+              </select>
+              <select id="listing-sort-filter">
+                <option value="date_desc" data-i18n="sort.dateDesc">Newest first</option>
+                <option value="price_asc" data-i18n="sort.priceAsc">Price low-high</option>
+                <option value="price_desc" data-i18n="sort.priceDesc">Price high-low</option>
+                <option value="score_desc" data-i18n="sort.scoreDesc">Best score</option>
+              </select>
+              <input id="listing-min-price-filter" type="number" step="0.01" placeholder="Min" data-i18n-placeholder="profile.minPriceShort">
+              <input id="listing-max-price-filter" type="number" step="0.01" placeholder="Max" data-i18n-placeholder="profile.maxPriceShort">
+              <label class="switch compact"><input id="include-hidden" type="checkbox"> <span data-i18n="listings.includeHidden">Show hidden</span></label>
+            </div>
+            <div class="listing-pagination-row">
+              <div class="pagination-controls" id="listings-pagination">
+                <label><span data-i18n="pagination.pageSize">Per page</span>
+                  <select data-page-size>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                </label>
+                <button class="mini-button" type="button" data-page-prev data-i18n="pagination.prev">Prev</button>
+                <span data-page-info>0-0 / 0</span>
+                <button class="mini-button" type="button" data-page-next data-i18n="pagination.next">Next</button>
+              </div>
+            </div>
+          </header>
           <div id="listings-table" class="listing-browser"></div>
         </section>
       </section>

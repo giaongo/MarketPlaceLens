@@ -354,6 +354,10 @@ main {
   border-bottom: 1px solid var(--line);
 }
 
+body[data-current-view="listings"] .topbar {
+  display: none;
+}
+
 .top-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1653,6 +1657,162 @@ textarea.chip-source {
   min-width: 0;
 }
 
+.listings-workspace-panel {
+  overflow: hidden;
+  padding: 0;
+}
+
+.listing-appbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  padding: 16px 18px 14px;
+  backdrop-filter: blur(16px);
+}
+
+.listing-appbar-main,
+.listing-appbar-tools,
+.listing-primary-actions,
+.listing-filter-strip,
+.listing-pagination-row,
+.listing-search-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.listing-appbar-main {
+  justify-content: space-between;
+}
+
+.listing-title-block {
+  min-width: 180px;
+}
+
+.listing-title-block h2 {
+  margin: 0;
+  font-size: clamp(1.55rem, 2vw, 2rem);
+  line-height: 1.04;
+}
+
+.listing-title-block .panel-subtitle {
+  margin-top: 5px;
+}
+
+.listing-primary-actions {
+  justify-content: flex-end;
+}
+
+.listing-primary-actions select {
+  width: min(260px, 28vw);
+  min-height: 40px;
+}
+
+.listing-primary-actions .button,
+.listing-primary-actions .icon-toggle {
+  min-height: 40px;
+}
+
+.listing-primary-actions .button {
+  white-space: nowrap;
+}
+
+.listing-primary-actions .icon-toggle {
+  width: 42px;
+  padding: 0;
+  font-size: 0;
+}
+
+.listing-primary-actions .icon-toggle::before {
+  content: "↻";
+  font-size: 1rem;
+}
+
+.listing-search-control {
+  flex: 1 1 320px;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+  padding: 0 12px;
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.listing-search-control input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--text);
+  font-weight: 760;
+  outline: none;
+}
+
+.listing-search-control:focus-within {
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-soft) 70%, transparent);
+}
+
+.listing-view-toggle {
+  flex: 0 0 auto;
+}
+
+.listing-view-toggle .icon-toggle {
+  width: auto;
+  min-width: 72px;
+  min-height: 34px;
+  padding: 6px 12px;
+}
+
+.listing-filter-strip {
+  flex-wrap: wrap;
+}
+
+.listing-filter-strip select,
+.listing-filter-strip input,
+.listing-filter-strip .switch.compact {
+  min-height: 34px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 0.84rem;
+  font-weight: 820;
+}
+
+.listing-filter-strip select {
+  width: auto;
+  max-width: 190px;
+  padding: 6px 30px 6px 12px;
+}
+
+.listing-filter-strip input {
+  width: 104px;
+  padding: 6px 12px;
+}
+
+.listing-filter-strip .switch.compact {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+}
+
+.listing-pagination-row {
+  justify-content: flex-end;
+  margin-top: -2px;
+}
+
+.listings-workspace-panel .listing-browser {
+  padding: 18px;
+}
+
+.listings-workspace-panel .listing-browser:empty {
+  padding: 0;
+}
+
 .listing-run-controls {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(128px, auto);
@@ -2396,27 +2556,89 @@ textarea.chip-source {
 
   .sidebar {
     min-height: auto;
-    position: static;
+    position: fixed;
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 70;
     border-right: 0;
-    border-bottom: 1px solid var(--line);
-    padding: 14px;
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    color: var(--text);
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
     width: 100%;
     overflow: hidden;
+    box-shadow: 0 -18px 42px rgba(24, 35, 29, 0.12);
+    backdrop-filter: blur(16px);
+  }
+
+  .brand {
+    display: none;
   }
 
   nav {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
     overflow: visible;
-    padding-bottom: 2px;
+    padding-bottom: 0;
     width: 100%;
     max-width: 100%;
   }
 
   .nav-item {
-    flex: 1 1 150px;
-    white-space: nowrap;
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    min-height: 52px;
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+    padding: 6px 4px;
+    font-size: 0;
+    overflow-wrap: normal;
+    white-space: normal;
     text-align: center;
+  }
+
+  .sidebar .nav-item {
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .nav-item::before {
+    display: block;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .nav-item::after {
+    display: block;
+    font-size: 0.64rem;
+    font-weight: 850;
+    line-height: 1.05;
+    white-space: nowrap;
+  }
+
+  .nav-item[data-view="dashboard"]::before { content: "⌂"; }
+  .nav-item[data-view="profiles"]::before { content: "◎"; }
+  .nav-item[data-view="listings"]::before { content: "▤"; }
+  .nav-item[data-view="review"]::before { content: "↔"; }
+  .nav-item[data-view="watchlist"]::before { content: "☆"; }
+  .nav-item[data-view="settings"]::before { content: "⚙"; }
+  .nav-item[data-view="dashboard"]::after { content: "Home"; }
+  .nav-item[data-view="profiles"]::after { content: "Jobs"; }
+  .nav-item[data-view="listings"]::after { content: "Listings"; }
+  .nav-item[data-view="review"]::after { content: "Swipe"; }
+  .nav-item[data-view="watchlist"]::after { content: "Watch"; }
+  .nav-item[data-view="settings"]::after { content: "Settings"; }
+
+  .sidebar .nav-item.active {
+    border-color: transparent;
+    background: var(--brand-soft);
+    color: var(--brand-dark);
   }
 
   .status-grid,
@@ -2469,7 +2691,7 @@ textarea.chip-source {
 
   .display-options {
     right: max(10px, env(safe-area-inset-right));
-    bottom: max(10px, env(safe-area-inset-bottom));
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 72px);
   }
 
   #toast {
@@ -2646,6 +2868,84 @@ textarea.chip-source {
   .listing-browser {
     max-height: none;
     overflow: visible;
+  }
+
+  .listings-workspace-panel {
+    margin-inline: -6px;
+  }
+
+  .listing-appbar {
+    top: 0;
+    gap: 10px;
+    padding: 12px 12px 10px;
+  }
+
+  .listing-appbar-main,
+  .listing-appbar-tools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .listing-title-block h2 {
+    font-size: 1.55rem;
+  }
+
+  .listing-primary-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(96px, auto) 42px;
+    width: 100%;
+  }
+
+  .listing-primary-actions select {
+    width: 100%;
+  }
+
+  .listing-primary-actions .button {
+    padding-inline: 10px;
+  }
+
+  .listing-search-control {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .listing-view-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .listing-view-toggle .icon-toggle {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .listing-filter-strip {
+    display: flex;
+    flex-wrap: nowrap;
+    margin-inline: -2px;
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+  }
+
+  .listing-filter-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .listing-filter-strip select,
+  .listing-filter-strip input,
+  .listing-filter-strip .switch.compact {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .listing-pagination-row {
+    justify-content: flex-start;
+  }
+
+  .listings-workspace-panel .listing-browser {
+    padding: 12px;
   }
 
   .listing-toolbar,

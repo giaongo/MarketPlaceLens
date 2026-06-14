@@ -203,6 +203,7 @@ const translations = {
     "listings.includeHidden": "Show hidden/seen",
     "listings.runSelectedJob": "Run job",
     "listings.runSelectedJobHint": "Select a job to run it from here.",
+    "listings.resultSummary": "{total} matches with current filters",
     "watchlist.title": "Watchlist",
     "watchlist.subtitle": "Saved listings you want to compare or revisit later.",
     "review.title": "Swipe",
@@ -224,6 +225,7 @@ const translations = {
     "sort.priceDesc": "Price high-low",
     "sort.scoreDesc": "Best score",
     "view.list": "List",
+    "view.scan": "Scan",
     "view.tiles": "Tiles",
     "pagination.pageSize": "Per page",
     "pagination.prev": "Prev",
@@ -546,6 +548,7 @@ const translations = {
     "listings.includeHidden": "Ausgeblendete/Gesehene anzeigen",
     "listings.runSelectedJob": "Job starten",
     "listings.runSelectedJobHint": "Wähle einen Job aus, um ihn hier zu starten.",
+    "listings.resultSummary": "{total} Treffer mit aktuellen Filtern",
     "watchlist.title": "Watchlist",
     "watchlist.subtitle": "Gespeicherte Listings zum Vergleichen oder späteren Öffnen.",
     "review.title": "Swipen",
@@ -567,6 +570,7 @@ const translations = {
     "sort.priceDesc": "Preis hoch-niedrig",
     "sort.scoreDesc": "Bester Score",
     "view.list": "Liste",
+    "view.scan": "Scan",
     "view.tiles": "Kacheln",
     "pagination.pageSize": "Pro Seite",
     "pagination.prev": "Zurück",
@@ -769,6 +773,7 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 document.addEventListener("DOMContentLoaded", () => {
   applyTheme();
+  document.body.dataset.currentView = state.currentView;
   bindNavigation();
   bindForms();
   syncPreferenceControls();
@@ -864,6 +869,8 @@ function bindNavigation() {
   $("#listing-max-price-filter").addEventListener("input", debounce(resetListingsPage, 220));
   $("#listing-sort-filter").addEventListener("change", resetListingsPage);
   $("#include-hidden").addEventListener("change", resetListingsPage);
+  $("#listing-refresh-button").addEventListener("click", refreshAll);
+  $("#listing-scan-button").addEventListener("click", () => showView("review"));
   $$("[data-listing-view]").forEach((button) => {
     button.addEventListener("click", () => setListingView(button.dataset.listingView));
   });
@@ -956,6 +963,7 @@ function bindForms() {
 
 function showView(view) {
   state.currentView = view;
+  document.body.dataset.currentView = view;
   $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === view));
   $$(".view").forEach((item) => item.classList.toggle("active", item.id === `${view}-view`));
   $("#view-title").textContent = t({
@@ -2441,6 +2449,7 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
   browser.classList.toggle("list-view", state.listingView !== "grid");
   updateListingViewButtons();
   updatePaginationControls(watchlistedOnly, total);
+  if (!watchlistedOnly) updateListingsSummary(total);
   browser.innerHTML = listings.length
     ? listings.map((listing) => listingMarkup(listing)).join("")
     : `<article class="listing-card empty-listing"><strong>${escapeHtml(t(watchlistedOnly ? "empty.noWatchlist" : "empty.noListings"))}</strong><p class="meta">${escapeHtml(t(watchlistedOnly ? "empty.noWatchlistHint" : "empty.noListingsHint"))}</p></article>`;
@@ -2508,6 +2517,12 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
     });
   });
   queueAutoAssessments(listings, containerSelector, watchlistedOnly, page);
+}
+
+function updateListingsSummary(total) {
+  const summary = $("#listings-current-summary");
+  if (!summary) return;
+  summary.textContent = t("listings.resultSummary", { total });
 }
 
 function queueAutoAssessments(listings, containerSelector, watchlistedOnly, page) {
@@ -3178,6 +3193,11 @@ function applyTranslations() {
     button.title = t("view.tiles");
     button.setAttribute("aria-label", t("view.tiles"));
   });
+  const scanButton = $("#listing-scan-button");
+  if (scanButton) {
+    scanButton.title = t("view.scan");
+    scanButton.setAttribute("aria-label", t("view.scan"));
+  }
   updateListingRunButton();
   syncPreferenceControls();
   syncAllChipInputs();
