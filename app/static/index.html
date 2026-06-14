@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>MarketPlaceLens</title>
     <link rel="icon" href="/static/favicon.ico" sizes="any">
     <link rel="icon" href="/static/assets/marketplacelens-logo.svg" type="image/svg+xml">
@@ -406,10 +406,6 @@
             <div class="collapsible-content">
               <div class="filters">
                 <input id="listing-search-filter" placeholder="Search title, location, category" data-i18n-placeholder="listings.searchPlaceholder">
-                <select id="listing-profile-filter">
-                  <option value="" data-i18n="profiles.all">All profiles</option>
-                </select>
-                <button class="button ghost filter-action" type="button" id="run-listing-profile-button" data-i18n="listings.runSelectedJob">Run selected job</button>
                 <select id="listing-status-filter">
                   <option value="" data-i18n="listings.allStatuses">All statuses</option>
                   <option value="new" data-i18n="status.new">New</option>
@@ -430,6 +426,12 @@
             </div>
           </details>
           <div class="listing-toolbar" aria-label="Listing display options">
+            <div class="listing-run-controls">
+              <select id="listing-profile-filter">
+                <option value="" data-i18n="profiles.all">All profiles</option>
+              </select>
+              <button class="button ghost filter-action" type="button" id="run-listing-profile-button" data-i18n="listings.runSelectedJob">Run selected job</button>
+            </div>
             <div class="view-toggle" role="group" aria-label="Listing view">
               <button class="icon-toggle active" type="button" data-listing-view="list" title="List view" aria-label="List view" data-i18n="view.list">List</button>
               <button class="icon-toggle" type="button" data-listing-view="grid" title="Tile view" aria-label="Tile view" data-i18n="view.tiles">Tiles</button>

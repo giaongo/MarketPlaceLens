@@ -1953,13 +1953,16 @@ async function runSelectedProfile() {
 async function runListingProfile() {
   const id = $("#listing-profile-filter").value;
   if (!id) return toast(t("toast.selectJobFirst"));
-  $("#run-listing-profile-button").disabled = true;
+  const button = $("#run-listing-profile-button");
+  button.disabled = true;
   toast(t("toast.runStarted"));
   try {
     const result = await api(`/api/profiles/${id}/run`, { method: "POST" });
     toast(t("toast.runComplete", result));
     state.listingPage = 0;
     await refreshAll();
+  } catch (error) {
+    toast(errorMessage(error));
   } finally {
     updateListingRunButton();
   }

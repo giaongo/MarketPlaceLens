@@ -31,6 +31,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Fixed
 
+- Listings now respect iPhone safe-area spacing, keep the job selector and run action visible outside the collapsible filter panel, and show run errors as toasts.
 - Each job run now rechecks unseen listings and records whether they are active, reserved, deleted, or currently unknown.
 - Kleinanzeigen scans now read listing dates from `time` metadata and, when a result card omits the date, from the listing detail page before saving the listing. Cards no longer show an "unknown" date chip when the source still does not provide a date.
 - Duplicate listing refreshes now backfill missing marketplace fields such as price, location, description, and image; invalid Kleinanzeigen account links are cleaned up; notifications sit above the floating display controls; and watchlist chevrons render as proper icons.
