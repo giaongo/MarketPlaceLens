@@ -32,6 +32,8 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Fixed
 
+- Kleinanzeigen "Passwort vergessen?" account-page artifacts are now filtered at parse time, excluded from listing API responses, and cleaned from existing local data on startup.
+- Mobile listing, watchlist, settings, and swipe screens were audited; the floating language/theme control no longer covers card actions on phones, listing titles get full width before badges, and settings tabs use a denser two-column mobile layout.
 - Listings now respect iPhone safe-area spacing, keep the job selector and run action visible outside the collapsible filter panel, and show run errors as toasts.
 - Each job run now rechecks unseen listings and records whether they are active, reserved, deleted, or currently unknown.
 - Kleinanzeigen scans now read listing dates from `time` metadata and, when a result card omits the date, from the listing detail page before saving the listing. Cards no longer show an "unknown" date chip when the source still does not provide a date.

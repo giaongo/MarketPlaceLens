@@ -253,7 +253,7 @@ class HtmlListingConnector(MarketplaceConnector):
             return None
         listing_url = urljoin("https://www.kleinanzeigen.de", link) if link else ""
         title = clean_text(first_text(card, [".aditem-main .text-module-begin", ".ellipsis", "h2", "h3", "a"]))
-        if not title or not listing_url:
+        if not title or not listing_url or is_non_listing_artifact(self.source_type, title, listing_url):
             return None
         price_text = clean_text(first_text(card, [".aditem-main--middle--price-shipping--price", "[class*=price]"]))
         location_text = clean_text(first_text(card, [".aditem-main--top--left", "[class*=location]"]))
@@ -418,7 +418,7 @@ class HtmlListingConnector(MarketplaceConnector):
                 ],
             )
         )
-        if not title or len(title) < 3:
+        if not title or len(title) < 3 or is_non_listing_artifact(self.source_type, title, listing_url):
             return None
         price_text = clean_text(first_text(card, ["[class*=price]", "[data-testid*=price]", ".aditem-main--middle--price-shipping--price"]))
         location_text = clean_text(first_text(card, ["[class*=location]", "[data-testid*=location]", ".aditem-main--top--left"]))
@@ -533,6 +533,18 @@ def first_text(card: Tag, selectors: list[str]) -> str:
 def is_kleinanzeigen_listing_url(url: str) -> bool:
     parsed = urlparse(urljoin("https://www.kleinanzeigen.de", url))
     return "kleinanzeigen.de" in parsed.netloc.lower() and "/s-anzeige/" in parsed.path
+
+
+def is_non_listing_artifact(source_type: str, title: str, listing_url: str) -> bool:
+    normalized_title = clean_text(title).lower()
+    parsed = urlparse(urljoin("https://www.kleinanzeigen.de", listing_url))
+    path = parsed.path.lower()
+    if source_type == "kleinanzeigen":
+        if "passwort vergessen" in normalized_title or "passwort-vergessen" in path:
+            return True
+        if "kleinanzeigen.de" in parsed.netloc.lower() and "/s-anzeige/" not in path:
+            return True
+    return False
 
 
 def extract_listing_id(url: str) -> str:

@@ -171,7 +171,12 @@ def init_db() -> None:
             """
             DELETE FROM listings
             WHERE source_type = 'kleinanzeigen'
-              AND listing_url NOT LIKE '%/s-anzeige/%'
+              AND (
+                listing_url NOT LIKE '%/s-anzeige/%'
+                OR lower(title) LIKE '%passwort vergessen%'
+                OR lower(listing_url) LIKE '%passwort-vergessen%'
+                OR lower(listing_url) LIKE '%/m-passwort%'
+              )
             """
         )
         ensure_admin_user(db)

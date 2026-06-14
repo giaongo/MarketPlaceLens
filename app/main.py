@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .auth import COOKIE_NAME, create_session, current_user_from_session, hash_password, valid_credentials
 from .config import settings
-from .connectors import ListingCandidate, get_connector, parse_listing_availability, safe_cookie_header
+from .connectors import ListingCandidate, get_connector, is_non_listing_artifact, parse_listing_availability, safe_cookie_header
 from .database import connect, encode_list, ensure_default_watchlist, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import FilterResult, apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
@@ -556,6 +556,18 @@ async def list_listings(
     if max_price is not None:
         clauses.append("(price_value IS NULL OR price_value <= ?)")
         values.append(max_price)
+    clauses.append(
+        """
+        NOT (
+          listings.source_type = 'kleinanzeigen'
+          AND (
+            lower(listings.title) LIKE '%passwort vergessen%'
+            OR lower(listings.listing_url) LIKE '%passwort-vergessen%'
+            OR lower(listings.listing_url) LIKE '%/m-passwort%'
+          )
+        )
+        """
+    )
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     order_by = {
         "price_asc": "price_value IS NULL, price_value ASC, first_seen_at DESC",
@@ -920,6 +932,9 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
     now = utc_now()
     with connect() as db:
         for candidate in candidates:
+            if is_non_listing_artifact(candidate.source_type, candidate.title, candidate.listing_url):
+                stats["hidden"] += 1
+                continue
             existing = find_existing_listing(db, profile["id"], candidate)
             if existing:
                 updates = ["last_seen_at = ?", "availability_status = ?", "availability_checked_at = ?"]

@@ -198,6 +198,31 @@ class ConnectorTests(unittest.TestCase):
         self.assertEqual([listing.title for listing in listings], ["Echte Anzeige"])
         self.assertEqual(listings[0].price_text, "15 € VB")
 
+    def test_kleinanzeigen_parser_ignores_password_reset_artifact_with_listing_url(self) -> None:
+        html = """
+        <ul id="srchrslt-adtable">
+          <li class="ad-listitem">
+            <article class="aditem" data-href="/s-anzeige/passwort-vergessen/99999-172-1">
+              <a href="/s-anzeige/passwort-vergessen/99999-172-1">Passwort vergessen?</a>
+              <p class="aditem-main--middle--price-shipping--price">kein Preis</p>
+            </article>
+          </li>
+          <li class="ad-listitem">
+            <article class="aditem" data-href="/s-anzeige/echte-anzeige/12345-172-1">
+              <a href="/s-anzeige/echte-anzeige/12345-172-1">Echte Anzeige</a>
+              <p class="aditem-main--middle--price-shipping--price">15 € VB</p>
+            </article>
+          </li>
+        </ul>
+        """
+
+        listings = HtmlListingConnector("kleinanzeigen").parse_kleinanzeigen_listings(
+            html,
+            {"search_url": "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=defekt"},
+        )
+
+        self.assertEqual([listing.title for listing in listings], ["Echte Anzeige"])
+
     def test_kleinanzeigen_pagination_keeps_client_available(self) -> None:
         first_url = "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl"
         second_url = "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl&pageNum=2"

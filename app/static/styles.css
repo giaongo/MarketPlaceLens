@@ -2665,7 +2665,7 @@ textarea.chip-source {
   .settings-tabs {
     position: static;
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
   }
 
@@ -2690,8 +2690,7 @@ textarea.chip-source {
   }
 
   .display-options {
-    right: max(10px, env(safe-area-inset-right));
-    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 72px);
+    display: none;
   }
 
   #toast {
@@ -2747,6 +2746,11 @@ textarea.chip-source {
     width: 100%;
     height: auto;
     aspect-ratio: 1.2 / 1;
+  }
+
+  .listing-title-row {
+    display: grid;
+    gap: 8px;
   }
 
   .listing-card .row-actions {
