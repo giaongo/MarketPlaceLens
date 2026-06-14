@@ -29,6 +29,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Fixed
 
+- Kleinanzeigen scans now read listing dates from `time` metadata and, when a result card omits the date, from the listing detail page before saving the listing. Cards no longer show an "unknown" date chip when the source still does not provide a date.
 - Duplicate listing refreshes now backfill missing marketplace fields such as price, location, description, and image; invalid Kleinanzeigen account links are cleaned up; notifications sit above the floating display controls; and watchlist chevrons render as proper icons.
 - Listing and review cards now label the marketplace listing date plus ZIP code and place instead of showing an unlabeled location or internal discovery time.
 - Mobile swipe-card action buttons no longer scroll under the right edge or clip the Seen button.

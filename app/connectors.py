@@ -139,7 +139,9 @@ class HtmlListingConnector(MarketplaceConnector):
         html = first_html
         current_url = first_url
         for _ in range(12):
-            for candidate in self.parse_kleinanzeigen_listings(html, profile):
+            page_candidates = self.parse_kleinanzeigen_listings(html, profile)
+            await self.fill_missing_kleinanzeigen_posted_dates(client, page_candidates)
+            for candidate in page_candidates:
                 if candidate.content_hash in seen:
                     continue
                 seen.add(candidate.content_hash)
@@ -153,6 +155,20 @@ class HtmlListingConnector(MarketplaceConnector):
             html = response.text
             current_url = str(response.url)
         return candidates[:500]
+
+    async def fill_missing_kleinanzeigen_posted_dates(
+        self,
+        client: httpx.AsyncClient,
+        candidates: list[ListingCandidate],
+    ) -> None:
+        missing = [candidate for candidate in candidates if not candidate.posted_at_text]
+        for candidate in missing[:24]:
+            try:
+                response = await client.get(candidate.listing_url)
+                response.raise_for_status()
+            except (httpx.HTTPError, KeyError):
+                continue
+            candidate.posted_at_text = parse_kleinanzeigen_detail_posted_at(response.text)
 
     def parse_facebook_listings(self, html: str, profile: dict) -> list[ListingCandidate]:
         soup = BeautifulSoup(html, "html.parser")
@@ -241,7 +257,7 @@ class HtmlListingConnector(MarketplaceConnector):
             return None
         price_text = clean_text(first_text(card, [".aditem-main--middle--price-shipping--price", "[class*=price]"]))
         location_text = clean_text(first_text(card, [".aditem-main--top--left", "[class*=location]"]))
-        posted_at_text = clean_text(first_text(card, [".aditem-main--top--right", "time", "[class*=date]"]))
+        posted_at_text = parse_kleinanzeigen_card_posted_at(card)
         tags = clean_text(first_text(card, [".aditem-main--middle--tags"]))
         snippet = clean_text(first_text(card, [".aditem-main--middle--description", "[class*=description]", "p"]))
         image = card.find("img")
@@ -438,6 +454,42 @@ class HtmlListingConnector(MarketplaceConnector):
 
 def clean_text(value: str | None) -> str:
     return re.sub(r"\s+", " ", value or "").strip()
+
+
+def parse_kleinanzeigen_card_posted_at(card: Tag) -> str:
+    date_node = card.select_one(".aditem-main--top--right, time, [class*=date]")
+    if not isinstance(date_node, Tag):
+        return ""
+    candidates = [
+        str(date_node.get("datetime") or ""),
+        str(date_node.get("title") or ""),
+        date_node.get_text(" ", strip=True),
+    ]
+    return next((clean_text(value) for value in candidates if clean_text(value)), "")
+
+
+def parse_kleinanzeigen_detail_posted_at(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    selectors = [
+        "#viewad-extra-info .icon-calendar-gray-simple + span",
+        "#viewad-extra-info span",
+        "time[datetime]",
+        ".aditem-main--top--right",
+    ]
+    for selector in selectors:
+        for node in soup.select(selector):
+            if not isinstance(node, Tag):
+                continue
+            candidates = [
+                str(node.get("datetime") or ""),
+                str(node.get("title") or ""),
+                node.get_text(" ", strip=True),
+            ]
+            for candidate in candidates:
+                text = clean_text(candidate)
+                if re.search(r"\b(\d{1,2}\.\d{1,2}\.(?:\d{2}|\d{4})|heute|gestern)\b", text, re.IGNORECASE):
+                    return text
+    return ""
 
 
 def first_text(card: Tag, selectors: list[str]) -> str:

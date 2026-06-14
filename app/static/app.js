@@ -2130,7 +2130,7 @@ function reviewListingMarkup(listing) {
     listingDateFact(listing),
     ...locationFacts(listing),
     ...(listing.category_text ? [listing.category_text] : []),
-  ];
+  ].filter(Boolean);
   return `
     <article class="review-card" data-review-card data-id="${listing.id}">
       <div class="review-image-wrap">
@@ -2583,7 +2583,7 @@ function locationFacts(listing) {
 function listingDateFact(listing) {
   const posted = String(listing.posted_at_text || "").trim();
   if (posted) return `${t("listing.postedAt")}: ${posted}`;
-  return `${t("listing.postedAt")}: ${t("listing.unknownPostedAt")}`;
+  return "";
 }
 
 function listingMarkup(listing) {
@@ -2597,7 +2597,7 @@ function listingMarkup(listing) {
     listingDateFact(listing),
     ...locationFacts(listing),
     t("listing.score", { score: listing.score }),
-  ];
+  ].filter(Boolean);
   return `
     <article class="listing-card ${listing.watchlisted ? "watchlisted" : ""}">
       <div class="listing-media">

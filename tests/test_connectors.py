@@ -3,7 +3,13 @@ from __future__ import annotations
 import asyncio
 import unittest
 
-from app.connectors import HtmlListingConnector, apply_kleinanzeigen_location_to_url, facebook_requires_login, safe_cookie_header
+from app.connectors import (
+    HtmlListingConnector,
+    apply_kleinanzeigen_location_to_url,
+    facebook_requires_login,
+    parse_kleinanzeigen_detail_posted_at,
+    safe_cookie_header,
+)
 
 
 class FakeResponse:
@@ -28,6 +34,7 @@ class FakeClient:
 def article(title: str, href: str, price: str = "10 EUR") -> str:
     return f"""
     <article class="aditem" data-adid="{href.rsplit('/', 1)[-1]}">
+      <div class="aditem-main--top--right">Heute</div>
       <a href="{href}"><h2>{title}</h2></a>
       <p class="aditem-main--middle--price-shipping--price">{price}</p>
     </article>
@@ -111,6 +118,35 @@ class ConnectorTests(unittest.TestCase):
         self.assertEqual(listing.category_text, "Haus & Garten")
         self.assertEqual(listing.posted_at_text, "Heute")
         self.assertEqual(listing.listing_url, "https://www.kleinanzeigen.de/s-anzeige/eiche-stuhl/12345-86-1")
+
+    def test_kleinanzeigen_parser_reads_time_datetime_when_visible_text_is_empty(self) -> None:
+        html = """
+        <ul id="srchrslt-adtable">
+          <li class="ad-listitem">
+            <article class="aditem" data-adid="12345" data-href="/s-anzeige/eiche-stuhl/12345-86-1">
+              <time class="date" datetime="12.06.2026"></time>
+              <a href="/s-anzeige/eiche-stuhl/12345-86-1">Eiche Stuhl</a>
+              <p class="aditem-main--middle--price-shipping--price">25 EUR VB</p>
+            </article>
+          </li>
+        </ul>
+        """
+
+        listings = HtmlListingConnector("kleinanzeigen").parse_kleinanzeigen_listings(
+            html,
+            {"search_url": "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl"},
+        )
+
+        self.assertEqual(listings[0].posted_at_text, "12.06.2026")
+
+    def test_kleinanzeigen_detail_posted_at_is_read_from_extra_info(self) -> None:
+        html = """
+        <div id="viewad-extra-info" class="boxedarticle--details--full">
+          <div><i class="icon icon-small icon-calendar-gray-simple"></i><span>07.06.2026</span></div>
+        </div>
+        """
+
+        self.assertEqual(parse_kleinanzeigen_detail_posted_at(html), "07.06.2026")
 
     def test_kleinanzeigen_parser_ignores_account_links(self) -> None:
         html = """
