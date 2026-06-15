@@ -675,6 +675,36 @@ h1 {
   overflow-wrap: anywhere;
 }
 
+.settings-guide {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--brand-soft) 42%, var(--surface));
+  color: var(--text);
+  padding: 12px 14px;
+}
+
+.settings-guide summary {
+  cursor: pointer;
+  color: var(--brand-dark);
+  font-weight: 850;
+}
+
+.settings-guide ol {
+  margin: 10px 0 12px;
+  padding-left: 20px;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.settings-guide li + li {
+  margin-top: 6px;
+}
+
+.settings-guide .mini-button {
+  color: var(--brand-dark);
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

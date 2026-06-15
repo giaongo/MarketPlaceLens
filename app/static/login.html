@@ -60,7 +60,18 @@
           "theme.switchToDark": "Dunkel",
         },
       };
-      let language = localStorage.getItem("marketplacelens.language") || "en";
+      function detectBrowserLanguage() {
+        const supported = ["de", "en"];
+        const languages = Array.isArray(navigator.languages) && navigator.languages.length
+          ? navigator.languages
+          : [navigator.language || navigator.userLanguage || ""];
+        for (const candidate of languages) {
+          const prefix = String(candidate || "").trim().toLowerCase().split("-")[0];
+          if (supported.includes(prefix)) return prefix;
+        }
+        return "en";
+      }
+      let language = localStorage.getItem("marketplacelens.language") || detectBrowserLanguage();
       let theme = localStorage.getItem("marketplacelens.theme") || "light";
       const languageSelect = document.querySelector("#language-select");
       const themeToggle = document.querySelector("#theme-toggle");

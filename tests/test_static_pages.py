@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 
 from app.main import static_page_response
 
@@ -24,6 +25,20 @@ class StaticPageTests(unittest.TestCase):
         self.assertLess(notice_index, form_index)
         self.assertIn("Kleinanzeigen", html)
         self.assertIn("Nutzungsbedingungen", html)
+
+    def test_index_includes_facebook_setup_guide(self) -> None:
+        response = static_page_response("index.html")
+        html = response.body.decode("utf-8")
+
+        self.assertIn('data-i18n="settings.facebookGuideTitle"', html)
+        self.assertIn("https://www.facebook.com/marketplace/", html)
+
+    def test_app_uses_browser_language_when_unset(self) -> None:
+        app_js = (Path(__file__).resolve().parents[1] / "app" / "static" / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn("detectBrowserLanguage", app_js)
+        self.assertIn("navigator.languages", app_js)
+        self.assertIn('savedLanguage || detectBrowserLanguage()', app_js)
 
 
 if __name__ == "__main__":

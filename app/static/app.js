@@ -1,8 +1,23 @@
+const SUPPORTED_LANGUAGES = ["de", "en"];
+
+function detectBrowserLanguage() {
+  const languages = Array.isArray(navigator.languages) && navigator.languages.length
+    ? navigator.languages
+    : [navigator.language || navigator.userLanguage || ""];
+  for (const candidate of languages) {
+    const prefix = String(candidate || "").trim().toLowerCase().split("-")[0];
+    if (SUPPORTED_LANGUAGES.includes(prefix)) return prefix;
+  }
+  return "en";
+}
+
+const savedLanguage = localStorage.getItem("marketplacelens.language");
+
 const state = {
   profiles: [],
   selectedProfile: null,
   listingView: localStorage.getItem("marketplacelens.listingView") || "list",
-  language: localStorage.getItem("marketplacelens.language") || "en",
+  language: savedLanguage || detectBrowserLanguage(),
   theme: localStorage.getItem("marketplacelens.theme") || "light",
   listingPage: 0,
   watchlistPage: 0,
@@ -181,7 +196,7 @@ const translations = {
     "notifications.telegramHint": "Send new matches to Telegram.",
     "notifications.webhookHint": "Post new matches to your webhook.",
     "source.kleinanzeigenHelp": "Paste a public Kleinanzeigen search URL.",
-    "source.facebookHelp": "Use a concrete Marketplace search or category URL.",
+    "source.facebookHelp": "Use a Marketplace search/category URL. The Facebook settings guide helps with browser sessions.",
     "source.mobiledeHelp": "Paste a public mobile.de search result URL.",
     "source.generic": "Generic HTML",
     "source.genericHelp": "Use a simple listing result page.",
@@ -271,6 +286,12 @@ const translations = {
     "settings.aiToneCheeky": "Cheeky",
     "settings.facebook": "Facebook Marketplace session",
     "settings.facebookSubtitle": "Paste a Cookie header from your own browser session. Stored locally and only sent to Facebook.",
+    "settings.facebookGuideTitle": "Setup guide",
+    "settings.facebookGuideStep1": "Open Facebook Marketplace in your browser and run the search or category view you want to watch.",
+    "settings.facebookGuideStep2": "Copy the full Marketplace search or category URL and use it when creating a Facebook job.",
+    "settings.facebookGuideStep3": "If Facebook blocks anonymous server access, copy the Cookie header from one of your own browser requests to facebook.com and paste it below.",
+    "settings.facebookGuideStep4": "Cookies stay local, can expire, and can be revoked by logging out of Facebook. MarketPlaceLens does not store your Facebook password or bypass login/CAPTCHA protections.",
+    "settings.facebookOpen": "Open Marketplace",
     "settings.facebookCookie": "Cookie header",
     "settings.facebookCookieHint": "Use only your own account/session. No password is stored. Leave ******** unchanged to keep the saved cookie.",
     "settings.save": "Save settings",
@@ -526,7 +547,7 @@ const translations = {
     "notifications.telegramHint": "Neue Treffer an Telegram senden.",
     "notifications.webhookHint": "Neue Treffer an deinen Webhook senden.",
     "source.kleinanzeigenHelp": "Öffentliche Kleinanzeigen-Such-URL einfügen.",
-    "source.facebookHelp": "Konkrete Marketplace-Suche oder Kategorie-URL einfügen.",
+    "source.facebookHelp": "Marketplace-Suche oder Kategorie-URL einfügen. Die Facebook-Anleitung in den Einstellungen hilft bei Browser-Sessions.",
     "source.mobiledeHelp": "Öffentliche mobile.de-Suchergebnis-URL einfügen.",
     "source.generic": "Generic HTML",
     "source.genericHelp": "Einfache Listing-Ergebnisseite verwenden.",
@@ -616,6 +637,12 @@ const translations = {
     "settings.aiToneCheeky": "Frech",
     "settings.facebook": "Facebook-Marketplace-Session",
     "settings.facebookSubtitle": "Füge einen Cookie-Header aus deiner eigenen Browser-Session ein. Wird lokal gespeichert und nur an Facebook gesendet.",
+    "settings.facebookGuideTitle": "Einrichtungsanleitung",
+    "settings.facebookGuideStep1": "Öffne Facebook Marketplace im Browser und führe die Suche oder Kategorieansicht aus, die du beobachten möchtest.",
+    "settings.facebookGuideStep2": "Kopiere die vollständige Marketplace-Such- oder Kategorie-URL und nutze sie beim Erstellen eines Facebook-Jobs.",
+    "settings.facebookGuideStep3": "Wenn Facebook anonymen Serverzugriff blockiert, kopiere den Cookie-Header aus einer eigenen Browser-Anfrage an facebook.com und füge ihn unten ein.",
+    "settings.facebookGuideStep4": "Cookies bleiben lokal, können ablaufen und lassen sich durch Abmelden bei Facebook widerrufen. MarketPlaceLens speichert kein Facebook-Passwort und umgeht keine Logins/CAPTCHAs.",
+    "settings.facebookOpen": "Marketplace öffnen",
     "settings.facebookCookie": "Cookie-Header",
     "settings.facebookCookieHint": "Nur mit deinem eigenen Account/deiner eigenen Session nutzen. Kein Passwort wird gespeichert. ******** unverändert lassen, um den gespeicherten Cookie zu behalten.",
     "settings.save": "Einstellungen speichern",

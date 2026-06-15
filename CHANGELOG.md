@@ -6,6 +6,8 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Added
 
+- First visit now chooses the UI language from the browser language when the user has not saved a language preference yet.
+- Facebook Marketplace settings now include a setup guide for Marketplace URLs and optional browser Cookie headers.
 - First-run setup now shows a scraping and platform-rules notice before the admin account form.
 - Listing cards now show whether a buyer has already contacted the seller, with a quick toggle in list and swipe views.
 - Facebook Marketplace jobs can use an optional locally stored Cookie header from the admin settings when the URL only works in an authenticated browser session.
