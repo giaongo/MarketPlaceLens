@@ -6,6 +6,7 @@ import unittest
 from app.connectors import (
     HtmlListingConnector,
     apply_kleinanzeigen_location_to_url,
+    facebook_browser_headers,
     facebook_requires_login,
     parse_kleinanzeigen_detail_posted_at,
     parse_listing_availability,
@@ -45,7 +46,17 @@ def article(title: str, href: str, price: str = "10 EUR") -> str:
 class ConnectorTests(unittest.TestCase):
     def test_safe_cookie_header_rejects_multiline_values(self) -> None:
         self.assertEqual(safe_cookie_header(" c_user=1; xs=2; "), "c_user=1; xs=2;")
+        self.assertEqual(safe_cookie_header("Cookie: c_user=1; xs=2;"), "c_user=1; xs=2;")
+        self.assertEqual(safe_cookie_header("host: www.facebook.com\ncookie: c_user=1; xs=2;\naccept: text/html"), "c_user=1; xs=2;")
         self.assertEqual(safe_cookie_header("c_user=1\nX-Bad: yes"), "")
+        self.assertEqual(safe_cookie_header("X-Bad: yes"), "")
+
+    def test_facebook_browser_headers_include_navigation_context(self) -> None:
+        headers = facebook_browser_headers()
+
+        self.assertEqual(headers["Sec-Fetch-Dest"], "document")
+        self.assertEqual(headers["Sec-Fetch-Mode"], "navigate")
+        self.assertEqual(headers["Upgrade-Insecure-Requests"], "1")
 
     def test_facebook_marketplace_item_links_are_parsed(self) -> None:
         html = """

@@ -74,6 +74,8 @@ class HtmlListingConnector(MarketplaceConnector):
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
         }
+        if self.source_type == "facebook":
+            request_headers.update(facebook_browser_headers())
         facebook_cookie = safe_cookie_header(profile.get("facebook_cookie_header", ""))
         if self.source_type == "facebook" and facebook_cookie:
             request_headers["Cookie"] = facebook_cookie
@@ -661,11 +663,38 @@ def facebook_requires_login(html: str, final_url: str) -> bool:
     )
 
 
+def facebook_browser_headers() -> dict[str, str]:
+    return {
+        "Cache-Control": "max-age=0",
+        "DNT": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+    }
+
+
 def safe_cookie_header(value: str) -> str:
-    cookie = (value or "").strip()
-    if "\n" in cookie or "\r" in cookie:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    cookie = extract_cookie_header_value(raw)
+    if not cookie or "\n" in cookie or "\r" in cookie:
+        return ""
+    if ":" in cookie.split(";", 1)[0]:
         return ""
     return cookie
+
+
+def extract_cookie_header_value(value: str) -> str:
+    for line in value.splitlines():
+        name, separator, rest = line.partition(":")
+        if separator and name.strip().lower() == "cookie":
+            return rest.strip()
+    if value.lower().startswith("cookie:"):
+        return value.split(":", 1)[1].strip()
+    return value
 
 
 def parse_price(value: str) -> float | None:

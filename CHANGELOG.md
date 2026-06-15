@@ -21,6 +21,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Changed
 
+- Facebook Marketplace requests now normalize pasted browser headers to the real Cookie value and include browser navigation headers.
 - The Listings view now uses a compact modern work header with job run controls, search, view switching, filters, pagination, and a mobile bottom navigation.
 - Listing tiles and swipe cards now use the fuller Scan Card treatment, while list view keeps the compact scan row with actions on the right and mobile-friendly stacked actions.
 - Language, version, and light/dark theme controls now match Kramlet's bottom-right floating display-options control instead of living in the top header.

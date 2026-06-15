@@ -592,13 +592,13 @@
               <ol>
                 <li data-i18n="settings.facebookGuideStep1">Open Facebook Marketplace in your browser and run the search or category view you want to watch.</li>
                 <li data-i18n="settings.facebookGuideStep2">Copy the full Marketplace search or category URL and use it when creating a Facebook job.</li>
-                <li data-i18n="settings.facebookGuideStep3">If Facebook blocks anonymous server access, copy the Cookie header from one of your own browser requests to facebook.com and paste it below.</li>
+                <li data-i18n="settings.facebookGuideStep3">If Facebook blocks anonymous server access, copy the Cookie value, the Cookie: line, or the full request headers from one of your own browser requests to facebook.com and paste it below.</li>
                 <li data-i18n="settings.facebookGuideStep4">Cookies stay local, can expire, and can be revoked by logging out of Facebook. MarketPlaceLens does not store your Facebook password or bypass login/CAPTCHA protections.</li>
               </ol>
               <a class="mini-button" href="https://www.facebook.com/marketplace/" target="_blank" rel="noreferrer" data-i18n="settings.facebookOpen">Open Marketplace</a>
             </details>
             <label class="wide"><span data-i18n="settings.facebookCookie">Cookie header</span><textarea id="facebook-cookie-header" rows="4" autocomplete="off" spellcheck="false" placeholder="c_user=...; xs=...;"></textarea></label>
-            <p class="meta wide" data-i18n="settings.facebookCookieHint">Use only your own account/session. No password is stored. Leave ******** unchanged to keep the saved cookie.</p>
+            <p class="meta wide" data-i18n="settings.facebookCookieHint">Use only your own account/session. You can paste just c_user=...; xs=..., a Cookie: line, or a full browser request header block. Leave ******** unchanged to keep the saved cookie.</p>
             <div class="actions wide">
               <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
             </div>

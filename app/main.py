@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .auth import COOKIE_NAME, create_session, current_user_from_session, hash_password, valid_credentials
 from .config import settings
-from .connectors import ListingCandidate, get_connector, is_non_listing_artifact, parse_listing_availability, safe_cookie_header
+from .connectors import ListingCandidate, facebook_browser_headers, get_connector, is_non_listing_artifact, parse_listing_availability, safe_cookie_header
 from .database import connect, encode_list, ensure_default_watchlist, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import FilterResult, apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
@@ -824,7 +824,7 @@ async def update_settings(payload: SettingsPayload, request: Request) -> dict[st
                 "ai_base_url": payload.ai_base_url.strip(),
                 "ai_model": payload.ai_model.strip(),
                 "ai_tone": payload.ai_tone,
-                "facebook_cookie_header": current_facebook_cookie if payload.facebook_cookie_header == "********" else payload.facebook_cookie_header.strip(),
+                "facebook_cookie_header": current_facebook_cookie if payload.facebook_cookie_header == "********" else safe_cookie_header(payload.facebook_cookie_header),
             }
             for key, value in values.items():
                 db.execute(
@@ -1019,6 +1019,8 @@ async def verify_unseen_listing_availability(
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "de-DE,de;q=0.9,en;q=0.8",
     }
+    if profile["source_type"] == "facebook":
+        headers.update(facebook_browser_headers())
     facebook_cookie = safe_cookie_header(app_settings.get("facebook_cookie_header", ""))
     if profile["source_type"] == "facebook" and facebook_cookie:
         headers["Cookie"] = facebook_cookie
