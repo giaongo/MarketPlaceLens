@@ -6,6 +6,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Added
 
+- First-run setup now shows a scraping and platform-rules notice before the admin account form.
 - Listing cards now show whether a buyer has already contacted the seller, with a quick toggle in list and swipe views.
 - Facebook Marketplace jobs can use an optional locally stored Cookie header from the admin settings when the URL only works in an authenticated browser session.
 - The review flow now uses larger product-focused cards with inline actions inspired by the Kramlet card layout.

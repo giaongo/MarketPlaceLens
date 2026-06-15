@@ -79,7 +79,7 @@ Open:
 http://localhost:8091
 ```
 
-On first start, MarketPlaceLens opens a setup screen and asks for the first admin password. There is no built-in default password for normal deployments.
+On first start, MarketPlaceLens opens a setup screen with a scraping and platform-rules notice before asking for the first admin password. There is no built-in default password for normal deployments.
 
 Docker Hub image:
 
@@ -149,7 +149,7 @@ MARKETPLACELENS_MIN_POLL_MINUTES=30
 MARKETPLACELENS_DEFAULT_POLL_MINUTES=60
 MARKETPLACELENS_POLL_ENABLED=true
 MARKETPLACELENS_ADMIN_USERNAME=admin
-MARKETPLACELENS_BUILD_CODE=20260614.8
+MARKETPLACELENS_BUILD_CODE=20260615.1
 MARKETPLACELENS_BUILD_COMMIT=dev
 MARKETPLACELENS_BUILD_BRANCH=main
 MARKETPLACELENS_BUILD_CREATED=

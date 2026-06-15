@@ -95,8 +95,55 @@ body.login-page {
   padding: 24px;
 }
 
+.login-panel .brand {
+  color: var(--text);
+  margin-bottom: 18px;
+}
+
+.login-panel .brand small {
+  color: var(--muted);
+}
+
 .login-language {
   margin: -12px 0 18px;
+}
+
+.setup-notice {
+  margin: 18px 0 20px;
+  border: 1px solid color-mix(in srgb, var(--warning) 36%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--warning) 11%, var(--surface));
+  padding: 14px 16px;
+  color: var(--text);
+}
+
+.setup-notice h1 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.setup-notice p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.setup-notice p + p {
+  margin-top: 8px;
+}
+
+@media (max-width: 560px) {
+  .login-shell {
+    align-items: start;
+    min-height: auto;
+  }
+
+  .login-panel .brand small {
+    display: block;
+  }
 }
 
 .display-options {
@@ -3015,6 +3062,10 @@ textarea.chip-source {
 @media (max-width: 560px) {
   .brand {
     margin-bottom: 14px;
+  }
+
+  .login-panel .brand {
+    display: flex;
   }
 
   .brand small {
