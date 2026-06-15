@@ -63,6 +63,8 @@ class HtmlListingConnector(MarketplaceConnector):
         search_url = profile["search_url"]
         if self.source_type == "kleinanzeigen":
             search_url = apply_kleinanzeigen_location_to_url(search_url, profile.get("location_hint", ""))
+        if self.source_type == "facebook":
+            search_url = normalize_facebook_marketplace_url(search_url)
         self.validate_search_url(search_url)
         user_agent = (
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
@@ -78,15 +80,27 @@ class HtmlListingConnector(MarketplaceConnector):
             request_headers.update(facebook_browser_headers())
         facebook_cookie = safe_cookie_header(profile.get("facebook_cookie_header", ""))
         if self.source_type == "facebook" and facebook_cookie:
+            if not facebook_cookie_has_login_session(facebook_cookie):
+                raise ValueError(
+                    "Facebook Cookie header is incomplete. "
+                    "Copy the full Cookie header from a logged-in Marketplace browser request; it must include c_user and xs."
+                )
             request_headers["Cookie"] = facebook_cookie
         async with httpx.AsyncClient(
             headers=request_headers,
             follow_redirects=True,
             timeout=20.0,
         ) as client:
-            response = await client.get(search_url)
             try:
+                response = await client.get(search_url)
                 response.raise_for_status()
+            except httpx.TooManyRedirects as exc:
+                if self.source_type == "facebook":
+                    raise ValueError(
+                        "Facebook redirected this Marketplace request too many times. "
+                        "Use a normal Marketplace search URL and a complete logged-in Cookie header including c_user and xs."
+                    ) from exc
+                raise
             except httpx.HTTPStatusError as exc:
                 if self.source_type == "facebook" and exc.response.status_code in {400, 401, 403}:
                     raise ValueError(
@@ -571,6 +585,18 @@ def canonical_facebook_item_url(url: str) -> str:
     return urlunparse(("https", "www.facebook.com", path, "", "", ""))
 
 
+def normalize_facebook_marketplace_url(url: str) -> str:
+    parsed = urlparse(url)
+    host = parsed.netloc.lower()
+    if host not in {"facebook.com", "www.facebook.com", "m.facebook.com"}:
+        return url
+    path = parsed.path
+    np_search = re.match(r"^/marketplace/np/([^/]+)/search/?$", path, re.IGNORECASE)
+    if np_search:
+        path = f"/marketplace/{np_search.group(1)}/search/"
+    return urlunparse(("https", "www.facebook.com", path, "", parsed.query, ""))
+
+
 def extract_facebook_item_id(url: str) -> str:
     match = re.search(r"/marketplace/item/(\d+)", url)
     return match.group(1) if match else extract_listing_id(url)
@@ -685,6 +711,11 @@ def safe_cookie_header(value: str) -> str:
     if ":" in cookie.split(";", 1)[0]:
         return ""
     return cookie
+
+
+def facebook_cookie_has_login_session(cookie: str) -> bool:
+    names = {part.split("=", 1)[0].strip() for part in cookie.split(";") if "=" in part}
+    return {"c_user", "xs"}.issubset(names)
 
 
 def extract_cookie_header_value(value: str) -> str:

@@ -6,8 +6,10 @@ import unittest
 from app.connectors import (
     HtmlListingConnector,
     apply_kleinanzeigen_location_to_url,
+    facebook_cookie_has_login_session,
     facebook_browser_headers,
     facebook_requires_login,
+    normalize_facebook_marketplace_url,
     parse_kleinanzeigen_detail_posted_at,
     parse_listing_availability,
     safe_cookie_header,
@@ -57,6 +59,20 @@ class ConnectorTests(unittest.TestCase):
         self.assertEqual(headers["Sec-Fetch-Dest"], "document")
         self.assertEqual(headers["Sec-Fetch-Mode"], "navigate")
         self.assertEqual(headers["Upgrade-Insecure-Requests"], "1")
+
+    def test_facebook_cookie_requires_logged_in_session_pair(self) -> None:
+        self.assertTrue(facebook_cookie_has_login_session("c_user=1; xs=token; wd=1280x720"))
+        self.assertFalse(facebook_cookie_has_login_session("c_user=1; presence=C; wd=1280x720"))
+
+    def test_facebook_np_search_url_is_normalized(self) -> None:
+        url = normalize_facebook_marketplace_url(
+            "https://www.facebook.com/marketplace/np/105483586153093/search?query=porsche%20cayenne&radius=60"
+        )
+
+        self.assertEqual(
+            url,
+            "https://www.facebook.com/marketplace/105483586153093/search/?query=porsche%20cayenne&radius=60",
+        )
 
     def test_facebook_marketplace_item_links_are_parsed(self) -> None:
         html = """
