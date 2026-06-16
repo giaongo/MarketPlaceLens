@@ -38,6 +38,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Fixed
 
+- Ollama AI calls now use the OpenAI-compatible completion token limit field, preventing reasoning models such as Qwen from returning an empty visible message after spending the budget on reasoning tokens.
 - Kleinanzeigen "Passwort vergessen?" and "Erstelle ein Konto" account-page artifacts are now filtered at parse time, excluded from listing API responses, and cleaned from existing local data on startup.
 - Mobile listing, watchlist, settings, and swipe screens were audited; the floating language/theme control no longer covers card actions on phones, listing titles get full width before badges, and settings tabs use a denser two-column mobile layout.
 - Listings now respect iPhone safe-area spacing, keep the job selector and run action visible outside the collapsible filter panel, and show run errors as toasts.

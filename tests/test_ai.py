@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from app.main import normalize_search_draft
+from app.main import ai_token_limit_payload, normalize_search_draft
 
 
 class AiDraftTests(unittest.TestCase):
@@ -37,6 +37,12 @@ class AiDraftTests(unittest.TestCase):
 
         self.assertEqual(draft["source_type"], "kleinanzeigen")
         self.assertEqual(draft["max_listing_age_days"], 365)
+
+    def test_ollama_uses_completion_token_limit(self) -> None:
+        self.assertEqual(ai_token_limit_payload("ollama", 20), {"max_completion_tokens": 20})
+
+    def test_openai_uses_chat_token_limit(self) -> None:
+        self.assertEqual(ai_token_limit_payload("openai", 20), {"max_tokens": 20})
 
 
 if __name__ == "__main__":

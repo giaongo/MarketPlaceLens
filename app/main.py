@@ -1557,8 +1557,8 @@ async def generate_ai_text(app_settings: dict[str, str], messages: list[dict[str
                     "model": model,
                     "messages": messages,
                     "temperature": 0.65,
-                    "max_tokens": max_tokens,
                     "stream": False,
+                    **ai_token_limit_payload(provider, max_tokens),
                 },
             )
             response.raise_for_status()
@@ -1575,6 +1575,12 @@ async def generate_ai_text(app_settings: dict[str, str], messages: list[dict[str
     if not str(content).strip():
         raise HTTPException(502, "AI provider returned an empty response")
     return str(content)
+
+
+def ai_token_limit_payload(provider: str, max_tokens: int) -> dict[str, int]:
+    if provider == "ollama":
+        return {"max_completion_tokens": max_tokens}
+    return {"max_tokens": max_tokens}
 
 
 def normalized_ai_base_url(provider: str, value: str) -> str:
