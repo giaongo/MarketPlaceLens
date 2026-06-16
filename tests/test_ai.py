@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from app.main import ai_token_limit_payload, normalize_search_draft
+from app.main import ai_token_limit_payload, normalize_inquiry_text, normalize_search_draft
 
 
 class AiDraftTests(unittest.TestCase):
@@ -43,6 +43,22 @@ class AiDraftTests(unittest.TestCase):
 
     def test_openai_uses_chat_token_limit(self) -> None:
         self.assertEqual(ai_token_limit_payload("openai", 20), {"max_tokens": 20})
+
+    def test_normalize_inquiry_text_removes_buyer_name_from_greeting(self) -> None:
+        text = normalize_inquiry_text(
+            "Hallo Alex,\nist der Artikel noch verfügbar?\n\nViele Grüße, Alex",
+            {"display_name": "Alex"},
+        )
+
+        self.assertEqual(text, "Hallo,\nist der Artikel noch verfügbar?\n\nViele Grüße, Alex")
+
+    def test_normalize_inquiry_text_keeps_signature_name(self) -> None:
+        text = normalize_inquiry_text(
+            "Guten Tag Alex, ich könnte heute abholen.\nViele Grüße, Alex",
+            {"display_name": "Alex"},
+        )
+
+        self.assertEqual(text, "Guten Tag, ich könnte heute abholen.\nViele Grüße, Alex")
 
 
 if __name__ == "__main__":

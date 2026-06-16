@@ -705,7 +705,7 @@ async def generate_listing_inquiry(listing_id: int, payload: InquiryPayload, req
     account_profile = dict(account_row) if account_row else {}
     prompt = inquiry_prompt(listing, app_settings.get("ai_tone", "normal"), payload.language, account_profile)
     text = await generate_ai_text(app_settings, prompt)
-    return {"text": text.strip()}
+    return {"text": normalize_inquiry_text(text, account_profile)}
 
 
 @app.post("/api/listings/{listing_id}/assessment")
@@ -1411,7 +1411,8 @@ def inquiry_prompt(
                 "You write short buyer inquiry messages for marketplace listings. "
                 "Return only the message text. Do not invent private facts, do not mention AI, "
                 "and do not include placeholders, subject lines, or explanations. "
-                "Use the buyer profile only when it is provided and useful."
+                "Use the buyer profile only when it is provided and useful. "
+                "The buyer name belongs to the sender only: never use it as the greeting recipient."
             ),
         },
         {
@@ -1419,11 +1420,32 @@ def inquiry_prompt(
             "content": (
                 f"Write one {output_language} inquiry message. Style: {tone_instruction}. "
                 "Ask whether the item is still available and, if fitting, mention pickup or a quick viewing. "
-                "Keep it concise. If a signature is provided, end with it.\n\nListing facts:\n"
+                "Keep it concise. If a signature is provided, end with it. "
+                "Do not greet the seller by the buyer's name; use a neutral greeting or no named greeting.\n\nListing facts:\n"
                 f"{facts}\n\nBuyer profile:\n{buyer_facts}"
             ),
         },
     ]
+
+
+def normalize_inquiry_text(text: str, account_profile: dict[str, Any] | None = None) -> str:
+    cleaned = text.strip()
+    buyer_name = clean_ai_string((account_profile or {}).get("display_name"))
+    if not buyer_name:
+        return cleaned
+
+    escaped_name = re.escape(buyer_name)
+    leading_named_greeting = re.compile(
+        rf"^((?:hallo|hi|hey|hello|guten\s+tag|guten\s+morgen|guten\s+abend)\s+){escaped_name}([,!.:]?)",
+        re.IGNORECASE,
+    )
+    cleaned = leading_named_greeting.sub(lambda match: f"{match.group(1).rstrip()}{match.group(2) or ','}", cleaned, count=1)
+    leading_dear_greeting = re.compile(
+        rf"^(?:liebe?r?|dear)\s+{escaped_name}([,!.:]?)\s*",
+        re.IGNORECASE,
+    )
+    cleaned = leading_dear_greeting.sub("Hallo, ", cleaned, count=1)
+    return cleaned.strip()
 
 
 def listing_assessment_prompt(listing: dict[str, Any]) -> list[dict[str, str]]:
