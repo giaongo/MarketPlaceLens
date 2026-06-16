@@ -790,6 +790,7 @@ async def get_settings(request: Request) -> dict[str, Any]:
         "ai_enabled": values.get("ai_enabled", "0") == "1",
         "ai_listing_assessments_enabled": values.get("ai_listing_assessments_enabled", "0") == "1",
         "ai_listing_assessments_auto_enabled": values.get("ai_listing_assessments_auto_enabled", "0") == "1",
+        "ai_listing_assessments_new_enabled": values.get("ai_listing_assessments_new_enabled", "0") == "1",
         "ai_provider": values.get("ai_provider", "openai") or "openai",
         "ai_api_key": mask_secret(values.get("ai_api_key", "")),
         "ai_api_key_set": bool(values.get("ai_api_key")),
@@ -819,6 +820,7 @@ async def update_settings(payload: SettingsPayload, request: Request) -> dict[st
                 "ai_enabled": "1" if payload.ai_enabled else "0",
                 "ai_listing_assessments_enabled": "1" if payload.ai_listing_assessments_enabled else "0",
                 "ai_listing_assessments_auto_enabled": "1" if payload.ai_listing_assessments_auto_enabled else "0",
+                "ai_listing_assessments_new_enabled": "1" if payload.ai_listing_assessments_new_enabled else "0",
                 "ai_provider": payload.ai_provider,
                 "ai_api_key": current_ai_key if payload.ai_api_key == "********" else payload.ai_api_key,
                 "ai_base_url": payload.ai_base_url.strip(),
@@ -967,6 +969,17 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
                 stats["hidden"] += 1
                 continue
             stats["new"] += 1
+            if should_auto_assess_new_listing(app_settings):
+                try:
+                    assessment_text = await generate_ai_text(app_settings, listing_assessment_prompt(row_to_listing(listing)), max_tokens=220)
+                    assessed_at = utc_now()
+                    db.execute(
+                        "UPDATE listings SET ai_assessment_text = ?, ai_assessed_at = ? WHERE id = ?",
+                        (assessment_text.strip()[:1200], assessed_at, listing_id),
+                    )
+                    listing = db.execute("SELECT * FROM listings WHERE id = ?", (listing_id,)).fetchone()
+                except HTTPException:
+                    pass
             delivered = False
             if profile["notify_telegram"] and notifier.configured:
                 try:
@@ -1209,6 +1222,14 @@ def get_setting(db, key: str) -> str:
     return row["value"] if row else ""
 
 
+def should_auto_assess_new_listing(app_settings: dict[str, str]) -> bool:
+    return (
+        app_settings.get("ai_enabled") == "1"
+        and app_settings.get("ai_listing_assessments_enabled") == "1"
+        and app_settings.get("ai_listing_assessments_new_enabled") == "1"
+    )
+
+
 def count_enabled_admins(db: sqlite3.Connection) -> int:
     row = db.execute("SELECT COUNT(*) count FROM users WHERE role = 'admin' AND enabled = 1").fetchone()
     return int(row["count"] if row else 0)
@@ -1422,16 +1443,18 @@ def listing_assessment_prompt(listing: dict[str, Any]) -> list[dict[str, str]]:
         {
             "role": "system",
             "content": (
-                "You assess marketplace listings for a buyer. Return only a short German assessment. "
+                "You assess marketplace listings for a buyer. Return only a short German product assessment. "
+                "Focus on whether the product, price, and description look worthwhile and qualitative. "
                 "Do not mention AI. Do not invent facts. If the information is thin, say what is missing. "
-                "Keep it to two compact sentences."
+                "Keep it to two compact sentences with a clear buy/watch/pass tendency."
             ),
         },
         {
             "role": "user",
             "content": (
-                "Give a concise usefulness/risk assessment for this listing. "
-                "Mention likely fit, price/location relevance, and any caution signs visible in the data.\n\n"
+                "Assess whether this listing looks worthwhile. Weigh product quality signals, price plausibility, "
+                "description completeness, fit to the search job, and visible risk signs. "
+                "Call out missing details that would make the product or price hard to judge.\n\n"
                 f"{facts}"
             ),
         },

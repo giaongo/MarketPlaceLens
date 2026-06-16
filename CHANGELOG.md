@@ -18,10 +18,13 @@ All notable changes to MarketPlaceLens are documented here.
 - Admins can now delete individual run errors or clear all run-error logs to reset the dashboard error counter.
 - Listings can now show an optional saved AI assessment that summarizes fit and visible caution signs directly on listing and review cards.
 - AI listing assessments now have a separate automatic mode for visible listing batches, with an in-settings warning about potential token usage.
+- AI listing assessments can now be enabled for newly found listings during job runs, so fresh matches can arrive with a product, price, and description quality note already attached.
 
 ### Changed
 
 - Facebook Marketplace search URLs copied from the `marketplace/np/.../search` view are normalized to the standard Marketplace search path before fetching.
+- Facebook setup copy is now more task-oriented: users first create a Marketplace URL job, then add a browser Cookie only when Facebook requires a logged-in session.
+- AI listing assessment prompts now focus on whether the product, price, and description make the listing worthwhile and qualitative.
 - Facebook Cookie settings now fail fast with a clear message when the stored browser Cookie lacks the logged-in `c_user`/`xs` session pair.
 - Facebook Marketplace requests now normalize pasted browser headers to the real Cookie value and include browser navigation headers.
 - The Listings view now uses a compact modern work header with job run controls, search, view switching, filters, pagination, and a mobile bottom navigation.
@@ -39,6 +42,7 @@ All notable changes to MarketPlaceLens are documented here.
 ### Fixed
 
 - Ollama AI calls now use the OpenAI-compatible completion token limit field, preventing reasoning models such as Qwen from returning an empty visible message after spending the budget on reasoning tokens.
+- Listing action buttons and job-form save controls now wrap and stay reachable more defensively on narrow screens.
 - Kleinanzeigen "Passwort vergessen?" and "Erstelle ein Konto" account-page artifacts are now filtered at parse time, excluded from listing API responses, and cleaned from existing local data on startup.
 - Mobile listing, watchlist, settings, and swipe screens were audited; the floating language/theme control no longer covers card actions on phones, listing titles get full width before badges, and settings tabs use a denser two-column mobile layout.
 - Listings now respect iPhone safe-area spacing, keep the job selector and run action visible outside the collapsible filter panel, and show run errors as toasts.

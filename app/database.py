@@ -207,6 +207,7 @@ def init_db() -> None:
             "ai_enabled": "0",
             "ai_listing_assessments_enabled": "0",
             "ai_listing_assessments_auto_enabled": "0",
+            "ai_listing_assessments_new_enabled": "0",
             "ai_provider": "openai",
             "ai_api_key": "",
             "ai_base_url": "",

@@ -4,7 +4,7 @@ import sqlite3
 import unittest
 
 from app.connectors import ListingCandidate
-from app.main import refresh_existing_listing_fields
+from app.main import refresh_existing_listing_fields, should_auto_assess_new_listing
 
 
 def candidate() -> ListingCandidate:
@@ -60,6 +60,26 @@ class ListingRefreshTests(unittest.TestCase):
         self.assertEqual(values[6], 25.0)
         self.assertEqual(values[7], "hash-with-price")
         db.close()
+
+    def test_new_listing_auto_assessment_requires_all_ai_switches(self) -> None:
+        self.assertTrue(
+            should_auto_assess_new_listing(
+                {
+                    "ai_enabled": "1",
+                    "ai_listing_assessments_enabled": "1",
+                    "ai_listing_assessments_new_enabled": "1",
+                }
+            )
+        )
+        self.assertFalse(
+            should_auto_assess_new_listing(
+                {
+                    "ai_enabled": "1",
+                    "ai_listing_assessments_enabled": "1",
+                    "ai_listing_assessments_new_enabled": "0",
+                }
+            )
+        )
 
     def test_duplicate_listing_keeps_existing_marketplace_fields(self) -> None:
         db = sqlite3.connect(":memory:")

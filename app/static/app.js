@@ -30,6 +30,7 @@ const state = {
   aiEnabled: false,
   aiAssessmentsEnabled: false,
   aiAssessmentsAutoEnabled: false,
+  aiAssessmentsNewEnabled: false,
   autoAssessmentBatches: new Set(),
   autoAssessmentRunning: false,
   wizardStep: 0,
@@ -274,7 +275,8 @@ const translations = {
     "settings.aiEnabled": "Enable AI features",
     "settings.aiAssessmentsEnabled": "Show AI listing assessments",
     "settings.aiAssessmentsAutoEnabled": "Automatically assess visible listings",
-    "settings.aiAssessmentCostWarning": "AI assessments send listing text to the configured provider and can use many tokens, especially when automatic assessment is enabled.",
+    "settings.aiAssessmentsNewEnabled": "Assess new listings during job runs",
+    "settings.aiAssessmentCostWarning": "AI assessments send listing title, price, description, and match data to the configured provider. New-listing and visible-listing automation can use many tokens.",
     "settings.aiTest": "Test AI",
     "settings.aiProvider": "Provider",
     "settings.aiApiKey": "API key",
@@ -285,12 +287,12 @@ const translations = {
     "settings.aiToneNormal": "Normal",
     "settings.aiToneCheeky": "Cheeky",
     "settings.facebook": "Facebook Marketplace session",
-    "settings.facebookSubtitle": "Paste a Cookie header from your own browser session. Stored locally and only sent to Facebook.",
+    "settings.facebookSubtitle": "Use a Marketplace URL first. Add your own browser Cookie only if Facebook blocks the server request.",
     "settings.facebookGuideTitle": "Setup guide",
-    "settings.facebookGuideStep1": "Open Facebook Marketplace in your browser and run the search or category view you want to watch.",
-    "settings.facebookGuideStep2": "Copy the full Marketplace search or category URL and use it when creating a Facebook job.",
-    "settings.facebookGuideStep3": "If Facebook blocks anonymous server access, copy the Cookie value, the Cookie: line, or the full request headers from one of your own logged-in Marketplace requests. The Cookie must include c_user and xs.",
-    "settings.facebookGuideStep4": "Cookies stay local, can expire, and can be revoked by logging out of Facebook. MarketPlaceLens does not store your Facebook password or bypass login/CAPTCHA protections.",
+    "settings.facebookGuideStep1": "Open Facebook Marketplace in your browser and set the search, category, location, and filters exactly as you want them.",
+    "settings.facebookGuideStep2": "Copy the browser address and paste it into a new Facebook job. Try Run now once before adding cookies.",
+    "settings.facebookGuideStep3": "Only if the run says Facebook needs a logged-in session: open browser developer tools, copy the Cookie value or Cookie: request header from your own Marketplace request, and paste it below. It must include c_user and xs.",
+    "settings.facebookGuideStep4": "Cookies stay local, can expire, and can be replaced by pasting a fresh one. MarketPlaceLens stores no Facebook password and does not bypass login/CAPTCHA protections.",
     "settings.facebookOpen": "Open Marketplace",
     "settings.facebookCookie": "Cookie header",
     "settings.facebookCookieHint": "Use only your own account/session. Paste a Cookie that includes c_user and xs, a Cookie: line, or a full browser request header block. Leave ******** unchanged to keep the saved cookie.",
@@ -625,7 +627,8 @@ const translations = {
     "settings.aiEnabled": "KI-Funktionen aktivieren",
     "settings.aiAssessmentsEnabled": "KI-Einschätzungen bei Anzeigen zeigen",
     "settings.aiAssessmentsAutoEnabled": "Sichtbare Anzeigen automatisch einschätzen",
-    "settings.aiAssessmentCostWarning": "KI-Einschätzungen senden Anzeigentext an den konfigurierten Anbieter und können viele Tokens verbrauchen, besonders wenn automatische Einschätzungen aktiv sind.",
+    "settings.aiAssessmentsNewEnabled": "Neue Listings beim Job-Lauf einschätzen",
+    "settings.aiAssessmentCostWarning": "KI-Einschätzungen senden Titel, Preis, Beschreibung und Treffer-Daten an den konfigurierten Anbieter. Automatik für neue oder sichtbare Listings kann viele Tokens verbrauchen.",
     "settings.aiTest": "KI testen",
     "settings.aiProvider": "Provider",
     "settings.aiApiKey": "API-Key",
@@ -636,12 +639,12 @@ const translations = {
     "settings.aiToneNormal": "Normal",
     "settings.aiToneCheeky": "Frech",
     "settings.facebook": "Facebook-Marketplace-Session",
-    "settings.facebookSubtitle": "Füge einen Cookie-Header aus deiner eigenen Browser-Session ein. Wird lokal gespeichert und nur an Facebook gesendet.",
+    "settings.facebookSubtitle": "Nutze zuerst eine Marketplace-URL. Füge deinen Browser-Cookie nur ein, wenn Facebook den Serverzugriff blockiert.",
     "settings.facebookGuideTitle": "Einrichtungsanleitung",
-    "settings.facebookGuideStep1": "Öffne Facebook Marketplace im Browser und führe die Suche oder Kategorieansicht aus, die du beobachten möchtest.",
-    "settings.facebookGuideStep2": "Kopiere die vollständige Marketplace-Such- oder Kategorie-URL und nutze sie beim Erstellen eines Facebook-Jobs.",
-    "settings.facebookGuideStep3": "Wenn Facebook anonymen Serverzugriff blockiert, kopiere den Cookie-Wert, die Cookie:-Zeile oder den kompletten Request-Header-Block aus einer eigenen eingeloggten Marketplace-Anfrage. Der Cookie muss c_user und xs enthalten.",
-    "settings.facebookGuideStep4": "Cookies bleiben lokal, können ablaufen und lassen sich durch Abmelden bei Facebook widerrufen. MarketPlaceLens speichert kein Facebook-Passwort und umgeht keine Logins/CAPTCHAs.",
+    "settings.facebookGuideStep1": "Öffne Facebook Marketplace im Browser und stelle Suche, Kategorie, Ort und Filter genau so ein, wie der Job laufen soll.",
+    "settings.facebookGuideStep2": "Kopiere die Browser-Adresse und füge sie in einen neuen Facebook-Job ein. Teste einmal „Jetzt ausführen“, bevor du Cookies einträgst.",
+    "settings.facebookGuideStep3": "Nur wenn der Lauf eine eingeloggte Facebook-Session verlangt: öffne die Browser-Entwicklertools, kopiere den Cookie-Wert oder die Cookie:-Request-Zeile aus deiner eigenen Marketplace-Anfrage und füge sie unten ein. Der Cookie muss c_user und xs enthalten.",
+    "settings.facebookGuideStep4": "Cookies bleiben lokal, können ablaufen und lassen sich durch einen frischen Cookie ersetzen. MarketPlaceLens speichert kein Facebook-Passwort und umgeht keine Logins/CAPTCHAs.",
     "settings.facebookOpen": "Marketplace öffnen",
     "settings.facebookCookie": "Cookie-Header",
     "settings.facebookCookieHint": "Nur mit deinem eigenen Account/deiner eigenen Session nutzen. Füge einen Cookie mit c_user und xs, eine Cookie:-Zeile oder einen kompletten Browser-Request-Header-Block ein. ******** unverändert lassen, um den gespeicherten Cookie zu behalten.",
@@ -2763,9 +2766,11 @@ async function loadSettings() {
   state.aiEnabled = Boolean(settings.ai_enabled);
   state.aiAssessmentsEnabled = Boolean(settings.ai_listing_assessments_enabled);
   state.aiAssessmentsAutoEnabled = Boolean(settings.ai_listing_assessments_auto_enabled);
+  state.aiAssessmentsNewEnabled = Boolean(settings.ai_listing_assessments_new_enabled);
   $("#ai-enabled").checked = Boolean(settings.ai_enabled);
   $("#ai-assessments-enabled").checked = Boolean(settings.ai_listing_assessments_enabled);
   $("#ai-assessments-auto-enabled").checked = Boolean(settings.ai_listing_assessments_auto_enabled);
+  $("#ai-assessments-new-enabled").checked = Boolean(settings.ai_listing_assessments_new_enabled);
   $("#ai-provider").value = settings.ai_provider || "openai";
   $("#ai-api-key").value = settings.ai_api_key || "";
   $("#ai-base-url").value = settings.ai_base_url || "";
@@ -2811,6 +2816,7 @@ async function saveSettings() {
       ai_enabled: $("#ai-enabled").checked,
       ai_listing_assessments_enabled: $("#ai-assessments-enabled").checked,
       ai_listing_assessments_auto_enabled: $("#ai-assessments-auto-enabled").checked,
+      ai_listing_assessments_new_enabled: $("#ai-assessments-new-enabled").checked,
       ai_provider: $("#ai-provider").value,
       ai_api_key: $("#ai-api-key").value,
       ai_base_url: $("#ai-base-url").value,
@@ -2823,6 +2829,7 @@ async function saveSettings() {
   state.aiEnabled = Boolean(settings.ai_enabled);
   state.aiAssessmentsEnabled = Boolean(settings.ai_listing_assessments_enabled);
   state.aiAssessmentsAutoEnabled = Boolean(settings.ai_listing_assessments_auto_enabled);
+  state.aiAssessmentsNewEnabled = Boolean(settings.ai_listing_assessments_new_enabled);
   state.autoAssessmentBatches.clear();
   renderDefaultWatchlistSelect();
   toast(t("toast.settingsSaved"));

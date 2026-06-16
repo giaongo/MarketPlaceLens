@@ -1627,7 +1627,15 @@ textarea.chip-source {
 }
 
 .sticky-actions {
-  padding-top: 2px;
+  position: sticky;
+  bottom: 12px;
+  z-index: 8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow-soft);
+  padding: 10px;
+  backdrop-filter: blur(10px);
 }
 
 .actions {
@@ -1990,7 +1998,7 @@ textarea.chip-source {
 
 .listing-card {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) minmax(190px, auto);
+  grid-template-columns: 150px minmax(0, 1fr) minmax(220px, 240px);
   gap: 14px;
   align-items: start;
   border: 1px solid var(--line);
@@ -2236,8 +2244,8 @@ textarea.chip-source {
 
 .row-actions {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   align-items: start;
   justify-content: stretch;
   min-width: 0;
@@ -2261,12 +2269,22 @@ textarea.chip-source {
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 750;
-  white-space: nowrap;
+  min-height: 32px;
+  white-space: normal;
+  line-height: 1.15;
 }
 
 .row-actions .mini-button,
 .row-actions .watch-split {
   width: 100%;
+}
+
+.row-actions .watch-split {
+  grid-column: 1 / -1;
+}
+
+.watch-split .mini-button {
+  width: auto;
 }
 
 .mini-button.danger {
@@ -2296,6 +2314,7 @@ textarea.chip-source {
   position: relative;
   display: grid;
   place-items: center;
+  flex: 0 0 34px;
   min-width: 30px;
   border-left: 0;
   border-radius: 0 8px 8px 0;
@@ -2939,7 +2958,7 @@ textarea.chip-source {
 
   .review-card-actions [data-review-inquiry],
   .review-card-actions [data-review-assessment] {
-    grid-column: span 3;
+    grid-column: 1 / -1;
   }
 
   .listing-browser.grid-view {

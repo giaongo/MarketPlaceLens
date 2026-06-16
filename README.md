@@ -106,7 +106,7 @@ Normal users can create, edit, delete, and manually run their own search jobs. T
 
 AI text generation is disabled by default. When an admin enables and configures it, listings show a `KI-Text` / `AI text` button. The generated text is shown in a copyable dialog only; MarketPlaceLens does not send messages to sellers. The quick-job wizard can also turn one natural-language sentence into a structured search draft with source, query, price, location, radius, and keyword filters.
 
-Admins can additionally enable AI listing assessments. When enabled, listing and review cards get a `KI-Einschätzung` / `AI assessment` action that stores a short fit/risk note on the listing and shows it inline on later views. A separate automatic assessment option can evaluate visible listing batches without clicking each card. The settings screen warns that manual and automatic assessments send listing text to the configured AI provider and can use many tokens.
+Admins can additionally enable AI listing assessments. When enabled, listing and review cards get a `KI-Einschätzung` / `AI assessment` action that stores a short product, price, and description quality note on the listing and shows it inline on later views. Separate automatic options can assess newly found listings during job runs or evaluate visible listing batches without clicking each card. The settings screen warns that assessments send listing text to the configured AI provider and can use many tokens.
 
 Supported compatible providers:
 
