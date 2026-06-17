@@ -1285,10 +1285,11 @@ def normalized_default_watchlist_id(db: sqlite3.Connection) -> int:
     except ValueError:
         configured = 0
     default_id = valid_watchlist_id(db, configured)
-    db.execute(
-        "INSERT INTO app_settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-        ("default_watchlist_id", str(default_id)),
-    )
+    if configured != default_id:
+        db.execute(
+            "INSERT INTO app_settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            ("default_watchlist_id", str(default_id)),
+        )
     return default_id
 
 
@@ -1296,7 +1297,8 @@ def normalized_user_default_watchlist_id(db: sqlite3.Connection, user: dict[str,
     row = db.execute("SELECT default_watchlist_id FROM users WHERE id = ?", (user["id"],)).fetchone()
     configured = row["default_watchlist_id"] if row else None
     default_id = valid_watchlist_id(db, configured or normalized_default_watchlist_id(db))
-    db.execute("UPDATE users SET default_watchlist_id = ?, updated_at = ? WHERE id = ?", (default_id, utc_now(), user["id"]))
+    if configured != default_id:
+        db.execute("UPDATE users SET default_watchlist_id = ?, updated_at = ? WHERE id = ?", (default_id, utc_now(), user["id"]))
     return default_id
 
 

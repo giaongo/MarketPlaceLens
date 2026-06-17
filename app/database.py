@@ -34,8 +34,9 @@ def decode_list(value: str | None) -> list[str]:
 @contextmanager
 def connect() -> Iterator[sqlite3.Connection]:
     Path(os.path.dirname(settings.db_path) or ".").mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(settings.db_path)
+    db = sqlite3.connect(settings.db_path, timeout=30)
     db.row_factory = sqlite3.Row
+    db.execute("PRAGMA busy_timeout = 30000")
     db.execute("PRAGMA foreign_keys = ON")
     try:
         yield db

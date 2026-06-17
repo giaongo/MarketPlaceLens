@@ -42,6 +42,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Fixed
 
+- Settings reads no longer rewrite the default watchlist row on every request, and SQLite now waits for short writer locks instead of returning intermittent internal server errors while job runs are active.
 - AI quick jobs now clean price constraints out of the search query, infer notebook searches as Kleinanzeigen `Elektronik > Notebooks`, and avoid saving Kleinanzeigen footer links as fake results when a search page has no real listing cards.
 - Ollama AI calls now use the OpenAI-compatible completion token limit field, preventing reasoning models such as Qwen from returning an empty visible message after spending the budget on reasoning tokens.
 - Listing action buttons and job-form save controls now wrap and stay reachable more defensively on narrow screens.
