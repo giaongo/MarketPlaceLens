@@ -245,7 +245,7 @@ class HtmlListingConnector(MarketplaceConnector):
         soup = BeautifulSoup(html, "html.parser")
         cards = [node for node in soup.select("#srchrslt-adtable .ad-listitem, .aditem") if isinstance(node, Tag)]
         if not cards:
-            return self.parse_listings(html, profile)
+            return []
 
         candidates: list[ListingCandidate] = []
         seen: set[str] = set()

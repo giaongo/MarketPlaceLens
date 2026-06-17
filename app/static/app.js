@@ -761,6 +761,7 @@ const providerCategories = {
     { label: "Autoteile & Reifen", path: "autoteile-reifen", id: "223" },
     { label: "Dienstleistungen", path: "dienstleistungen", id: "297" },
     { label: "Elektronik", path: "elektronik", id: "161" },
+    { label: "Elektronik > Notebooks", path: "notebooks", id: "278", aliases: ["laptop", "laptops", "notebook", "notebooks", "macbook"] },
     { label: "Familie, Kind & Baby", path: "familie-kind-baby", id: "17" },
     { label: "Freizeit, Hobby & Nachbarschaft", path: "freizeit-nachbarschaft", id: "185" },
     { label: "Haus & Garten", path: "haus-garten", id: "80" },
@@ -1875,7 +1876,7 @@ function matchWizardCategory(source, hint) {
   const normalized = normalizeCategoryHint(hint);
   if (!normalized) return null;
   return (providerCategories[source] || []).find((category) => {
-    return [category.label, category.slug, category.id, category.path]
+    return [category.label, category.slug, category.id, category.path, ...(category.aliases || [])]
       .filter(Boolean)
       .some((value) => normalizeCategoryHint(value).includes(normalized) || normalized.includes(normalizeCategoryHint(value)));
   }) || null;

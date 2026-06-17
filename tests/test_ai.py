@@ -38,6 +38,28 @@ class AiDraftTests(unittest.TestCase):
         self.assertEqual(draft["source_type"], "kleinanzeigen")
         self.assertEqual(draft["max_listing_age_days"], 365)
 
+    def test_normalize_search_draft_cleans_price_from_query_and_infers_notebooks(self) -> None:
+        draft = normalize_search_draft(
+            """
+            {
+              "name": "Macbook air M2 unter 600€",
+              "source_type": "kleinanzeigen",
+              "query": "Macbook air M2 unter 600€",
+              "category_hint": "",
+              "location": "",
+              "radius_km": null,
+              "max_price": null,
+              "required_keywords": ["Macbook", "Air", "M2"],
+              "exclude_keywords": []
+            }
+            """
+        )
+
+        self.assertEqual(draft["query"], "Macbook air M2")
+        self.assertEqual(draft["name"], "Macbook air M2")
+        self.assertEqual(draft["max_price"], 600.0)
+        self.assertEqual(draft["category_hint"], "Elektronik > Notebooks")
+
     def test_ollama_uses_completion_token_limit(self) -> None:
         self.assertEqual(ai_token_limit_payload("ollama", 20), {"max_completion_tokens": 20})
 

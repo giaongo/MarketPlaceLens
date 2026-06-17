@@ -1493,6 +1493,8 @@ def search_draft_prompt(prompt: str, language: str) -> list[dict[str, str]]:
                 "Return only one JSON object, without markdown or explanations. "
                 "Allowed source_type values: kleinanzeigen, facebook, mobilede. "
                 "Use kleinanzeigen unless the user clearly asks for Facebook Marketplace, mobile.de, cars, or vehicles. "
+                "Keep query to the product/search words only; put prices, radius, location, and listing age only in their fields. "
+                "For Kleinanzeigen category_hint, prefer a precise category path such as 'Elektronik > Notebooks' for laptops. "
                 "Use null for unknown numeric values and [] for empty keyword arrays."
             ),
         },
@@ -1523,20 +1525,64 @@ def normalize_search_draft(text: str) -> dict[str, Any]:
     query = clean_ai_string(data.get("query")) or clean_ai_string(data.get("name"))
     if not query:
         raise HTTPException(502, "AI provider did not return a search query")
+    max_price = bounded_float(data.get("max_price"), 0, 1_000_000)
+    if max_price is None:
+        max_price = infer_max_price(query)
+    query = sanitize_search_query(query)
+    if not query:
+        raise HTTPException(502, "AI provider did not return a search query")
+    category_hint = clean_ai_string(data.get("category_hint"))[:120]
+    if not category_hint:
+        category_hint = infer_category_hint(query)
     radius = bounded_int(data.get("radius_km"), 0, 200)
     max_age = bounded_int(data.get("max_listing_age_days"), 1, 3650) or 365
     return {
-        "name": clean_ai_string(data.get("name")) or query,
+        "name": sanitize_search_name(clean_ai_string(data.get("name")) or query, query),
         "source_type": source_type,
         "query": query[:120],
-        "category_hint": clean_ai_string(data.get("category_hint"))[:120],
+        "category_hint": category_hint,
         "location": clean_ai_string(data.get("location"))[:120],
         "radius_km": radius,
-        "max_price": bounded_float(data.get("max_price"), 0, 1_000_000),
+        "max_price": max_price,
         "max_listing_age_days": max_age,
         "required_keywords": clean_ai_list(data.get("required_keywords"))[:12],
         "exclude_keywords": clean_ai_list(data.get("exclude_keywords"))[:12],
     }
+
+
+def infer_max_price(value: str) -> float | None:
+    match = re.search(r"(?:\b(?:unter|bis|max(?:imal)?|höchstens|under|below|up\s+to)\s*)?(\d{2,7})(?:[.,]\d{1,2})?\s*(?:€|eur|euro)(?=\s|$|[,.])", value, re.IGNORECASE)
+    if not match:
+        match = re.search(r"\b(?:unter|bis|max(?:imal)?|höchstens|under|below|up\s+to)\s+(\d{2,7})(?:[.,]\d{1,2})?\b", value, re.IGNORECASE)
+    if not match:
+        return None
+    return bounded_float(match.group(1), 0, 1_000_000)
+
+
+def sanitize_search_query(value: str) -> str:
+    cleaned = clean_ai_string(value)
+    cleaned = re.sub(
+        r"\b(?:unter|bis|max(?:imal)?|höchstens|under|below|up\s+to)\s+\d{2,7}(?:[.,]\d{1,2})?\s*(?:€|eur|euro)?(?=\s|$|[,.])",
+        " ",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(r"\b\d{2,7}(?:[.,]\d{1,2})?\s*(?:€|eur|euro)(?=\s|$|[,.])", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\b(?:kleinanzeigen|facebook marketplace|mobile\.de)\b", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\b(?:suche|suchen|gesucht|finde|finden|looking for)\b", " ", cleaned, flags=re.IGNORECASE)
+    return clean_ai_string(cleaned).strip(" ,;:-")
+
+
+def sanitize_search_name(value: str, fallback_query: str) -> str:
+    cleaned = sanitize_search_query(value)
+    return cleaned or fallback_query
+
+
+def infer_category_hint(query: str) -> str:
+    normalized = query.lower()
+    if re.search(r"\b(macbook|notebook|laptop|thinkpad|chromebook)\b", normalized):
+        return "Elektronik > Notebooks"
+    return ""
 
 
 def extract_json_object(value: str) -> str:

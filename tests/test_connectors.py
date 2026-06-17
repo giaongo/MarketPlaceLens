@@ -195,6 +195,21 @@ class ConnectorTests(unittest.TestCase):
             "active",
         )
 
+    def test_kleinanzeigen_parser_ignores_footer_links_when_no_listing_cards(self) -> None:
+        connector = HtmlListingConnector("kleinanzeigen")
+        html = """
+        <html><body>
+          <footer>
+            <a href="https://www.facebook.com/Kleinanzeigen/">Facebook</a>
+            <a href="https://www.adevinta.com/brands">Adevinta</a>
+          </footer>
+        </body></html>
+        """
+
+        listings = connector.parse_kleinanzeigen_listings(html, {"search_url": "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=macbook"})
+
+        self.assertEqual(listings, [])
+
     def test_kleinanzeigen_parser_ignores_account_links(self) -> None:
         html = """
         <ul id="srchrslt-adtable">

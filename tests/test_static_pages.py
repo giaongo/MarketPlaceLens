@@ -40,6 +40,13 @@ class StaticPageTests(unittest.TestCase):
         self.assertIn("navigator.languages", app_js)
         self.assertIn('savedLanguage || detectBrowserLanguage()', app_js)
 
+    def test_quick_job_has_kleinanzeigen_notebook_category(self) -> None:
+        app_js = (Path(__file__).resolve().parents[1] / "app" / "static" / "app.js").read_text(encoding="utf-8")
+
+        self.assertIn('"Elektronik > Notebooks"', app_js)
+        self.assertIn('"notebooks"', app_js)
+        self.assertIn('"278"', app_js)
+
 
 if __name__ == "__main__":
     unittest.main()
