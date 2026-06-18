@@ -969,6 +969,7 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
                 stats["hidden"] += 1
                 continue
             stats["new"] += 1
+            db.commit()
             if should_auto_assess_new_listing(app_settings):
                 try:
                     assessment_text = await generate_ai_text(app_settings, listing_assessment_prompt(row_to_listing(listing)), max_tokens=220)
@@ -977,6 +978,7 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
                         "UPDATE listings SET ai_assessment_text = ?, ai_assessed_at = ? WHERE id = ?",
                         (assessment_text.strip()[:1200], assessed_at, listing_id),
                     )
+                    db.commit()
                     listing = db.execute("SELECT * FROM listings WHERE id = ?", (listing_id,)).fetchone()
                 except HTTPException:
                     pass
@@ -995,6 +997,7 @@ async def run_profile(profile_id: int) -> dict[str, Any]:
                     pass
             if delivered:
                 db.execute("UPDATE listings SET status = 'notified', notified_at = ? WHERE id = ?", (utc_now(), listing_id))
+                db.commit()
                 stats["notified"] += 1
         db.execute("UPDATE watch_profiles SET last_run_at = ?, updated_at = ? WHERE id = ?", (now, now, profile_id))
     stats.update(await verify_unseen_listing_availability(profile, app_settings, now))
