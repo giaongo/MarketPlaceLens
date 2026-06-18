@@ -15,7 +15,7 @@ class AiDraftTests(unittest.TestCase):
               "source_type": "kleinanzeigen",
               "query": "defekte elektronik",
               "category_hint": "Elektronik",
-              "location": "21629",
+              "location": "10115",
               "radius_km": 50,
               "max_price": 100,
               "max_listing_age_days": 14,
@@ -83,19 +83,19 @@ class AiDraftTests(unittest.TestCase):
 
     def test_normalize_inquiry_text_removes_buyer_name_from_greeting(self) -> None:
         text = normalize_inquiry_text(
-            "Hallo Alex,\nist der Artikel noch verfügbar?\n\nViele Grüße, Alex",
-            {"display_name": "Alex"},
+            "Hallo Mia,\nist der Artikel noch verfügbar?\n\nViele Grüße, Mia",
+            {"display_name": "Mia"},
         )
 
-        self.assertEqual(text, "Hallo,\nist der Artikel noch verfügbar?\n\nViele Grüße, Alex")
+        self.assertEqual(text, "Hallo,\nist der Artikel noch verfügbar?\n\nViele Grüße, Mia")
 
     def test_normalize_inquiry_text_keeps_signature_name(self) -> None:
         text = normalize_inquiry_text(
-            "Guten Tag Alex, ich könnte heute abholen.\nViele Grüße, Alex",
-            {"display_name": "Alex"},
+            "Guten Tag Mia, ich könnte heute abholen.\nViele Grüße, Mia",
+            {"display_name": "Mia"},
         )
 
-        self.assertEqual(text, "Guten Tag, ich könnte heute abholen.\nViele Grüße, Alex")
+        self.assertEqual(text, "Guten Tag, ich könnte heute abholen.\nViele Grüße, Mia")
 
 
 if __name__ == "__main__":

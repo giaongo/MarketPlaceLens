@@ -84,7 +84,7 @@ Use **Quick job** when starting from a simple idea. The wizard guides through:
 
 Use **New job** when you already have a concrete marketplace URL. The manual editor includes provider cards, URL parameter previews, Kleinanzeigen listing-type controls, text or map-based location criteria, keyword rules, and delivery settings.
 
-For Kleinanzeigen, a text location such as `21629 · +50 km` is translated into URL parameters. If the map mode is used, MarketPlaceLens reverse-geocodes the clicked point into a ZIP/place first and then uses that resolved location for Kleinanzeigen.
+For Kleinanzeigen, a text location such as `10115 · +50 km` is translated into URL parameters. If the map mode is used, MarketPlaceLens reverse-geocodes the clicked point into a ZIP/place first and then uses that resolved location for Kleinanzeigen.
 
 ## 5. Listing Workflow
 

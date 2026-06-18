@@ -1,6 +1,6 @@
 # MarketPlaceLens Wiki
 
-Welcome to the MarketPlaceLens wiki draft. These pages are prepared for a future GitHub Wiki and mirror the structure used by other AlexRosbach self-hosted projects.
+Welcome to the MarketPlaceLens wiki draft. These pages are prepared for a future GitHub Wiki and mirror the structure used by the project documentation.
 
 ## Pages
 

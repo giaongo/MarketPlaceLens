@@ -25,18 +25,18 @@ def candidate(location: str) -> ListingCandidate:
 
 class FilterTests(unittest.TestCase):
     def test_radius_location_hint_does_not_require_exact_zip_text(self) -> None:
-        result = apply_filters(candidate("20539 Hamburg Rothenburgsort (18 km)"), {"location_hint": "21629 · +50 km"})
+        result = apply_filters(candidate("20539 Hamburg Rothenburgsort (18 km)"), {"location_hint": "10115 · +50 km"})
 
         self.assertEqual(result.status, "new")
         self.assertEqual(result.reason, "")
-        self.assertEqual(location_filter_terms("21629 · +50 km"), [])
+        self.assertEqual(location_filter_terms("10115 · +50 km"), [])
 
     def test_exact_location_hint_still_filters_by_text(self) -> None:
-        result = apply_filters(candidate("20539 Hamburg Rothenburgsort"), {"location_hint": "21629"})
+        result = apply_filters(candidate("20539 Hamburg Rothenburgsort"), {"location_hint": "10115"})
 
         self.assertEqual(result.status, "hidden")
         self.assertEqual(result.reason, "location_mismatch")
-        self.assertEqual(location_filter_terms("21629"), ["21629"])
+        self.assertEqual(location_filter_terms("10115"), ["10115"])
 
 
 if __name__ == "__main__":

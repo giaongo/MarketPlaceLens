@@ -82,7 +82,7 @@ class ConnectorTests(unittest.TestCase):
               <img src="https://example.test/photo.jpg" />
               <span>120 €</span>
               <span>Vintage Stuhl</span>
-              <span>21629 Neu Wulmstorf</span>
+              <span>10115 Berlin</span>
             </a>
           </div>
         </body></html>
@@ -94,34 +94,34 @@ class ConnectorTests(unittest.TestCase):
         self.assertEqual(listings[0].listing_url, "https://www.facebook.com/marketplace/item/123456789/")
         self.assertEqual(listings[0].title, "Vintage Stuhl")
         self.assertEqual(listings[0].price_text, "120 €")
-        self.assertEqual(listings[0].location_text, "21629 Neu Wulmstorf")
+        self.assertEqual(listings[0].location_text, "10115 Berlin")
 
     def test_kleinanzeigen_location_hint_is_added_to_search_url(self) -> None:
         url = apply_kleinanzeigen_location_to_url(
             "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl",
-            "21629 · +50 km",
+            "10115 · +50 km",
         )
 
         self.assertEqual(
             url,
-            "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl&locationStr=21629&radius=50",
+            "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl&locationStr=10115&radius=50",
         )
 
     def test_kleinanzeigen_map_location_hint_uses_resolved_place(self) -> None:
         url = apply_kleinanzeigen_location_to_url(
             "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl",
-            "Kartenpunkt: 53.4667, 9.8000 · 21629 Neu Wulmstorf · +50 km",
+            "Kartenpunkt: 52.5200, 13.4050 · 10115 Berlin · +50 km",
         )
 
         self.assertEqual(
             url,
-            "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl&locationStr=21629+Neu+Wulmstorf&radius=50",
+            "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl&locationStr=10115+Berlin&radius=50",
         )
 
     def test_existing_kleinanzeigen_location_url_is_not_rewritten(self) -> None:
         url = "https://www.kleinanzeigen.de/s-immobilien/duesseldorf/anzeige:angebote/wohnung/k0c195l2068r5"
 
-        self.assertEqual(apply_kleinanzeigen_location_to_url(url, "21629 · +50 km"), url)
+        self.assertEqual(apply_kleinanzeigen_location_to_url(url, "10115 · +50 km"), url)
 
     def test_kleinanzeigen_dedicated_parser_reads_aditem_fields(self) -> None:
         html = """

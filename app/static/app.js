@@ -1642,11 +1642,11 @@ async function resolveMapPoint(lat, lng) {
     const place = await reverseGeocodeLocation(lat, lng);
     if (token !== state.locationResolveToken) return;
     $("#profile-location-label").value = place;
-    $("#profile-location-label").placeholder = "21629 Neu Wulmstorf";
+    $("#profile-location-label").placeholder = "10115 Berlin";
   } catch {
     if (token !== state.locationResolveToken) return;
     $("#profile-location-label").value = "";
-    $("#profile-location-label").placeholder = "21629 Neu Wulmstorf";
+    $("#profile-location-label").placeholder = "10115 Berlin";
   }
   syncLocationCriteria();
 }

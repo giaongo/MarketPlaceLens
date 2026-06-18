@@ -24,7 +24,7 @@ Use the manual editor for precise marketplace URLs. It supports provider cards, 
 Text location examples:
 
 ```text
-21629 · +50 km
+10115 · +50 km
 Hamburg · +30 km
 ```
 
