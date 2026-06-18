@@ -305,6 +305,7 @@
                     </div>
                     <div class="location-fields">
                       <label><span data-i18n="location.coordinates">Coordinates</span><input id="profile-location-coordinates" readonly placeholder="53.5500, 10.0000"></label>
+                      <label><span data-i18n="location.resolvedPlace">Resolved place</span><input id="profile-location-label" readonly placeholder="21629 Neu Wulmstorf"></label>
                       <label><span data-i18n="location.radius">Radius</span>
                         <select id="profile-map-radius">
                           <option value="" data-i18n="location.wholePlace">Whole place</option>
@@ -745,6 +746,20 @@
           <button class="button primary" type="button" id="copy-inquiry-button" data-i18n="inquiry.copy">Copy</button>
         </div>
       </form>
+    </dialog>
+    <dialog id="listing-map-dialog" class="modal-dialog map-dialog">
+      <div class="modal-card">
+        <div class="panel-heading">
+          <div>
+            <h2 id="listing-map-title" data-i18n="listing.locationMapTitle">Listing location</h2>
+            <p id="listing-map-subtitle" class="panel-subtitle"></p>
+          </div>
+          <button class="mini-button" type="button" id="close-listing-map" data-i18n="inquiry.close">Close</button>
+        </div>
+        <div id="listing-map-status" class="map-status" data-i18n="listing.locationMapLoading">Loading map...</div>
+        <iframe id="listing-map-frame" class="listing-map-frame hidden" title="Listing location map" loading="lazy"></iframe>
+        <a id="listing-map-open" class="button ghost hidden" target="_blank" rel="noopener" data-i18n="listing.locationMapOpen">Open in OpenStreetMap</a>
+      </div>
     </dialog>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
     <script src="/static/app.js?v=__ASSET_VERSION__" defer></script>

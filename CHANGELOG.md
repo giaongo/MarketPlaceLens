@@ -6,6 +6,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Added
 
+- Listing location chips now include a map action that opens the advertisement ZIP/place in an OpenStreetMap dialog.
 - First visit now chooses the UI language from the browser language when the user has not saved a language preference yet.
 - Facebook Marketplace settings now include a setup guide for Marketplace URLs and optional browser Cookie headers.
 - First-run setup now shows a scraping and platform-rules notice before the admin account form.
@@ -43,6 +44,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Fixed
 
+- Job map clicks now reverse-geocode the selected point into a ZIP/place so Kleinanzeigen location and radius searches can use the map selection.
 - Listing status updates no longer collide with long-running job-side AI assessment or notification waits, because job writes are committed before external provider calls.
 - Settings reads no longer rewrite the default watchlist row on every request, and SQLite now waits for short writer locks instead of returning intermittent internal server errors while job runs are active.
 - AI quick jobs now clean price constraints out of the search query, infer notebook searches as Kleinanzeigen `Elektronik > Notebooks`, and avoid saving Kleinanzeigen footer links as fake results when a search page has no real listing cards.

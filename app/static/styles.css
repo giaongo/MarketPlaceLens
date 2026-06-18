@@ -1427,6 +1427,10 @@ textarea.chip-source {
   gap: 12px;
 }
 
+.location-map-panel .location-fields {
+  grid-template-columns: minmax(140px, 0.8fr) minmax(180px, 1fr) minmax(130px, 0.55fr);
+}
+
 .location-map {
   position: relative;
   min-height: 190px;
@@ -2172,6 +2176,22 @@ textarea.chip-source {
   overflow-wrap: anywhere;
 }
 
+.location-map-button {
+  border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--brand-soft) 74%, var(--surface));
+  color: var(--brand-dark);
+  padding: 3px 8px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.location-map-button:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
 .grid-view .listing-facts {
   display: flex;
   flex-wrap: wrap;
@@ -2623,6 +2643,31 @@ textarea.chip-source {
   min-height: 220px;
 }
 
+.map-dialog {
+  width: min(880px, calc(100vw - 28px));
+}
+
+.listing-map-frame {
+  width: 100%;
+  height: min(58vh, 520px);
+  min-height: 320px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--input-bg);
+}
+
+.map-status {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-weight: 800;
+  text-align: center;
+}
+
 #toast {
   position: fixed;
   right: 18px;
@@ -2751,6 +2796,10 @@ textarea.chip-source {
   .wizard-grid,
   .source-card-grid,
   .provider-url-row {
+    grid-template-columns: 1fr;
+  }
+
+  .location-map-panel .location-fields {
     grid-template-columns: 1fr;
   }
 

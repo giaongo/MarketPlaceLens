@@ -656,17 +656,20 @@ def apply_kleinanzeigen_location_to_url(url: str, location_hint: str) -> str:
 
 def parse_location_hint(value: str) -> tuple[str, str]:
     normalized = value.replace("·", ",").strip()
-    if normalized.lower().startswith(("map point:", "kartenpunkt:")):
-        return "", ""
     location = ""
     radius = ""
     for part in normalized.split(","):
         cleaned = part.strip()
         if not cleaned or cleaned.lower() in {"whole place", "ganzer ort"}:
             continue
+        cleaned = re.sub(r"^(?:map point|kartenpunkt)\s*:\s*", "", cleaned, flags=re.IGNORECASE).strip()
+        if not cleaned:
+            continue
         radius_match = re.search(r"\+?\s*(\d+)\s*km\b", cleaned, re.IGNORECASE)
         if radius_match:
             radius = radius_match.group(1)
+            continue
+        if re.fullmatch(r"-?\d+\.\d+", cleaned):
             continue
         if not location:
             location = cleaned

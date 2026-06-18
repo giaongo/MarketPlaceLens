@@ -107,6 +107,17 @@ class ConnectorTests(unittest.TestCase):
             "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl&locationStr=21629&radius=50",
         )
 
+    def test_kleinanzeigen_map_location_hint_uses_resolved_place(self) -> None:
+        url = apply_kleinanzeigen_location_to_url(
+            "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl",
+            "Kartenpunkt: 53.4667, 9.8000 · 21629 Neu Wulmstorf · +50 km",
+        )
+
+        self.assertEqual(
+            url,
+            "https://www.kleinanzeigen.de/s-suchanfrage.html?keywords=stuhl&locationStr=21629+Neu+Wulmstorf&radius=50",
+        )
+
     def test_existing_kleinanzeigen_location_url_is_not_rewritten(self) -> None:
         url = "https://www.kleinanzeigen.de/s-immobilien/duesseldorf/anzeige:angebote/wohnung/k0c195l2068r5"
 

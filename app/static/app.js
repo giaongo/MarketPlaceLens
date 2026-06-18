@@ -41,6 +41,7 @@ const state = {
   locationMap: null,
   locationMarker: null,
   locationCircle: null,
+  locationResolveToken: 0,
   appOpenCheckStarted: false,
   settingsTab: "notifications",
   currentView: "dashboard",
@@ -174,6 +175,8 @@ const translations = {
     "location.radius": "Radius",
     "location.wholePlace": "Whole place",
     "location.coordinates": "Coordinates",
+    "location.resolvedPlace": "Resolved place",
+    "location.resolving": "Resolving place...",
     "location.mapHint": "Click on the map to set an approximate center point",
     "location.help": "Use a ZIP/place like Kleinanzeigen, or click a map point and choose a radius.",
     "location.mapPrefix": "Map point",
@@ -338,6 +341,11 @@ const translations = {
     "listing.noImage": "No image available",
     "listing.noPrice": "no price",
     "listing.noLocation": "no location",
+    "listing.map": "Map",
+    "listing.locationMapTitle": "Listing location",
+    "listing.locationMapOpen": "Open in OpenStreetMap",
+    "listing.locationMapLoading": "Loading map...",
+    "listing.locationMapUnavailable": "No map position found for this location.",
     "listing.postedAt": "Listed",
     "listing.unknownPostedAt": "unknown",
     "listing.postcode": "ZIP",
@@ -526,6 +534,8 @@ const translations = {
     "location.radius": "Radius",
     "location.wholePlace": "Ganzer Ort",
     "location.coordinates": "Koordinaten",
+    "location.resolvedPlace": "Erkannter Ort",
+    "location.resolving": "Ort wird ermittelt...",
     "location.mapHint": "In die Karte klicken, um einen ungefähren Mittelpunkt zu setzen",
     "location.help": "Nutze PLZ/Ort wie bei Kleinanzeigen oder klicke einen Kartenpunkt und wähle einen Radius.",
     "location.mapPrefix": "Kartenpunkt",
@@ -690,6 +700,11 @@ const translations = {
     "listing.noImage": "Kein Bild verfügbar",
     "listing.noPrice": "kein Preis",
     "listing.noLocation": "kein Ort",
+    "listing.map": "Karte",
+    "listing.locationMapTitle": "Anzeigenort",
+    "listing.locationMapOpen": "In OpenStreetMap öffnen",
+    "listing.locationMapLoading": "Karte wird geladen...",
+    "listing.locationMapUnavailable": "Für diesen Ort wurde keine Kartenposition gefunden.",
     "listing.postedAt": "Anzeige",
     "listing.unknownPostedAt": "unbekannt",
     "listing.postcode": "PLZ",
@@ -889,6 +904,7 @@ function bindNavigation() {
   $("#review-seen-button").addEventListener("click", reviewSeenCurrent);
   $("#review-inquiry-button").addEventListener("click", reviewInquiryCurrent);
   $("#review-open-button").addEventListener("click", reviewOpenCurrent);
+  $("#close-listing-map").addEventListener("click", () => $("#listing-map-dialog").close());
   $("#listing-status-filter").addEventListener("change", resetListingsPage);
   $("#listing-profile-filter").addEventListener("change", () => {
     updateListingRunButton();
@@ -1557,7 +1573,12 @@ function formatLocationCriteria() {
   if (mode === "map") {
     const coordinates = $("#profile-location-coordinates").value.trim();
     if (!coordinates) return "";
-    return `${t("location.mapPrefix")}: ${coordinates} · ${radiusLabel($("#profile-map-radius").value)}`;
+    const resolvedPlace = $("#profile-location-label").value.trim();
+    return [
+      `${t("location.mapPrefix")}: ${coordinates}`,
+      resolvedPlace,
+      radiusLabel($("#profile-map-radius").value),
+    ].filter(Boolean).join(" · ");
   }
   const query = $("#profile-location-query").value.trim();
   if (!query) return "";
@@ -1597,7 +1618,7 @@ function initializeLocationMap() {
   if (match) updateLeafletMarker(Number(match[1]), Number(match[2]));
 }
 
-function setMapCoordinates(lat, lng) {
+function setMapCoordinates(lat, lng, options = {}) {
   const formattedLat = Number(lat).toFixed(4);
   const formattedLng = Number(lng).toFixed(4);
   $("#profile-location-coordinates").value = `${formattedLat}, ${formattedLng}`;
@@ -1607,6 +1628,44 @@ function setMapCoordinates(lat, lng) {
     updateFallbackMapPin(Number(formattedLat), Number(formattedLng));
   }
   syncLocationCriteria();
+  if (options.resolve !== false) {
+    resolveMapPoint(Number(formattedLat), Number(formattedLng));
+  }
+}
+
+async function resolveMapPoint(lat, lng) {
+  const token = ++state.locationResolveToken;
+  $("#profile-location-label").value = "";
+  $("#profile-location-label").placeholder = t("location.resolving");
+  syncLocationCriteria();
+  try {
+    const place = await reverseGeocodeLocation(lat, lng);
+    if (token !== state.locationResolveToken) return;
+    $("#profile-location-label").value = place;
+    $("#profile-location-label").placeholder = "21629 Neu Wulmstorf";
+  } catch {
+    if (token !== state.locationResolveToken) return;
+    $("#profile-location-label").value = "";
+    $("#profile-location-label").placeholder = "21629 Neu Wulmstorf";
+  }
+  syncLocationCriteria();
+}
+
+async function reverseGeocodeLocation(lat, lng) {
+  const url = new URL("https://nominatim.openstreetmap.org/reverse");
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("lat", String(lat));
+  url.searchParams.set("lon", String(lng));
+  url.searchParams.set("zoom", "14");
+  url.searchParams.set("addressdetails", "1");
+  const response = await fetch(url.toString(), { headers: { "Accept": "application/json" } });
+  if (!response.ok) throw new Error("reverse geocoding failed");
+  const data = await response.json();
+  const address = data.address || {};
+  const postcode = address.postcode || "";
+  const place = address.city || address.town || address.village || address.municipality || address.suburb || "";
+  const resolved = [postcode, place].filter(Boolean).join(" ").trim();
+  return resolved || String(data.display_name || "").split(",").slice(0, 2).join(", ").trim();
 }
 
 function updateFallbackMapPin(lat, lng) {
@@ -1666,6 +1725,7 @@ function applyLocationCriteria(value) {
   $("#profile-location-query").value = "";
   $("#profile-location-radius").value = "";
   $("#profile-location-coordinates").value = "";
+  $("#profile-location-label").value = "";
   $("#profile-map-radius").value = "";
   $("#profile-location-pin").classList.remove("visible");
   clearLeafletMapSelection();
@@ -1680,7 +1740,9 @@ function applyLocationCriteria(value) {
     if (coordinateMatch) {
       const lat = Number(coordinateMatch[1]);
       const lng = Number(coordinateMatch[2]);
-      setMapCoordinates(lat, lng);
+      const resolvedPlace = mapResolvedPlaceFromCriteria(raw);
+      $("#profile-location-label").value = resolvedPlace;
+      setMapCoordinates(lat, lng, { resolve: !resolvedPlace });
     }
     const radiusMatch = raw.match(/\+(\d+)\s*km/i);
     $("#profile-map-radius").value = radiusMatch?.[1] || "";
@@ -1694,6 +1756,19 @@ function applyLocationCriteria(value) {
   const radiusMatch = raw.match(/\+(\d+)\s*km/i);
   $("#profile-location-radius").value = radiusMatch?.[1] || "";
   syncLocationCriteria();
+}
+
+function mapResolvedPlaceFromCriteria(value) {
+  return String(value || "")
+    .replace(/^(?:map point|kartenpunkt)\s*:/i, "")
+    .split("·")
+    .map((part) => part.trim())
+    .filter((part) => {
+      return part
+        && !/^[-+]?\d+(?:\.\d+)?\s*,\s*[-+]?\d+(?:\.\d+)?$/.test(part)
+        && !/\+?\s*\d+\s*km\b/i.test(part)
+        && !/^(whole place|ganzer ort)$/i.test(part);
+    })[0] || "";
 }
 
 async function changePassword() {
@@ -2181,6 +2256,9 @@ function renderReviewCard() {
   target.querySelector("[data-review-open]")?.addEventListener("click", reviewOpenCurrent);
   target.querySelector("[data-review-inquiry]")?.addEventListener("click", reviewInquiryCurrent);
   target.querySelector("[data-review-assessment]")?.addEventListener("click", (event) => reviewAssessmentCurrent(event.currentTarget));
+  target.querySelector("[data-map-location]")?.addEventListener("click", (event) => {
+    openListingMap(event.currentTarget.dataset.mapLocation, event.currentTarget.dataset.mapTitle);
+  });
 }
 
 function reviewListingMarkup(listing) {
@@ -2208,7 +2286,7 @@ function reviewListingMarkup(listing) {
         ${listing.description_snippet ? `<p class="review-description">${escapeHtml(listing.description_snippet)}</p>` : ""}
         <strong class="review-price">${escapeHtml(listing.price_text || t("listing.noPrice"))}</strong>
         <div class="listing-facts">
-          ${detailFacts.map((fact) => `<span>${escapeHtml(fact)}</span>`).join("")}
+          ${factsMarkup(detailFacts, listing)}
         </div>
         <p class="review-reason">${escapeHtml(t("review.reason", { score: listing.score }))}</p>
         ${listing.ai_assessment_text ? `
@@ -2324,6 +2402,69 @@ async function generateInquiry(listingId, button) {
   } finally {
     if (button) button.disabled = false;
   }
+}
+
+async function openListingMap(location, title) {
+  const query = String(location || "").trim();
+  if (!query) return toast(t("listing.locationMapUnavailable"));
+  const dialog = $("#listing-map-dialog");
+  const status = $("#listing-map-status");
+  const frame = $("#listing-map-frame");
+  const openLink = $("#listing-map-open");
+  $("#listing-map-title").textContent = t("listing.locationMapTitle");
+  $("#listing-map-subtitle").textContent = `${title || ""}${title ? " · " : ""}${query}`;
+  status.textContent = t("listing.locationMapLoading");
+  status.classList.remove("hidden");
+  frame.classList.add("hidden");
+  frame.removeAttribute("src");
+  openLink.classList.add("hidden");
+  openLink.removeAttribute("href");
+  dialog.showModal();
+  try {
+    const result = await geocodeListingLocation(query);
+    if (!result) throw new Error("location unavailable");
+    frame.src = osmEmbedUrl(result.lat, result.lng);
+    frame.classList.remove("hidden");
+    openLink.href = osmSearchUrl(query);
+    openLink.classList.remove("hidden");
+    status.classList.add("hidden");
+  } catch {
+    status.textContent = t("listing.locationMapUnavailable");
+    openLink.href = osmSearchUrl(query);
+    openLink.classList.remove("hidden");
+  }
+}
+
+async function geocodeListingLocation(query) {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("format", "jsonv2");
+  url.searchParams.set("limit", "1");
+  url.searchParams.set("countrycodes", "de");
+  url.searchParams.set("q", query);
+  const response = await fetch(url.toString(), { headers: { "Accept": "application/json" } });
+  if (!response.ok) return null;
+  const results = await response.json();
+  const first = Array.isArray(results) ? results[0] : null;
+  if (!first?.lat || !first?.lon) return null;
+  return { lat: Number(first.lat), lng: Number(first.lon) };
+}
+
+function osmEmbedUrl(lat, lng) {
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+  const latPad = 0.015;
+  const lngPad = 0.025;
+  const url = new URL("https://www.openstreetmap.org/export/embed.html");
+  url.searchParams.set("bbox", `${longitude - lngPad},${latitude - latPad},${longitude + lngPad},${latitude + latPad}`);
+  url.searchParams.set("layer", "mapnik");
+  url.searchParams.set("marker", `${latitude},${longitude}`);
+  return url.toString();
+}
+
+function osmSearchUrl(query) {
+  const url = new URL("https://www.openstreetmap.org/search");
+  url.searchParams.set("query", query);
+  return url.toString();
 }
 
 async function generateAssessment(listingId, button, options = {}) {
@@ -2539,6 +2680,9 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
   browser.querySelectorAll("[data-assessment-action]").forEach((button) => {
     button.addEventListener("click", () => generateAssessment(button.dataset.id, button));
   });
+  browser.querySelectorAll("[data-map-location]").forEach((button) => {
+    button.addEventListener("click", () => openListingMap(button.dataset.mapLocation, button.dataset.mapTitle));
+  });
   browser.querySelectorAll(".listing-image").forEach((img) => {
     img.addEventListener("error", () => {
       const fallback = document.createElement("span");
@@ -2676,6 +2820,17 @@ function locationFacts(listing) {
   ].filter(Boolean);
 }
 
+function listingLocationQuery(listing) {
+  return String(listing?.location_text || "").replace(/\s+/g, " ").trim();
+}
+
+function factsMarkup(facts, listing) {
+  const factItems = facts.map((fact) => `<span>${escapeHtml(fact)}</span>`).join("");
+  const location = listingLocationQuery(listing);
+  if (!location) return factItems;
+  return `${factItems}<button class="location-map-button" type="button" data-map-location="${escapeAttribute(location)}" data-map-title="${escapeAttribute(listing.title || location)}">${escapeHtml(t("listing.map"))}</button>`;
+}
+
 function listingDateFact(listing) {
   const posted = String(listing.posted_at_text || "").trim();
   if (posted) return `${t("listing.postedAt")}: ${posted}`;
@@ -2714,7 +2869,7 @@ function listingMarkup(listing) {
         <strong class="listing-price">${escapeHtml(listing.price_text || t("listing.noPrice"))}</strong>
         <p class="meta listing-description">${escapeHtml(listing.description_snippet || "")}</p>
         <div class="listing-facts">
-          ${detailFacts.map((fact) => `<span>${escapeHtml(fact)}</span>`).join("")}
+          ${factsMarkup(detailFacts, listing)}
         </div>
         ${listing.filter_reason ? `<p class="filter-reason">${escapeHtml(listing.filter_reason)}</p>` : ""}
         ${listing.ai_assessment_text ? `
