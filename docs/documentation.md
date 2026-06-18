@@ -1,129 +1,203 @@
 # MarketPlaceLens Documentation
 
-MarketPlaceLens is a self-hosted marketplace watcher. It helps users turn search result URLs into recurring jobs, review found listings, save interesting items to watchlists, and optionally draft buyer messages with a configured LLM provider.
+MarketPlaceLens is a self-hosted marketplace watcher. It turns user-supplied search URLs into recurring jobs, stores normalized listings locally, and gives users a focused workflow for reviewing, saving, hiding, contacting, and assessing items.
 
-## Setup
+## 1. Installation
 
-1. Install with Docker Compose.
+Requirements:
 
-   ```bash
-   mkdir -p marketplacelens && cd marketplacelens && curl -fsSL https://raw.githubusercontent.com/AlexRosbach/MarketPlaceLens/main/docker-compose.install.yml -o docker-compose.yml && docker compose up -d
-   ```
+- Docker 20.10+
+- Docker Compose v2
 
-   For local development from a checkout, copy the environment template first.
+Install with the published release image:
 
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+mkdir -p marketplacelens && cd marketplacelens
+curl -fsSL https://raw.githubusercontent.com/AlexRosbach/MarketPlaceLens/main/docker-compose.install.yml -o docker-compose.yml
+docker compose up -d
+```
 
-2. Optionally adjust `.env` or compose environment values.
+Open:
 
-   ```env
-   MARKETPLACELENS_ADMIN_USERNAME=admin
-   ```
+```text
+http://<your-host-ip>:8091
+```
 
-3. Start the app.
+On first start, MarketPlaceLens displays a platform-rules notice and then creates the first admin password. No normal deployment ships with a default password.
 
-   ```bash
-   docker compose up -d --build
-   ```
+For local development:
 
-4. Open `http://localhost:8091` and complete the setup screen. The first admin password is created there. MarketPlaceLens creates a persistent session secret automatically at startup.
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
 
-## Search Jobs
+## 2. Core Concepts
 
-Jobs are saved searches. A job stores the source, search URL, local filters, polling interval, and notification settings.
+### Jobs
 
-Use the quick-job wizard when creating a new search from a simple idea. It guides through source, search terms, optional price/location limits, keyword rules, and final review.
+A job is a saved search. It stores:
 
-Use the manual job editor when you already have a precise search URL or need more control over filters. If a search URL already contains query parameters, MarketPlaceLens shows them as editable rows so they can be adjusted without hand-editing the full URL.
+- source type
+- source URL
+- poll interval
+- listing type options
+- local filters
+- notification choices
+- owning user
 
-Every job has an oldest-listing limit. The default is 365 days.
+Admins can manage all jobs. Normal users can create, run, edit, and delete their own jobs.
 
-Normal users can create and manage their own jobs. Admins can see and manage all jobs.
+### Listings
 
-## Listings
+A listing is a normalized result imported from a job run. Listings carry title, price, location, category, marketplace URL, image URL, source status, user status, watchlist state, contacted state, and optional AI assessment text.
 
-The listing browser starts collapsed by default. Open it when you want to filter, sort, paginate, or switch between list and tile views.
+### Watchlists
 
-Default listing views show active items. Listings marked `seen` or `hidden` disappear from the active list and stay available through explicit status filters.
+Every user can choose a default watchlist. A normal watch action saves the listing to that default list. Marking a listing as contacted also adds it to the default watchlist, because contacted items should remain easy to find later.
 
-## Interface Preferences
+### Review Mode
 
-Language, version, and theme controls live in the bottom-right display-options control, matching Kramlet's layout. Use the `DE` / `EN` select to switch the UI language, and use the adjacent icon button to switch the current theme. Preferences are saved in the browser so the next visit uses the same language and theme.
+Review mode shows one listing at a time with image, price, location, source, AI assessment, and actions. Users can open the source listing, save to watchlist, mark contacted, mark seen, or generate AI text.
 
-## Review Mode
+## 3. Source Status
 
-Review mode shows one listing at a time with image, price, location, source, and key details.
+| Source | Status | Notes |
+|---|---|---|
+| Kleinanzeigen | Stable primary path | Best-supported connector. Supports public search/category URLs, price, age, keyword, location/radius, and listing type handling. |
+| Facebook Marketplace | **In testing** | Works only when Facebook returns listing links to the server. Facebook frequently returns login, consent, location, or JavaScript shell pages. Optional Cookie headers are stored locally and sent only to `facebook.com`. |
+| mobile.de | **In testing** | Reads public search pages when embedded vehicle result data is available. The official mobile.de Search API needs separate Basic Auth access. |
+| Generic HTML | Experimental | Basic fallback for simple link-card result pages. It is not a universal parser. |
 
-- Double-click or use `Watchlist` to save the listing.
-- Swipe horizontally or use `Seen, next` to mark the item seen and move on.
-- Use `Open original` to inspect the marketplace page.
-- On phones, the review card uses a compact Kramlet-style layout with the primary actions inside the product card so image, details, and buttons fit into one screen more reliably.
+MarketPlaceLens does not bypass login walls, CAPTCHA, bot protection, private APIs, blocked sessions, or platform access controls.
 
-## Watchlists
+## 4. Creating Jobs
 
-Users can create watchlists and choose their own default watchlist in Settings. The normal Watch action saves to that user's default list. The dropdown on listing cards and review cards lets users choose another list or create a new one directly.
+Use **Quick job** when starting from a simple idea. The wizard guides through:
 
-## AI Features
+1. source
+2. search term
+3. category
+4. price and location limits
+5. keyword rules
+6. polling and notification choices
 
-Admins can enable AI inquiry texts in Settings.
+Use **New job** when you already have a concrete marketplace URL. The manual editor includes provider cards, URL parameter previews, Kleinanzeigen listing-type controls, text or map-based location criteria, keyword rules, and delivery settings.
 
-Supported providers:
+For Kleinanzeigen, a text location such as `21629 · +50 km` is translated into URL parameters. If the map mode is used, MarketPlaceLens reverse-geocodes the clicked point into a ZIP/place first and then uses that resolved location for Kleinanzeigen.
+
+## 5. Listing Workflow
+
+Listings can be:
+
+- filtered by status, job, watchlist, text, price, and sort order
+- viewed in list or tile mode
+- opened on the original marketplace
+- marked seen or hidden
+- saved to a watchlist
+- marked contacted
+- shown on a map by ZIP/place
+- enriched with AI assessment text
+
+The default active listing view excludes seen and hidden items unless the user explicitly changes filters.
+
+## 6. Notifications
+
+Notification settings are split into Telegram and webhook configuration cards. Each job decides whether it sends Telegram and/or webhook notifications.
+
+Global rate limiting avoids aggressive polling. Per-job intervals are constrained by the configured minimum interval.
+
+## 7. AI Features
+
+AI is disabled by default. Admins can enable it and configure an OpenAI-compatible provider:
 
 - OpenAI API
 - Ollama
 - LM Studio
 
-The configured tone controls how the buyer message is written: very polite, normal, or cheeky. Generated text is displayed for copying only. MarketPlaceLens does not send seller messages.
+AI can generate:
 
-Each user can store personal buyer details in Settings, including display name, location, contact note, and preferred signature. When AI inquiry texts are generated, those details are included in the prompt so the draft can sound like the user and include the right context.
+- buyer inquiry text for manual copying
+- structured quick-job drafts
+- listing assessments
 
-The quick-job wizard can also use the configured AI provider to turn one sentence into a search draft. It fills source, query, category hint, price, location, radius, and keyword filters before the user saves the job. Admins can use the `Test AI` button in Settings to verify provider connectivity from the running container.
+Listing assessments focus on fit to the saved search, practical value, resale potential, visible risk signs, missing details, and whether the price looks plausible against a typical used-market range.
 
-Admins can enable AI listing assessments separately from the base AI switch. When this is active, listing and review cards offer a `KI-Einschätzung` action. The generated note is stored with the listing and shown inline so the user can quickly judge fit, price/location relevance, and visible caution signs. Admins can also enable automatic assessments for visible listing batches; the settings panel includes a warning because every assessment sends listing text to the configured AI provider and can consume many tokens.
+AI requests may send listing title, price, description, source metadata, match data, and user-provided buyer profile fields to the configured provider.
 
-## Users and Roles
+## 8. Users and Roles
 
-Admin:
+Admin users can:
 
 - manage all jobs and listings
 - manage users and roles
-- edit notification, webhook, AI, and watchlist settings
-- see all run logs and dashboard counts
+- configure notifications, AI, Facebook settings, watchlists, and run logs
+- clear individual or all run errors
 
-The Settings page uses separate tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account. Notification settings are grouped into Telegram, webhook, and delivery-rule cards, matching the LanLens-style settings layout while keeping per-job notification delivery on the job cards. The Watchlists tab is available to every user and stores a per-user default watchlist.
+Normal users can:
 
-User:
+- manage their own jobs
+- review listings from their own jobs
+- use watchlists
+- choose a default watchlist
+- edit account and buyer profile fields
+- change their password
 
-- create, edit, delete, and run their own jobs
-- review and mark listings from their own jobs
-- use watchlists and choose their own default watchlist
-- change their own password
-- cannot access global settings or other users' jobs
+## 9. Settings
 
-## Source Notes
+Settings are grouped into:
 
-MarketPlaceLens expects user-supplied Marketplace URLs. It does not bypass CAPTCHA, bot protection, private APIs, or platform access controls.
+- Notifications
+- Facebook
+- AI
+- Watchlists
+- Users
+- Recent runs
+- Account
 
-Facebook Marketplace and mobile.de may return login, consent, protection, or JavaScript-only pages to anonymous server requests. When that happens, MarketPlaceLens records a connector error with a direct explanation. For Facebook URLs that only work in the admin's own browser session, admins can paste their Facebook `Cookie` header in Settings. The value is stored locally in SQLite, masked in the UI/API, and only sent to `facebook.com`; no password is stored.
+Facebook settings include a setup guide and optional Cookie header field. The Cookie value is masked in UI/API responses and is intended only for private self-hosted use when the URL works in the admin's own browser session.
 
-The official mobile.de Search API requires Basic Auth access. The built-in mobile.de connector therefore reads public search pages when mobile.de makes embedded vehicle data available to the server.
+## 10. Updating
 
-The marketplace connectors are intended only for private, self-hosted use with URLs you are allowed to access. Depending on source, frequency, and local law, automated checks may violate platform terms of service. The maintainer accepts no responsibility for misuse, blocked accounts, denied access, data processing, or third-party policy violations.
+Pull the latest release image:
 
-## Updating
+```bash
+docker compose pull
+docker compose up -d
+```
 
-Pull the latest code, rebuild the container, and restart:
+For checkout-based installs:
 
 ```bash
 git pull
 docker compose up -d --build
 ```
 
-SQLite schema migrations run during app startup.
+SQLite schema migrations run during startup.
 
-## Version Metadata
+## 11. Troubleshooting
+
+### Source returns no listings
+
+Check the run logs first. Some platforms return empty HTML, login pages, consent pages, or JavaScript shells to server requests.
+
+### Facebook fails
+
+Facebook Marketplace is **in testing**. If the URL works only in your browser, add a browser Cookie header in Settings. Cookies expire, can be revoked, and may still not make the server response usable.
+
+### mobile.de fails
+
+mobile.de is **in testing**. Use a concrete public search result URL. If mobile.de returns no embedded result data or blocks the request, MarketPlaceLens records a connector error.
+
+### AI request fails
+
+Use **Test AI** in Settings. Local Ollama and LM Studio models can take longer on the first request while the model loads.
+
+### Browser shows stale UI
+
+The app appends the build code to local CSS and JavaScript URLs. If a browser still shows old controls, do a hard reload.
+
+## 12. Version Metadata
 
 `GET /api/version` returns:
 
@@ -133,5 +207,18 @@ SQLite schema migrations run during app startup.
 - `branch`
 - `created`
 
-The same build code appears as a small badge in the sidebar.
-The app also appends that build code to local CSS and JavaScript URLs, which keeps browser caches from mixing old UI scripts with newly deployed HTML.
+The build code also appears in the sidebar badge.
+
+## 13. Compliance Boundaries
+
+MarketPlaceLens is intended for private self-hosted use with URLs the operator is allowed to access.
+
+- No login automation
+- No CAPTCHA bypass
+- No proxy rotation
+- No aggressive polling
+- No automatic seller messaging
+- No public redistribution of marketplace data
+- No local thumbnail mirroring; images are proxied on demand
+
+The maintainer does not guarantee third-party platform compatibility and does not take responsibility for misuse, blocked accounts, denied access, data processing, or third-party policy violations.

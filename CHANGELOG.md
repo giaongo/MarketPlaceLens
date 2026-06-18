@@ -4,6 +4,10 @@ All notable changes to MarketPlaceLens are documented here.
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## [0.4.0] - 2026-06-18
+
 ### Added
 
 - Listing location chips now include a map action that opens the advertisement ZIP/place in an OpenStreetMap dialog.

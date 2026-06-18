@@ -1,6 +1,6 @@
 services:
   marketplacelens:
-    image: alexrosbach/marketplacelens:${MARKETPLACELENS_TAG:-0.3.0}
+    image: alexrosbach/marketplacelens:${MARKETPLACELENS_TAG:-0.4.0}
     container_name: marketplacelens
     restart: unless-stopped
     environment:
@@ -8,7 +8,7 @@ services:
       MARKETPLACELENS_POLL_ENABLED: ${MARKETPLACELENS_POLL_ENABLED:-true}
       MARKETPLACELENS_MIN_POLL_MINUTES: ${MARKETPLACELENS_MIN_POLL_MINUTES:-30}
       MARKETPLACELENS_DEFAULT_POLL_MINUTES: ${MARKETPLACELENS_DEFAULT_POLL_MINUTES:-60}
-      MARKETPLACELENS_USER_AGENT: ${MARKETPLACELENS_USER_AGENT:-MarketPlaceLens/0.3 (+self-hosted listing watcher)}
+      MARKETPLACELENS_USER_AGENT: ${MARKETPLACELENS_USER_AGENT:-MarketPlaceLens/0.4 (+self-hosted listing watcher)}
       MARKETPLACELENS_ADMIN_USERNAME: ${MARKETPLACELENS_ADMIN_USERNAME:-admin}
       MARKETPLACELENS_WEBHOOK_URL: ${MARKETPLACELENS_WEBHOOK_URL:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}

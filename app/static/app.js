@@ -1288,8 +1288,8 @@ function groupedProfilesMarkup(profiles) {
 function sourceLabel(source) {
   return {
     kleinanzeigen: "Kleinanzeigen",
-    facebook: "Facebook Marketplace",
-    mobilede: "mobile.de",
+    facebook: "Facebook Marketplace (in testing)",
+    mobilede: "mobile.de (in testing)",
     html: "Generic HTML",
   }[source] || source;
 }

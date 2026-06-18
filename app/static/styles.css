@@ -642,16 +642,22 @@ h1 {
 .profile-card-top h4 {
   margin: 0 0 6px;
   font-size: 1.1rem;
+  min-width: 0;
 }
 
 .source-badge {
-  flex: 0 0 auto;
+  display: inline-flex;
+  flex: 0 1 auto;
+  max-width: 100%;
   border-radius: 999px;
   background: var(--surface-strong);
   color: var(--muted);
   padding: 4px 8px;
   font-size: 0.78rem;
   font-weight: 800;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .source-badge.kleinanzeigen {
@@ -1287,6 +1293,20 @@ textarea.chip-source {
 
 .source-option strong {
   color: var(--text);
+}
+
+.source-option .source-status {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--warning) 36%, var(--line));
+  border-radius: 6px;
+  background: var(--warning-soft);
+  color: var(--warning);
+  padding: 1px 6px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1.35;
+  vertical-align: middle;
 }
 
 .source-option span {

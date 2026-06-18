@@ -1,180 +1,202 @@
-<p align="center">
-  <img src="app/static/assets/marketplacelens-logo.png" alt="MarketPlaceLens logo" width="112" height="112">
-</p>
+<div align="center">
 
-<h1 align="center">MarketPlaceLens</h1>
+<img src="app/static/assets/marketplacelens-logo.png" alt="MarketPlaceLens logo" width="96" height="96">
 
-<p align="center">
-  <strong>Self-hosted marketplace monitoring with guided search jobs, review queues, watchlists, and AI-assisted inquiry texts.</strong>
-</p>
+# MarketPlaceLens
 
-<p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.3.0-24745a">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-24745a">
-  <img alt="Docker Compose" src="https://img.shields.io/badge/deploy-Docker%20Compose-24745a">
-  <img alt="Docker pulls" src="https://img.shields.io/docker/pulls/alexrosbach/marketplacelens?color=24745a&label=docker%20pulls">
-  <img alt="Python" src="https://img.shields.io/badge/python-3.12-24745a">
-</p>
+**Self-hosted marketplace monitoring with search jobs, watchlists, review flows, and AI-assisted buyer notes**
 
-MarketPlaceLens watches marketplace search result pages, normalizes listings from different sources, applies local filters, and gives every user a focused place to review, save, hide, or act on found items. It is designed for small self-hosted deployments where the data stays local and the operator controls every source URL.
+[![Version](https://img.shields.io/badge/version-0.4.0-24745a)](https://github.com/AlexRosbach/MarketPlaceLens)
+[![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
+[![Docker Hub](https://img.shields.io/docker/pulls/alexrosbach/marketplacelens?color=0ea5e9)](https://hub.docker.com/r/alexrosbach/marketplacelens)
+[![Python](https://img.shields.io/badge/python-3.12-24745a)](requirements.txt)
 
-Useful links:
+MarketPlaceLens turns user-supplied marketplace search URLs into recurring local jobs. It collects matching listings, lets users triage them in a clean web UI, saves promising items to watchlists, and can draft buyer inquiry text or listing assessments through a configured AI provider.
 
-- [Documentation](docs/documentation.md)
-- [Changelog](CHANGELOG.md)
-- [Security policy](SECURITY.md)
-- [Issue templates](.github/ISSUE_TEMPLATE)
+[Documentation](docs/documentation.md) · [Wiki draft](docs/wiki/Home.md) · [Changelog](CHANGELOG.md) · [Security policy](SECURITY.md) · [Docker Hub](https://hub.docker.com/r/alexrosbach/marketplacelens)
 
-## Screenshots
+</div>
 
-Screenshots below use demo data.
-
-| Dashboard | Listings |
-| --- | --- |
-| ![MarketPlaceLens dashboard](docs/screenshots/marketplacelens-dashboard.png) | ![MarketPlaceLens listings](docs/screenshots/marketplacelens-listings.png) |
-
-| Mobile wizard | Mobile review |
-| --- | --- |
-| ![Mobile quick-job wizard](docs/screenshots/marketplacelens-mobile-wizard.png) | ![Mobile listing review](docs/screenshots/marketplacelens-mobile-review.png) |
+---
 
 ## What It Does
 
-- Guided search-job wizard for Kleinanzeigen, Facebook Marketplace, mobile.de, and generic HTML result pages
-- Manual job editor with provider URL detection, keyword rules, price limits, location criteria, and map-assisted radius selection
-- Editable search-URL parameters for already parameterized marketplace URLs
-- Listing age limit per job, defaulting to one year
-- Background polling with conservative interval limits and manual run controls
-- Listing inbox with list/tile views, filters, pagination, lazy thumbnails, and clear seen/hidden/watchlist states
-- Kramlet-style review mode with compact mobile product cards, large images, double-click watchlisting, swipe-to-seen, and button fallbacks
-- Multiple watchlists, per-user default watchlist selection, and per-listing watchlist dropdowns
-- Optional AI inquiry text generation through OpenAI API, Ollama, or LM Studio compatible chat completions
-- Per-user buyer details for AI inquiry text personalization
-- Multi-user roles: admins manage global settings and users; normal users manage their own jobs and listings
-- Telegram and webhook notification settings
-- English/German UI, Kramlet-style bottom-right display controls, and mobile-friendly layouts
+MarketPlaceLens is built for small self-hosted deployments where marketplace data stays local and the operator controls every source URL.
+
+- Guided and manual search jobs for recurring marketplace checks
+- Kleinanzeigen search/category URL monitoring with price, keyword, age, listing-type, location, and radius filters
+- Facebook Marketplace and mobile.de connectors marked **in testing** because these sources can block anonymous server-side requests
+- Dashboard, job groups, listing browser, watchlist view, and swipe-style review flow
+- Clickable listing locations that open an OpenStreetMap dialog for the advertisement ZIP/place
+- Multiple watchlists with per-user default watchlist selection
+- Contacted-state tracking; marking a listing as contacted automatically saves it to the user's default watchlist
+- Optional AI inquiry text, AI-generated job drafts, and AI listing assessments
+- Telegram and webhook notifications per job
+- Multi-user roles with admin-only global settings and user-owned jobs
+- German/English UI, light/dark theme, and responsive mobile layouts
+
+> [!IMPORTANT]
+> Use MarketPlaceLens only with marketplace URLs you are allowed to access and process. The project does not bypass logins, CAPTCHA, bot protection, rate limits, private APIs, or platform access controls.
+
+---
+
+## Source Status
+
+| Source | Status | What Works | Notes |
+|---|---|---|---|
+| Kleinanzeigen | Stable primary path | Public search URLs, categories, listing type, price, age, keyword, ZIP/place and radius filtering | Best-supported connector today |
+| Facebook Marketplace | **In testing** | Public Marketplace URLs when Facebook returns listing links; optional local Cookie header for a user's own browser session | Facebook often returns login, consent, location, or JavaScript shell pages to servers |
+| mobile.de | **In testing** | Public search result URLs when embedded vehicle result data is present | The official mobile.de Search API requires separate Basic Auth access |
+| Generic HTML | Experimental | Basic link-card style result pages | Useful for simple pages, not a universal parser |
+
+---
+
+## Product Screenshots
+
+The screenshots below use sanitized demo data.
+
+| Dashboard | Jobs |
+|---|---|
+| ![MarketPlaceLens dashboard](docs/screenshots/marketplacelens-dashboard.png) | ![MarketPlaceLens jobs](docs/screenshots/marketplacelens-jobs.png) |
+
+| Listings | Swipe review |
+|---|---|
+| ![MarketPlaceLens listings](docs/screenshots/marketplacelens-listings.png) | ![MarketPlaceLens review](docs/screenshots/marketplacelens-mobile-review.png) |
+
+| Mobile quick job | AI and source settings |
+|---|---|
+| ![Mobile quick-job wizard](docs/screenshots/marketplacelens-mobile-wizard.png) | ![MarketPlaceLens settings](docs/screenshots/marketplacelens-settings-ai.png) |
+
+---
 
 ## Quick Start
 
-Requirements:
+### Requirements
 
 - Docker 20.10+
 - Docker Compose v2
 
-One-line install with the published Docker image:
+### 1. Start MarketPlaceLens
 
 ```bash
-mkdir -p marketplacelens && cd marketplacelens && curl -fsSL https://raw.githubusercontent.com/AlexRosbach/MarketPlaceLens/main/docker-compose.install.yml -o docker-compose.yml && docker compose up -d
-```
-
-For local development from a checkout:
-
-```bash
-cp .env.example .env
-docker compose up -d --build
+mkdir -p marketplacelens && cd marketplacelens
+curl -fsSL https://raw.githubusercontent.com/AlexRosbach/MarketPlaceLens/main/docker-compose.install.yml -o docker-compose.yml
+docker compose up -d
 ```
 
 Open:
 
 ```text
-http://localhost:8091
+http://<your-host-ip>:8091
 ```
 
-On first start, MarketPlaceLens opens a setup screen with a scraping and platform-rules notice before asking for the first admin password. There is no built-in default password for normal deployments.
+On first start, MarketPlaceLens shows a setup screen with a scraping/platform-rules notice before creating the first admin password. There is no built-in default password for normal deployments.
 
-Docker Hub image:
+### 2. Create a Job
+
+Use **Quick job** for guided setup, or **New job** when you already have a concrete marketplace search URL.
+
+For the best current results, start with a Kleinanzeigen public search/category URL such as:
+
+```text
+https://www.kleinanzeigen.de/s-notebooks/macbook-air-m2/k0c278
+```
+
+Add optional constraints such as maximum price, ZIP/place, radius, listing age, required keywords, excluded words, listing type, Telegram delivery, and webhook delivery.
+
+### 3. Review Listings
+
+Listings can be:
+
+- marked seen or hidden
+- saved to a watchlist
+- marked contacted
+- opened on the original marketplace
+- assessed through AI when enabled
+- shown on a map when location text contains a ZIP/place
+
+---
+
+## Docker Images
+
+Images are published at [`alexrosbach/marketplacelens`](https://hub.docker.com/r/alexrosbach/marketplacelens).
 
 ```bash
-docker pull alexrosbach/marketplacelens:0.3.0
+docker pull alexrosbach/marketplacelens:0.4.0
+docker pull alexrosbach/marketplacelens:latest
 docker pull alexrosbach/marketplacelens:dev
 ```
 
-Docker image tags follow the same shape as LanLens:
+Tag policy:
 
-- `dev` for the current development image
-- semantic version tags such as `0.3.0` for releases
-- no implicit commit/build-number tags
+- `dev` tracks the current development image
+- semantic version tags such as `0.4.0` mark releases
+- `latest` tracks the latest stable release
+- no implicit commit/build-number Docker tags
 
-MarketPlaceLens creates and stores its own session secret at startup when none is provided. You do not need to configure a session secret in `.env`.
-
-## Roles
-
-Admins can manage every job, all users, notification settings, AI settings, watchlists, and global app configuration.
-
-Normal users can create, edit, delete, and manually run their own search jobs. They can review their own listings, mark items seen or hidden, choose their own default watchlist, use watchlists, and change their own password. They cannot change global settings, provider configuration, AI configuration, notification secrets, or other users.
+---
 
 ## AI Features
 
-AI text generation is disabled by default. When an admin enables and configures it, listings show a `KI-Text` / `AI text` button. The generated text is shown in a copyable dialog only; MarketPlaceLens does not send messages to sellers. The quick-job wizard can also turn one natural-language sentence into a structured search draft with source, query, price, location, radius, and keyword filters.
-
-Admins can additionally enable AI listing assessments. When enabled, listing and review cards get a `KI-Einschätzung` / `AI assessment` action that stores a short product, price, and description quality note on the listing and shows it inline on later views. Separate automatic options can assess newly found listings during job runs or evaluate visible listing batches without clicking each card. The settings screen warns that assessments send listing text to the configured AI provider and can use many tokens.
+AI features are disabled by default. Admins can configure an OpenAI-compatible provider in Settings.
 
 Supported compatible providers:
 
-- OpenAI API: `https://api.openai.com/v1`
-- Ollama: `http://host.docker.internal:11434/v1`
-- LM Studio: `http://host.docker.internal:1234/v1`
+- OpenAI API
+- Ollama
+- LM Studio
 
-Available tones are very polite, normal, and cheeky.
+AI can be used for:
 
-Each user can save personal buyer details in Settings: name, location, contact note, and preferred signature. These details are included when that user generates an AI inquiry text.
+- buyer inquiry text that the user copies manually
+- quick-job drafts from one natural-language sentence
+- listing assessments that summarize search fit, value, visible risks, missing details, and price plausibility
 
-Use the `Test AI` action in Settings after changing provider details. Local Ollama and LM Studio models can take longer on the first request while the model is loading.
+MarketPlaceLens does not send seller messages. AI requests may send listing title, price, description, source metadata, and user-provided buyer profile fields to the configured provider.
 
-## Sources
+---
 
-MarketPlaceLens works best with concrete search result URLs that are publicly reachable by the server.
+## Documentation
 
-- Kleinanzeigen: public search and category URLs
-- Facebook Marketplace: marketplace URLs when Facebook returns listing links; if the URL only works in your browser, admins can paste their own Facebook `Cookie` header in Settings so the request uses that local session
-- mobile.de: public `mobile.de` / `suchen.mobile.de` search result URLs when embedded vehicle data is present
-- Generic HTML: user-supplied search result pages with ordinary link cards
+- [Full documentation](docs/documentation.md)
+- [Wiki draft home](docs/wiki/Home.md)
+- [Installation wiki page](docs/wiki/Installation.md)
+- [Jobs and sources wiki page](docs/wiki/Jobs-and-Sources.md)
+- [Listings and watchlists wiki page](docs/wiki/Listings-and-Watchlists.md)
+- [AI and automation wiki page](docs/wiki/AI-and-Automation.md)
+- [Troubleshooting wiki page](docs/wiki/Troubleshooting.md)
 
-Some platforms return login, consent, protection, or JavaScript shell pages to anonymous server requests. MarketPlaceLens does not bypass login, CAPTCHA, bot protection, private APIs, or platform access controls. In those cases runs are recorded as connector errors with a clear message. The optional Facebook Cookie setting stores only the pasted Cookie header locally in SQLite, masks it in the UI/API, and sends it only to `facebook.com`; cookies can expire or be revoked from Facebook at any time.
+The files under `docs/wiki/` are prepared so they can be copied into the GitHub Wiki when the project wiki is enabled.
 
-The official mobile.de Search API requires Basic Auth access, so the built-in connector uses public search pages rather than a private API.
+---
 
-Important: connectors for Kleinanzeigen, Facebook Marketplace, mobile.de, and similar platforms are intended only for private, self-hosted use with URLs you are allowed to access. Depending on source, frequency, and local law, automated checks may violate platform terms of service. The maintainer accepts no responsibility for misuse, blocked accounts, denied access, data processing, or third-party policy violations.
+## Runtime Configuration
 
-## Configuration
+Common environment variables:
 
-Settings are organized into tabs for Notifications, Facebook, AI, Watchlists, Users, Recent runs, and Account. Notification settings use separate Telegram and webhook cards, while individual jobs still decide whether their matches should be delivered to Telegram and/or webhook. The Watchlists tab is available to every user and stores that user's own default watchlist.
+| Variable | Default | Purpose |
+|---|---|---|
+| `MARKETPLACELENS_DB_PATH` | `/data/marketplacelens.db` | SQLite database path in Docker |
+| `MARKETPLACELENS_POLL_ENABLED` | `true` | Enables background job polling |
+| `MARKETPLACELENS_MIN_POLL_MINUTES` | `30` | Minimum allowed poll interval |
+| `MARKETPLACELENS_DEFAULT_POLL_MINUTES` | `60` | Default poll interval for new jobs |
+| `MARKETPLACELENS_ADMIN_USERNAME` | `admin` | First admin username |
+| `TELEGRAM_BOT_TOKEN` | empty | Optional Telegram notification bot token |
+| `TELEGRAM_CHAT_ID` | empty | Optional Telegram target chat |
+| `MARKETPLACELENS_WEBHOOK_URL` | empty | Optional webhook target |
 
-Environment variables can seed first-run defaults:
+Runtime settings are stored in SQLite and can be managed from the Settings screen.
 
-```env
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHAT_ID=
-MARKETPLACELENS_WEBHOOK_URL=
-MARKETPLACELENS_MIN_POLL_MINUTES=30
-MARKETPLACELENS_DEFAULT_POLL_MINUTES=60
-MARKETPLACELENS_POLL_ENABLED=true
-MARKETPLACELENS_ADMIN_USERNAME=admin
-MARKETPLACELENS_BUILD_CODE=20260615.4
-MARKETPLACELENS_BUILD_COMMIT=dev
-MARKETPLACELENS_BUILD_BRANCH=main
-MARKETPLACELENS_BUILD_CREATED=
-```
+`GET /api/version` returns version, build code, commit, branch, and build timestamp metadata. HTML pages append the build code to local CSS and JavaScript asset URLs so browsers pick up UI changes after updates.
 
-Runtime settings are stored in SQLite and can be managed from the Settings screen. The first admin password is collected in the setup screen on first launch.
-
-## Versioning
-
-The current app version lives in:
-
-- `VERSION`
-- `app/version.py`
-- Docker build args in `docker-compose.yml`
-- the visible app version badge in the sidebar
-
-`GET /api/version` returns version, build code, commit, branch, and build timestamp metadata. Release notes are tracked in [CHANGELOG.md](CHANGELOG.md).
-HTML pages append the current build code to local CSS and JavaScript asset URLs so browsers pick up UI text and style changes after each deployed build.
+---
 
 ## Development
 
-Local Python validation:
+Run local validation:
 
 ```bash
-python3 -m py_compile app/*.py
+PYTHONPATH=. pytest
 node --check app/static/app.js
 git diff --check
 ```
@@ -182,7 +204,7 @@ git diff --check
 Run locally:
 
 ```bash
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8091
+MARKETPLACELENS_DB_PATH=./data/marketplacelens.db uvicorn app.main:app --reload --host 127.0.0.1 --port 8091
 ```
 
 Build with Docker Compose:
@@ -191,7 +213,7 @@ Build with Docker Compose:
 docker compose up -d --build
 ```
 
-## Architecture
+Project layout:
 
 ```text
 app/
@@ -202,7 +224,12 @@ app/
   notifier.py      Telegram and webhook delivery
   static/          no-build frontend
   version.py       Runtime version/build metadata
+docs/
+  documentation.md Full documentation
+  wiki/            GitHub Wiki draft pages
 ```
+
+---
 
 ## Compliance Boundaries
 
@@ -216,10 +243,16 @@ MarketPlaceLens is a conservative monitoring tool for user-supplied search resul
 - No full archival of third-party content
 - No local thumbnail mirroring; images are proxied on demand
 
-Use it only where you are allowed to access and process the listing data.
-
 This project is intended for private self-hosted use. The maintainer does not guarantee compatibility with third-party platforms and does not take responsibility for usage that violates their terms, rate limits, or access policies.
+
+---
+
+## Support
+
+MarketPlaceLens is free and open source. If it helps you, voluntary support through GitHub Sponsors is appreciated, but sponsorship does not buy support priority, features, or access.
+
+---
 
 ## License
 
-MarketPlaceLens is released under the [MIT License](LICENSE).
+MIT License, see [LICENSE](LICENSE).
