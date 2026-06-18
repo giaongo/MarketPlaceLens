@@ -2359,14 +2359,14 @@ async function reviewContactedCurrent() {
   const listing = currentReviewListing();
   if (!listing) return;
   const contacted = !listing.contacted;
-  await api(`/api/listings/${listing.id}`, {
+  const updated = await api(`/api/listings/${listing.id}`, {
     method: "PATCH",
     body: JSON.stringify({ contacted }),
   });
-  listing.contacted = contacted;
+  Object.assign(listing, updated);
   toast(t("toast.contactedChanged"));
   renderReviewCard();
-  await loadListings();
+  await Promise.all([loadListings(), loadWatchlist(), loadSummary()]);
 }
 
 function reviewOpenCurrent() {
@@ -2644,7 +2644,7 @@ async function loadListingBrowser(containerSelector, watchlistedOnly) {
         body: JSON.stringify({ contacted: button.dataset.contactedAction === "true" }),
       });
       toast(t("toast.contactedChanged"));
-      await Promise.all([loadListings(), loadWatchlist(), loadReviewQueue()]);
+      await Promise.all([loadListings(), loadWatchlist(), loadReviewQueue(), loadSummary()]);
     });
   });
   browser.querySelectorAll("[data-watchlist-action]").forEach((button) => {

@@ -4,7 +4,7 @@ import sqlite3
 import unittest
 
 from app.connectors import ListingCandidate
-from app.main import refresh_existing_listing_fields, should_auto_assess_new_listing
+from app.main import apply_listing_watchlist_update, refresh_existing_listing_fields, should_auto_assess_new_listing
 
 
 def candidate() -> ListingCandidate:
@@ -25,6 +25,27 @@ def candidate() -> ListingCandidate:
 
 
 class ListingRefreshTests(unittest.TestCase):
+    def test_contacted_side_effect_can_add_default_watchlist(self) -> None:
+        db = sqlite3.connect(":memory:")
+        db.row_factory = sqlite3.Row
+        db.executescript(
+            """
+            CREATE TABLE users(id INTEGER PRIMARY KEY, default_watchlist_id INTEGER, updated_at TEXT);
+            CREATE TABLE watchlists(id INTEGER PRIMARY KEY, name TEXT, updated_at TEXT);
+            CREATE TABLE app_settings(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+            CREATE TABLE listing_watchlists(listing_id INTEGER, watchlist_id INTEGER, created_at TEXT, PRIMARY KEY(listing_id, watchlist_id));
+            INSERT INTO watchlists(id, name, updated_at) VALUES (4, 'Default', '');
+            INSERT INTO users(id, default_watchlist_id, updated_at) VALUES (1, 4, '');
+            """
+        )
+
+        watchlisted = apply_listing_watchlist_update(db, 10, True, None, {"id": 1})
+
+        self.assertEqual(watchlisted, 1)
+        row = db.execute("SELECT * FROM listing_watchlists WHERE listing_id = 10").fetchone()
+        self.assertEqual(row["watchlist_id"], 4)
+        db.close()
+
     def test_duplicate_listing_refreshes_missing_marketplace_fields(self) -> None:
         db = sqlite3.connect(":memory:")
         db.row_factory = sqlite3.Row

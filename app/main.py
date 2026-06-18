@@ -626,13 +626,23 @@ async def update_listing_status(listing_id: int, payload: ListingStatusPayload, 
             if payload.status == "hidden":
                 updates.append("filter_reason = ?")
                 values.append("")
+        watchlisted_update: int | None = None
         if payload.watchlisted is not None:
-            set_listing_watchlisted(db, listing_id, payload.watchlisted, payload.watchlist_id, user)
-            updates.append("watchlisted = ?")
-            values.append(int(payload.watchlisted) if payload.watchlisted else listing_has_watchlists(db, listing_id))
+            watchlisted_update = apply_listing_watchlist_update(
+                db,
+                listing_id,
+                payload.watchlisted,
+                payload.watchlist_id,
+                user,
+            )
         if payload.contacted is not None:
             updates.append("contacted = ?")
             values.append(int(payload.contacted))
+            if payload.contacted:
+                watchlisted_update = apply_listing_watchlist_update(db, listing_id, True, payload.watchlist_id, user)
+        if watchlisted_update is not None:
+            updates.append("watchlisted = ?")
+            values.append(watchlisted_update)
         if not updates:
             raise HTTPException(400, "No listing changes supplied")
         values.append(listing_id)
@@ -1330,6 +1340,17 @@ def set_listing_watchlisted(
         )
     else:
         db.execute("DELETE FROM listing_watchlists WHERE listing_id = ?", (listing_id,))
+
+
+def apply_listing_watchlist_update(
+    db: sqlite3.Connection,
+    listing_id: int,
+    watchlisted: bool,
+    watchlist_id: int | None,
+    user: dict[str, Any],
+) -> int:
+    set_listing_watchlisted(db, listing_id, watchlisted, watchlist_id, user)
+    return int(watchlisted) if watchlisted else listing_has_watchlists(db, listing_id)
 
 
 def listing_has_watchlists(db: sqlite3.Connection, listing_id: int) -> int:
