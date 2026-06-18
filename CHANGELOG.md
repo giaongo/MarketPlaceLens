@@ -22,6 +22,7 @@ All notable changes to MarketPlaceLens are documented here.
 
 ### Changed
 
+- AI listing assessment prompts now judge whether an article is useful for the saved search and compare the asking price with a cautious currently usual used-market range.
 - AI buyer text suggestions now keep the configured buyer name for the signature only and prevent it from being used as the seller greeting.
 - Facebook Marketplace search URLs copied from the `marketplace/np/.../search` view are normalized to the standard Marketplace search path before fetching.
 - Facebook setup copy is now more task-oriented: users first create a Marketplace URL job, then add a browser Cookie only when Facebook requires a logged-in session.

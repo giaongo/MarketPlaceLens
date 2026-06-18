@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from app.main import ai_token_limit_payload, normalize_inquiry_text, normalize_search_draft
+from app.main import ai_token_limit_payload, listing_assessment_prompt, normalize_inquiry_text, normalize_search_draft
 
 
 class AiDraftTests(unittest.TestCase):
@@ -65,6 +65,21 @@ class AiDraftTests(unittest.TestCase):
 
     def test_openai_uses_chat_token_limit(self) -> None:
         self.assertEqual(ai_token_limit_payload("openai", 20), {"max_tokens": 20})
+
+    def test_listing_assessment_prompt_focuses_search_value_and_market_price(self) -> None:
+        prompt = listing_assessment_prompt(
+            {
+                "title": "MacBook Air M2 256 GB",
+                "price_text": "590 EUR",
+                "profile_name": "MacBook Air M2 bis 600",
+                "description_snippet": "Guter Zustand, Akku 91%",
+            }
+        )
+        joined = "\n".join(message["content"] for message in prompt)
+
+        self.assertIn("useful for the saved search", joined)
+        self.assertIn("currently usual market-price range", joined)
+        self.assertIn("Search job: MacBook Air M2 bis 600", joined)
 
     def test_normalize_inquiry_text_removes_buyer_name_from_greeting(self) -> None:
         text = normalize_inquiry_text(

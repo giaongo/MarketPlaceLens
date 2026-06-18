@@ -1468,17 +1468,21 @@ def listing_assessment_prompt(listing: dict[str, Any]) -> list[dict[str, str]]:
             "role": "system",
             "content": (
                 "You assess marketplace listings for a buyer. Return only a short German product assessment. "
-                "Focus on whether the product, price, and description look worthwhile and qualitative. "
-                "Do not mention AI. Do not invent facts. If the information is thin, say what is missing. "
-                "Keep it to two compact sentences with a clear buy/watch/pass tendency."
+                "Focus on the listing's usefulness for the search job, practical value or resale potential, "
+                "and whether the asking price looks close to the currently usual used-market price. "
+                "Estimate a typical market-price range only when the product details are sufficient; mark it as "
+                "uncertain when key facts such as model, condition, storage, age, or accessories are missing. "
+                "Do not mention AI. Do not invent exact facts. Keep it to two compact sentences with a clear "
+                "buy/watch/pass tendency."
             ),
         },
         {
             "role": "user",
             "content": (
-                "Assess whether this listing looks worthwhile. Weigh product quality signals, price plausibility, "
-                "description completeness, fit to the search job, and visible risk signs. "
-                "Call out missing details that would make the product or price hard to judge.\n\n"
+                "Assess whether this article is useful for the saved search. Weigh fit to the search job, "
+                "practical usability, resale/value potential, description completeness, visible risk signs, "
+                "and the asking price against a currently usual market-price range for comparable used items. "
+                "Call out missing details that would make the article or market price hard to judge.\n\n"
                 f"{facts}"
             ),
         },
