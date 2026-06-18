@@ -6,6 +6,13 @@ All notable changes to MarketPlaceLens are documented here.
 
 No unreleased changes yet.
 
+## [0.4.1] - 2026-06-18
+
+### Changed
+
+- Sanitized public demo data in documentation, tests, and screenshots to avoid private-looking names, places, or local context.
+- Refreshed README and screenshot examples with neutral demo content.
+
 ## [0.4.0] - 2026-06-18
 
 ### Added

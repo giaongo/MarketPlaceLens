@@ -1,6 +1,6 @@
 services:
   marketplacelens:
-    image: alexrosbach/marketplacelens:${MARKETPLACELENS_TAG:-0.4.0}
+    image: alexrosbach/marketplacelens:${MARKETPLACELENS_TAG:-0.4.1}
     container_name: marketplacelens
     restart: unless-stopped
     environment:

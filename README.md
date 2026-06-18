@@ -6,7 +6,7 @@
 
 **Self-hosted marketplace watcher for Kleinanzeigen and other public marketplace searches.**
 
-[![Version](https://img.shields.io/badge/version-0.4.0-24745a)](https://github.com/AlexRosbach/MarketPlaceLens)
+[![Version](https://img.shields.io/badge/version-0.4.1-24745a)](https://github.com/AlexRosbach/MarketPlaceLens)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 [![Docker Hub](https://img.shields.io/docker/pulls/alexrosbach/marketplacelens?color=0ea5e9)](https://hub.docker.com/r/alexrosbach/marketplacelens)
 
@@ -67,12 +67,12 @@ On first start, MarketPlaceLens asks you to create the first admin account.
 ## Docker Images
 
 ```bash
-docker pull alexrosbach/marketplacelens:0.4.0
+docker pull alexrosbach/marketplacelens:0.4.1
 docker pull alexrosbach/marketplacelens:latest
 docker pull alexrosbach/marketplacelens:dev
 ```
 
-- `0.4.0` is the current release
+- `0.4.1` is the current release
 - `latest` tracks the latest stable release
 - `dev` tracks the current development build
 
