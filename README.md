@@ -28,10 +28,11 @@ Most marketplace providers are optimized for browsing inside one platform. Marke
 
 ## Support and Legal
 
-MarketPlaceLens is an app by Alex Rosbach. Legal provider information is published with the LanLens project:
+MarketPlaceLens is free and open source. If it helps you or saves you time, you can support ongoing development voluntarily. Support does not buy support priority, features, or access.
 
-- [Impressum and privacy notice](https://lanlens.org/privacy.html)
-- [Buy Me a Coffee](https://www.buymeacoffee.com/alexrosbaci)
+<a href="https://www.buymeacoffee.com/alexrosbaci" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-blue.png" alt="Buy Me a Coffee" height="42"></a>
+
+MarketPlaceLens is an app by Alex Rosbach. Legal notice and project contact information are maintained on [lanlens.org/privacy.html](https://lanlens.org/privacy.html).
 
 ## Status
 

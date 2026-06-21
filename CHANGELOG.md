@@ -5,7 +5,7 @@ All notable changes to MarketPlaceLens are documented here.
 ## Unreleased
 
 - README and full documentation now explain the product advantage over native marketplace searches: granular search rules, a unified review workflow, and built-in AI assistance.
-- README now links to the LanLens.org Impressum/privacy page and the Buy Me a Coffee support page.
+- README now uses the LanLens-style Buy Me a Coffee button and explains that voluntary support does not buy support priority, features, or access.
 - Docker build context now excludes local databases, session secrets, caches, Git metadata, and generated screenshots.
 - FastAPI is updated so dependency resolution pulls a Starlette release with current security fixes.
 - Test discovery now works from a clean checkout without requiring callers to set `PYTHONPATH` manually.
