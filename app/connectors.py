@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 import re
 from dataclasses import dataclass
@@ -10,6 +11,9 @@ import httpx
 from bs4 import BeautifulSoup, Tag
 
 from .config import settings
+
+
+LOCAL_HOSTS = {"localhost", "localhost.localdomain", "host.docker.internal"}
 
 
 @dataclass
@@ -35,6 +39,7 @@ class MarketplaceConnector:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ValueError("Search URL must be an absolute http(s) URL.")
+        validate_public_fetch_host(parsed.hostname or "")
         if self.source_type == "facebook":
             host = parsed.netloc.lower()
             path = parsed.path.rstrip("/").lower()
@@ -51,6 +56,18 @@ class MarketplaceConnector:
 
     async def fetch_listings(self, profile: dict) -> list[ListingCandidate]:
         raise NotImplementedError
+
+
+def validate_public_fetch_host(hostname: str) -> None:
+    host = hostname.lower().strip("[]")
+    if host in LOCAL_HOSTS or host.endswith(".local"):
+        raise ValueError("Search URLs must not target local or private network hosts.")
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return
+    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved:
+        raise ValueError("Search URLs must not target local or private network hosts.")
 
 
 class HtmlListingConnector(MarketplaceConnector):

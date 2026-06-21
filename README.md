@@ -16,6 +16,23 @@ MarketPlaceLens runs recurring marketplace search jobs, collects matching listin
 
 </div>
 
+## Why It Is Different
+
+Most marketplace providers are optimized for browsing inside one platform. MarketPlaceLens is built for focused buying research across saved searches:
+
+- More granular search control: combine provider search URLs with local include, exclude, required keyword, category, price, age, location, radius, status, and watchlist filters.
+- Better matching workflow: normalize listings into one local review queue, hide noise, keep contacted items, and save promising items to watchlists instead of repeating the same provider searches.
+- Built-in AI assistance: turn natural-language buying intent into quick-job drafts, generate buyer messages, and add listing assessments that highlight fit, price plausibility, missing details, and visible risk signs.
+- Self-hosted ownership: data, settings, cookies, API keys, watchlists, and review history stay on the operator's server.
+- No lock-in to one marketplace UI: supported sources can evolve independently while the review, notification, and AI workflow stays the same.
+
+## Support and Legal
+
+MarketPlaceLens is an app by Alex Rosbach. Legal provider information is published with the LanLens project:
+
+- [Impressum and privacy notice](https://lanlens.org/privacy.html)
+- [Buy Me a Coffee](https://www.buymeacoffee.com/alexrosbaci)
+
 ## Status
 
 | Source | Status | Notes |
@@ -47,6 +64,7 @@ Demo data, no real listings.
 - Optional AI buyer text, quick-job drafts, and listing assessments
 - Multi-user login with admin settings and user-owned jobs
 - German/English UI, dark/light mode, and mobile layouts
+- Defensive URL validation prevents saved jobs and image proxy requests from targeting local or private network hosts
 
 ## Quick Start
 

@@ -2,6 +2,16 @@
 
 MarketPlaceLens is a self-hosted marketplace watcher. It turns user-supplied search URLs into recurring jobs, stores normalized listings locally, and gives users a focused workflow for reviewing, saving, hiding, contacting, and assessing items.
 
+## What MarketPlaceLens Does Better
+
+Marketplace-native searches are useful for casual browsing, but they usually stop at one provider's result page and a handful of fixed filters. MarketPlaceLens adds a buyer-focused layer on top:
+
+- It combines provider-side searches with more granular local rules for include, exclude, and required keywords, categories, price limits, listing age, location/radius, status, watchlists, and ownership.
+- It keeps a persistent review workflow so users can hide bad matches, save promising items, track contacted listings, and avoid re-reviewing the same noise after every search.
+- It can use built-in AI to translate a plain-language buying intent into a job draft, assess whether a listing fits the search, flag missing or risky details, and draft a buyer message for manual sending.
+- It keeps marketplace data and decisions in a self-hosted database instead of scattering them across browser tabs, provider accounts, and chat notes.
+- It gives admins one place for notifications, multi-user ownership, run logs, AI provider settings, and source-specific troubleshooting.
+
 ## 1. Installation
 
 Requirements:
@@ -70,6 +80,8 @@ Review mode shows one listing at a time with image, price, location, source, AI 
 | Generic HTML | Experimental | Basic fallback for simple link-card result pages. It is not a universal parser. |
 
 MarketPlaceLens does not bypass login walls, CAPTCHA, bot protection, private APIs, blocked sessions, or platform access controls.
+
+Saved job URLs and proxied listing images are rejected when they target localhost, `.local`, private IP, loopback, link-local, multicast, or reserved network ranges. This keeps marketplace fetches pointed at public sources rather than the host's own LAN services.
 
 ## 4. Creating Jobs
 

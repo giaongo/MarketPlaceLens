@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .auth import COOKIE_NAME, create_session, current_user_from_session, hash_password, valid_credentials
 from .config import settings
-from .connectors import ListingCandidate, facebook_browser_headers, get_connector, is_non_listing_artifact, parse_listing_availability, safe_cookie_header
+from .connectors import ListingCandidate, facebook_browser_headers, get_connector, is_non_listing_artifact, parse_listing_availability, safe_cookie_header, validate_public_fetch_host
 from .database import connect, encode_list, ensure_default_watchlist, init_db, row_to_listing, row_to_profile, utc_now
 from .filters import FilterResult, apply_filters
 from .notifier import TelegramNotifier, WebhookNotifier
@@ -1729,9 +1729,11 @@ def validate_remote_image_url(url: str) -> None:
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
         raise HTTPException(400, "Unsupported image URL")
+    try:
+        validate_public_fetch_host(parsed.hostname)
+    except ValueError as exc:
+        raise HTTPException(400, "Local image URLs are not allowed") from exc
     host = parsed.hostname.lower()
-    if host in {"localhost", "localhost.localdomain"} or host.endswith(".local"):
-        raise HTTPException(400, "Local image URLs are not allowed")
     try:
         ip = ipaddress.ip_address(host)
     except ValueError:

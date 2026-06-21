@@ -13,6 +13,7 @@ from app.connectors import (
     parse_kleinanzeigen_detail_posted_at,
     parse_listing_availability,
     safe_cookie_header,
+    validate_public_fetch_host,
 )
 
 
@@ -95,6 +96,14 @@ class ConnectorTests(unittest.TestCase):
         self.assertEqual(listings[0].title, "Vintage Stuhl")
         self.assertEqual(listings[0].price_text, "120 €")
         self.assertEqual(listings[0].location_text, "10115 Berlin")
+
+    def test_search_url_validation_rejects_local_fetch_hosts(self) -> None:
+        for host in ["localhost", "host.docker.internal", "127.0.0.1", "10.0.0.8", "192.168.1.10", "fd00::1"]:
+            with self.subTest(host=host):
+                with self.assertRaises(ValueError):
+                    validate_public_fetch_host(host)
+
+        validate_public_fetch_host("www.kleinanzeigen.de")
 
     def test_kleinanzeigen_location_hint_is_added_to_search_url(self) -> None:
         url = apply_kleinanzeigen_location_to_url(
